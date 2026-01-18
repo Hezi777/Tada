@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2, Sparkles, Check } from "lucide-react";
+import { Loader2, Lightbulb, Check } from "lucide-react";
 
 interface ProcessingViewProps {
   onComplete: () => void;
@@ -43,9 +43,9 @@ export function ProcessingView({ onComplete }: ProcessingViewProps) {
       <div className="max-w-md w-full mx-auto px-6 text-center">
         {/* Animated icon */}
         <div className="relative inline-flex items-center justify-center w-24 h-24 mb-8">
-          <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping" />
+          <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping motion-reduce:animate-none" />
           <div className="relative w-20 h-20 rounded-full gradient-primary flex items-center justify-center shadow-glow">
-            <Sparkles className="h-10 w-10 text-primary-foreground animate-pulse-soft" />
+            <Lightbulb className="h-10 w-10 text-primary-foreground animate-pulse-soft motion-reduce:animate-none" />
           </div>
         </div>
 
@@ -53,7 +53,7 @@ export function ProcessingView({ onComplete }: ProcessingViewProps) {
           Analyzing your data
         </h2>
         <p className="text-muted-foreground mb-10">
-          TADA is learning your data's structure and patterns
+          Tada is learning your data's structure and patterns
         </p>
 
         {/* Steps */}
@@ -63,6 +63,7 @@ export function ProcessingView({ onComplete }: ProcessingViewProps) {
               key={step}
               className={`
                 flex items-center gap-3 p-3 rounded-lg transition-all duration-300
+                motion-reduce:transition-none
                 ${index === currentStep ? 'bg-primary/5 border border-primary/20' : ''}
                 ${completedSteps.includes(index) ? 'opacity-60' : ''}
                 ${index > currentStep ? 'opacity-30' : ''}
@@ -72,7 +73,7 @@ export function ProcessingView({ onComplete }: ProcessingViewProps) {
                 {completedSteps.includes(index) ? (
                   <Check className="h-4 w-4 text-primary" />
                 ) : index === currentStep ? (
-                  <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                  <Loader2 className="h-4 w-4 text-primary animate-spin motion-reduce:animate-none" />
                 ) : (
                   <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
                 )}

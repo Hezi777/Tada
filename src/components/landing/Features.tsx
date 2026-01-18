@@ -32,7 +32,7 @@ export function Features() {
             Zero friction. Pure insight.
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            TADA removes everything that stands between you and understanding your data.
+            Tada removes everything that stands between you and understanding your data.
           </p>
         </div>
 
@@ -40,11 +40,12 @@ export function Features() {
           {features.map((feature, index) => (
             <div 
               key={feature.title}
-              className="group p-6 rounded-2xl bg-card border border-border hover:shadow-card hover:border-primary/20 transition-all duration-300"
+              className="group p-6 rounded-2xl bg-card border border-border transition-all duration-300 ease-out hover:shadow-soft hover:border-primary/30 hover:-translate-y-1 hover:scale-[1.02] focus-within:shadow-soft focus-within:border-primary/30 motion-reduce:hover:translate-y-0 motion-reduce:hover:scale-100 motion-reduce:transition-none"
               style={{ animationDelay: `${index * 0.1}s` }}
+              tabIndex={0}
             >
-              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4 group-hover:bg-primary/10 transition-colors">
-                <feature.icon className="h-6 w-6 text-primary" />
+              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4 transition-all duration-300 group-hover:bg-primary/10 group-hover:scale-110 group-hover:shadow-glow motion-reduce:group-hover:scale-100 motion-reduce:transition-none">
+                <feature.icon className="h-6 w-6 text-primary transition-transform duration-300 group-hover:scale-110 motion-reduce:group-hover:scale-100" />
               </div>
               <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
               <p className="text-sm text-muted-foreground">{feature.description}</p>
