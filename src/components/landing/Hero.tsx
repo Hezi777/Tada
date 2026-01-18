@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Upload, Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, BarChart3, MessageSquare, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface HeroProps {
@@ -7,23 +6,6 @@ interface HeroProps {
 }
 
 export function Hero({ onGetStarted }: HeroProps) {
-  const [isDragging, setIsDragging] = useState(false);
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    onGetStarted();
-  };
-
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
       {/* Background glow */}
@@ -53,48 +35,35 @@ export function Hero({ onGetStarted }: HeroProps) {
           Ask questions in plain English. No setup required.
         </p>
 
-        {/* Upload zone */}
-        <div 
-          className={`
-            max-w-2xl mx-auto p-8 rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer animate-fade-in-delay-3
-            ${isDragging 
-              ? 'border-primary bg-primary/5 scale-[1.02]' 
-              : 'border-border hover:border-primary/50 hover:bg-secondary/50'
-            }
-          `}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={onGetStarted}
-        >
-          <div className="flex flex-col items-center gap-4">
-            <div className={`
-              w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300
-              ${isDragging ? 'bg-primary text-primary-foreground' : 'bg-secondary text-primary'}
-            `}>
-              <Upload className="h-7 w-7" />
-            </div>
-            <div>
-              <p className="font-medium text-foreground mb-1">
-                Drop your file here or click to upload
-              </p>
-              <p className="text-sm text-muted-foreground">
-                CSV, Excel, or any tabular data
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* CTA */}
-        <div className="mt-8 animate-fade-in-delay-3">
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12 animate-fade-in-delay-3">
           <Button variant="hero" size="xl" onClick={onGetStarted}>
-            Try with sample data
+            Get started free
             <ArrowRight className="h-5 w-5 ml-1" />
+          </Button>
+          <Button variant="outline" size="lg" onClick={onGetStarted}>
+            Try with sample data
           </Button>
         </div>
 
+        {/* Feature pills */}
+        <div className="flex flex-wrap items-center justify-center gap-4 animate-fade-in-delay-3">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border">
+            <Zap className="h-4 w-4 text-primary" />
+            <span className="text-sm text-muted-foreground">Instant dashboards</span>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border">
+            <MessageSquare className="h-4 w-4 text-primary" />
+            <span className="text-sm text-muted-foreground">Chat with your data</span>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border">
+            <BarChart3 className="h-4 w-4 text-primary" />
+            <span className="text-sm text-muted-foreground">Smart visualizations</span>
+          </div>
+        </div>
+
         {/* Trust indicators */}
-        <p className="mt-12 text-sm text-muted-foreground animate-fade-in-delay-3">
+        <p className="mt-16 text-sm text-muted-foreground animate-fade-in-delay-3">
           Trusted by data teams at fast-growing companies
         </p>
       </div>

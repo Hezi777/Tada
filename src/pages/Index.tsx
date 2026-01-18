@@ -31,7 +31,7 @@ const Index = () => {
   };
 
   if (appState === "upload") {
-    return <UploadScreen onFileUpload={handleFileUpload} />;
+    return <UploadScreen onFileUpload={handleFileUpload} onBack={handleLogout} />;
   }
 
   if (appState === "processing") {
