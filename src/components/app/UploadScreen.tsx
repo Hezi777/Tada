@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, FileSpreadsheet, ArrowLeft, Sparkles } from "lucide-react";
+import { Upload, FileSpreadsheet, ArrowLeft, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import tadaLogo from "@/assets/tada-logo.png";
 
@@ -44,8 +44,8 @@ export const UploadScreen = ({ onFileUpload, onBack }: UploadScreenProps) => {
       <header className="w-full py-4 px-6 border-b border-border">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={tadaLogo} alt="TADA" className="h-8 w-8" />
-            <span className="text-xl font-bold text-foreground">TADA</span>
+            <img src={tadaLogo} alt="Tada" className="h-8 w-8" />
+            <span className="text-xl font-bold text-foreground">Tada</span>
           </div>
           <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -59,7 +59,7 @@ export const UploadScreen = ({ onFileUpload, onBack }: UploadScreenProps) => {
         {/* Title Section */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border mb-6">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <Lightbulb className="h-3.5 w-3.5 text-primary" />
             <span className="text-xs font-medium text-muted-foreground">Step 1 of 2</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
@@ -77,6 +77,7 @@ export const UploadScreen = ({ onFileUpload, onBack }: UploadScreenProps) => {
           onDrop={handleDrop}
           className={`
             w-full max-w-xl p-10 rounded-2xl border-2 border-dashed transition-all duration-300 bg-card
+            motion-reduce:transition-none
             ${isDragging 
               ? "border-primary bg-primary/5 scale-[1.02] shadow-glow" 
               : "border-border hover:border-primary/50 hover:shadow-soft"
@@ -87,6 +88,7 @@ export const UploadScreen = ({ onFileUpload, onBack }: UploadScreenProps) => {
             {/* Upload Icon */}
             <div className={`
               w-16 h-16 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300
+              motion-reduce:transition-none
               ${isDragging 
                 ? "bg-primary text-primary-foreground" 
                 : "bg-secondary text-primary"

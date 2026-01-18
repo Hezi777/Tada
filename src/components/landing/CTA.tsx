@@ -1,4 +1,4 @@
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface CTAProps {
@@ -15,7 +15,7 @@ export function CTA({ onGetStarted }: CTAProps) {
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8">
-            <Sparkles className="h-4 w-4 text-primary" />
+            <Lightbulb className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-primary">Start free, no credit card</span>
           </div>
           
@@ -24,7 +24,7 @@ export function CTA({ onGetStarted }: CTAProps) {
           </h2>
           
           <p className="text-lg text-muted-foreground mb-10">
-            Upload your first file and see TADA in action. 
+            Upload your first file and see Tada in action. 
             It takes 30 seconds to go from spreadsheet to insight.
           </p>
           
