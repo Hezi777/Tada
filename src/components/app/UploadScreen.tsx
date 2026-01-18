@@ -1,13 +1,14 @@
 import { useState, useRef } from "react";
-import { Upload, FileSpreadsheet } from "lucide-react";
+import { Upload, FileSpreadsheet, ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import tadaLogo from "@/assets/tada-logo.png";
 
 interface UploadScreenProps {
   onFileUpload: () => void;
+  onBack: () => void;
 }
 
-export const UploadScreen = ({ onFileUpload }: UploadScreenProps) => {
+export const UploadScreen = ({ onFileUpload, onBack }: UploadScreenProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -24,7 +25,6 @@ export const UploadScreen = ({ onFileUpload }: UploadScreenProps) => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    // Simulate file upload
     onFileUpload();
   };
 
@@ -39,26 +39,34 @@ export const UploadScreen = ({ onFileUpload }: UploadScreenProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="w-full py-6 px-8">
-        <div className="flex items-center gap-2">
-          <img src={tadaLogo} alt="TADA" className="h-8 w-8" />
-          <span className="text-xl font-bold text-white">TADA</span>
+      <header className="w-full py-4 px-6 border-b border-border">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src={tadaLogo} alt="TADA" className="h-8 w-8" />
+            <span className="text-xl font-bold text-foreground">TADA</span>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to home
+          </Button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 -mt-16">
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         {/* Title Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Data insights in{" "}
-            <span className="text-primary">seconds</span>
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border mb-6">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-medium text-muted-foreground">Step 1 of 2</span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+            Upload your <span className="text-gradient">data file</span>
           </h1>
-          <p className="text-slate-400 text-lg max-w-xl mx-auto">
-            Upload your CSV or Excel file and get AI-powered dashboards with interactive
-            charts. No setup, no technical skills needed.
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Drop your CSV or Excel file and we'll generate an AI-powered dashboard instantly.
           </p>
         </div>
 
@@ -68,42 +76,42 @@ export const UploadScreen = ({ onFileUpload }: UploadScreenProps) => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={`
-            w-full max-w-xl p-12 rounded-2xl border-2 border-dashed transition-all duration-300
+            w-full max-w-xl p-10 rounded-2xl border-2 border-dashed transition-all duration-300 bg-card
             ${isDragging 
-              ? "border-primary bg-primary/10 scale-[1.02]" 
-              : "border-slate-700 bg-slate-900/50 hover:border-slate-600"
+              ? "border-primary bg-primary/5 scale-[1.02] shadow-glow" 
+              : "border-border hover:border-primary/50 hover:shadow-soft"
             }
           `}
         >
           <div className="flex flex-col items-center text-center">
             {/* Upload Icon */}
             <div className={`
-              w-20 h-20 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300
+              w-16 h-16 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300
               ${isDragging 
-                ? "bg-primary/20" 
-                : "bg-slate-800"
+                ? "bg-primary text-primary-foreground" 
+                : "bg-secondary text-primary"
               }
             `}>
-              <Upload className={`w-10 h-10 transition-colors duration-300 ${isDragging ? "text-primary" : "text-primary"}`} />
+              <Upload className="w-7 h-7" />
             </div>
 
             {/* Text */}
-            <h2 className="text-xl font-semibold text-white mb-2">
-              Upload your data file
+            <h2 className="text-lg font-semibold text-foreground mb-2">
+              Drop your file here
             </h2>
-            <p className="text-slate-400 mb-2">
-              Drop your CSV or Excel file here, or click to browse.
+            <p className="text-muted-foreground text-sm mb-1">
+              or click to browse from your computer
             </p>
-            <p className="text-slate-500 text-sm mb-6">
+            <p className="text-muted-foreground/60 text-xs mb-6">
               Maximum file size: 100MB
             </p>
 
             {/* Choose File Button */}
             <Button
               onClick={handleFileSelect}
-              className="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2"
+              className="px-6"
             >
-              <FileSpreadsheet className="w-4 h-4" />
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
               Choose File
             </Button>
 
@@ -117,17 +125,29 @@ export const UploadScreen = ({ onFileUpload }: UploadScreenProps) => {
             />
 
             {/* File Type Indicators */}
-            <div className="flex items-center gap-6 mt-6">
+            <div className="flex items-center gap-6 mt-6 pt-6 border-t border-border w-full justify-center">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-primary"></span>
-                <span className="text-slate-400 text-sm">CSV</span>
+                <span className="text-muted-foreground text-sm">CSV</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span className="text-slate-400 text-sm">Excel</span>
+                <span className="text-muted-foreground text-sm">Excel (.xlsx)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                <span className="text-muted-foreground text-sm">Excel (.xls)</span>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Sample Data Option */}
+        <div className="mt-8 text-center">
+          <p className="text-sm text-muted-foreground mb-3">Don't have a file ready?</p>
+          <Button variant="outline" size="sm" onClick={onFileUpload}>
+            Try with sample data
+          </Button>
         </div>
       </main>
     </div>
