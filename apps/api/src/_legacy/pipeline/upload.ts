@@ -13,6 +13,40 @@ import { setDatasetRecord } from "../state-store";
 
 type ColumnType = "metric" | "date" | "dimension" | "categorical";
 type NormalizedRow = Record<string, string | number | boolean | null>;
+type TimeBucket = "day" | "month" | "year";
+
+type DateParseInfo = {
+  successRate: number;
+  parsedCount: number;
+  totalCount: number;
+  stringParsedCount: number;
+  numericParsedCount: number;
+};
+
+type ColumnStats = {
+  nonNullCount: number;
+  uniqueCount: number;
+  uniqueRatio: number;
+};
+
+type ChartCandidate = {
+  idBase: string;
+  spec: ChartSpec;
+  payload: ChartPayload;
+  kind: "time" | "categorical" | "distribution" | "table";
+  categoryMode?: "with_other" | "top_only";
+  bucket?: TimeBucket;
+  replacementReason?: string;
+  patternKey: string;
+};
+
+type ChartValidationContext = {
+  types: Record<string, ColumnType>;
+  columnStats: Record<string, ColumnStats>;
+  dateParseSuccess: Record<string, DateParseInfo>;
+};
+
+type ChartRejectionDebug = NonNullable<NormalizationDebug["chartRejections"]>[number];
 
 const DATE_RATIO = 0.7;
 const NUMERIC_RATIO = 0.7;
@@ -21,6 +55,14 @@ const TOP_VALUES_LIMIT = 10;
 const BIN_COUNT = 10;
 const SAMPLE_LIMIT = 5;
 const TABLE_LIMIT = 15;
+const TIME_PARSE_SUCCESS_THRESHOLD = 0.7;
+const MAX_TIME_POINTS = 200;
+const OTHER_DOMINANCE_THRESHOLD = 0.65;
+const HIGH_CARDINALITY_RATIO = 0.5;
+const HIGH_UNIQUE_RATIO = 0.9;
+
+const ID_LIKE_HINTS = ["id", "uuid", "guid", "name", "title"];
+const NON_ADDITIVE_HINTS = ["duration", "runtime", "age", "length", "latency", "size"];
 
 let datasetCounter = 0;
 
@@ -108,6 +150,19 @@ function parseDate(value: unknown): number | null {
   return null;
 }
 
+function hasHint(name: string, hints: string[]): boolean {
+  const lower = name.toLowerCase();
+  return hints.some((hint) => lower.includes(hint));
+}
+
+function isIdLikeColumn(name: string): boolean {
+  return hasHint(name, ID_LIKE_HINTS);
+}
+
+function isNonAdditiveMetric(name: string): boolean {
+  return hasHint(name, NON_ADDITIVE_HINTS);
+}
+
 function normalizeCategory(value: unknown): string {
   if (value === null || value === undefined || value === "") {
     return "Unknown";
@@ -157,6 +212,60 @@ function detectColumnTypes(rows: Record<string, unknown>[]): Record<string, Colu
   }
 
   return types;
+}
+
+function computeDateParseSuccess(
+  rows: Record<string, unknown>[],
+  columns: string[]
+): Record<string, DateParseInfo> {
+  const results: Record<string, DateParseInfo> = {};
+  for (const column of columns) {
+    let parsedCount = 0;
+    let totalCount = 0;
+    let stringParsedCount = 0;
+    let numericParsedCount = 0;
+    for (const row of rows) {
+      const raw = row[column];
+      if (raw === null || raw === undefined || raw === "") {
+        continue;
+      }
+      totalCount += 1;
+      const parsed = parseDate(raw);
+      if (parsed !== null) {
+        parsedCount += 1;
+        if (typeof raw === "string") {
+          stringParsedCount += 1;
+        }
+        if (typeof raw === "number") {
+          numericParsedCount += 1;
+        }
+      }
+    }
+    const successRate = totalCount === 0 ? 0 : parsedCount / totalCount;
+    results[column] = {
+      successRate,
+      parsedCount,
+      totalCount,
+      stringParsedCount,
+      numericParsedCount,
+    };
+  }
+  return results;
+}
+
+function buildColumnStats(rows: NormalizedRow[], columns: string[]): Record<string, ColumnStats> {
+  const stats: Record<string, ColumnStats> = {};
+  for (const column of columns) {
+    const values = rows
+      .map((row) => row[column])
+      .filter((value) => value !== null && value !== undefined);
+    const uniqueValues = new Set(values.map((value) => String(value)));
+    const uniqueCount = uniqueValues.size;
+    const nonNullCount = values.length;
+    const uniqueRatio = nonNullCount === 0 ? 0 : uniqueCount / nonNullCount;
+    stats[column] = { nonNullCount, uniqueCount, uniqueRatio };
+  }
+  return stats;
 }
 
 function normalizeRows(
@@ -261,8 +370,10 @@ function buildCategoricalPayload(
   rows: NormalizedRow[],
   xKey: string,
   yKey: string | undefined,
-  aggregation: "sum" | "avg" | "count"
+  aggregation: "sum" | "avg" | "count",
+  options?: { includeOther?: boolean }
 ): ChartPayload {
+  const includeOther = options?.includeOther ?? true;
   const totals = new Map<string, { sum: number; count: number }>();
   for (const row of rows) {
     const xValue = normalizeCategory(row[xKey]);
@@ -294,7 +405,7 @@ function buildCategoricalPayload(
   const sorted = values.sort((a, b) => b[1] - a[1]);
   const top = sorted.slice(0, TOP_VALUES_LIMIT);
   const remainder = sorted.slice(TOP_VALUES_LIMIT);
-  if (remainder.length) {
+  if (includeOther && remainder.length) {
     const otherSum = remainder.reduce((sum, [, value]) => sum + value, 0);
     top.push(["Other", otherSum]);
   }
@@ -329,22 +440,36 @@ function buildDistributionPayload(values: number[]): ChartPayload {
   return { data, xKey: "x", yKey: "y" };
 }
 
-function buildTimeSeriesPayload(
+function formatTimeLabel(date: Date, bucket: TimeBucket): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  if (bucket === "year") {
+    return `${year}`;
+  }
+  if (bucket === "month") {
+    return `${year}-${month}`;
+  }
+  return `${year}-${month}-${day}`;
+}
+
+function bucketStart(date: Date, bucket: TimeBucket): Date {
+  if (bucket === "year") {
+    return new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  }
+  if (bucket === "month") {
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+  }
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function buildTimeSeriesPayloadWithBucket(
   rows: NormalizedRow[],
   xKey: string,
   yKey: string | undefined,
-  aggregation: "sum" | "avg" | "count"
+  aggregation: "sum" | "avg" | "count",
+  bucket: TimeBucket
 ): ChartPayload {
-  const timestamps = rows
-    .map((row) => row[xKey])
-    .filter((value): value is number => typeof value === "number");
-  if (!timestamps.length) {
-    return { data: [], xKey: "x", yKey: "y" };
-  }
-  const min = Math.min(...timestamps);
-  const max = Math.max(...timestamps);
-  const spanDays = (max - min) / (1000 * 60 * 60 * 24);
-  const bucket = spanDays > 365 ? "month" : "day";
   const totals = new Map<number, { sum: number; count: number }>();
 
   for (const row of rows) {
@@ -353,10 +478,10 @@ function buildTimeSeriesPayload(
       continue;
     }
     const date = new Date(raw);
-    const bucketDate =
-      bucket === "month"
-        ? new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1))
-        : new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+    if (Number.isNaN(date.getTime())) {
+      continue;
+    }
+    const bucketDate = bucketStart(date, bucket);
     const key = bucketDate.getTime();
     const entry = totals.get(key) ?? { sum: 0, count: 0 };
     if (aggregation === "count" || !yKey) {
@@ -373,7 +498,7 @@ function buildTimeSeriesPayload(
 
   const data = Array.from(totals.entries())
     .sort((a, b) => a[0] - b[0])
-    .map(([x, entry]) => {
+    .map(([timestamp, entry]) => {
       const value =
         aggregation === "avg"
           ? entry.count
@@ -382,9 +507,339 @@ function buildTimeSeriesPayload(
           : aggregation === "sum"
             ? entry.sum
             : entry.count;
-      return { x, y: value };
+      return { x: formatTimeLabel(new Date(timestamp), bucket), y: value };
     });
   return { data, xKey: "x", yKey: "y" };
+}
+
+function selectTimeSeriesPayload(
+  rows: NormalizedRow[],
+  xKey: string,
+  yKey: string | undefined,
+  aggregation: "sum" | "avg" | "count"
+): { payload: ChartPayload; bucket: TimeBucket; pointCount: number; exceedsMax: boolean } {
+  const buckets: TimeBucket[] = ["day", "month", "year"];
+  let lastPayload: ChartPayload = { data: [], xKey: "x", yKey: "y" };
+  let lastBucket: TimeBucket = "day";
+  let lastCount = 0;
+
+  for (const bucket of buckets) {
+    const payload = buildTimeSeriesPayloadWithBucket(rows, xKey, yKey, aggregation, bucket);
+    const data = (payload as { data?: unknown[] }).data ?? [];
+    lastPayload = payload;
+    lastBucket = bucket;
+    lastCount = data.length;
+    if (data.length <= MAX_TIME_POINTS) {
+      return { payload, bucket, pointCount: data.length, exceedsMax: false };
+    }
+  }
+
+  return { payload: lastPayload, bucket: lastBucket, pointCount: lastCount, exceedsMax: true };
+}
+
+function buildPatternKey(input: {
+  kind: ChartCandidate["kind"];
+  spec: ChartSpec;
+  categoryMode?: ChartCandidate["categoryMode"];
+  bucket?: ChartCandidate["bucket"];
+}): string {
+  return [
+    input.kind,
+    input.spec.type,
+    input.spec.x,
+    input.spec.y ?? "",
+    input.spec.aggregation ?? "",
+    input.categoryMode ?? "",
+    input.bucket ?? "",
+  ].join("|");
+}
+
+function isMonotonicIncreasing(values: number[]): boolean {
+  if (values.length <= 2) {
+    return false;
+  }
+  for (let index = 1; index < values.length; index += 1) {
+    if (values[index] < values[index - 1]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function getOtherShare(payload: ChartPayload): number | null {
+  const data = (payload as { data?: Array<Record<string, unknown>> }).data;
+  if (!Array.isArray(data) || data.length === 0) {
+    return null;
+  }
+  let otherValue: number | null = null;
+  let total = 0;
+  for (const entry of data) {
+    const x = entry.x;
+    const y = entry.y;
+    if (typeof y !== "number") {
+      continue;
+    }
+    total += y;
+    if (x === "Other") {
+      otherValue = y;
+    }
+  }
+  if (otherValue === null || total <= 0) {
+    return null;
+  }
+  return otherValue / total;
+}
+
+function isValidCategoricalAxis(column: string, stats: ColumnStats | undefined): boolean {
+  if (isIdLikeColumn(column)) {
+    return false;
+  }
+  if (!stats) {
+    return true;
+  }
+  if (stats.uniqueRatio > HIGH_UNIQUE_RATIO) {
+    return false;
+  }
+  if (stats.uniqueRatio > HIGH_CARDINALITY_RATIO) {
+    return false;
+  }
+  return true;
+}
+
+function findValidCategory(
+  columns: string[],
+  types: Record<string, ColumnType>,
+  stats: Record<string, ColumnStats>
+): string | undefined {
+  for (const column of columns) {
+    if (types[column] !== "categorical" && types[column] !== "dimension") {
+      continue;
+    }
+    if (!isValidCategoricalAxis(column, stats[column])) {
+      continue;
+    }
+    return column;
+  }
+  return undefined;
+}
+
+function validateCandidate(
+  candidate: ChartCandidate,
+  context: ChartValidationContext
+): string[] {
+  const reasons: string[] = [];
+
+  if (candidate.kind === "time") {
+    const dateInfo = context.dateParseSuccess[candidate.spec.x];
+    if (dateInfo && dateInfo.successRate < TIME_PARSE_SUCCESS_THRESHOLD) {
+      reasons.push("time_parse_failure");
+    }
+    const data = (candidate.payload as { data?: Array<Record<string, unknown>> }).data ?? [];
+    if (data.length > MAX_TIME_POINTS) {
+      reasons.push("time_too_many_points");
+    }
+    const xKey = (candidate.payload as { xKey?: string }).xKey ?? "x";
+    const sample = data[0]?.[xKey];
+    if (typeof sample === "number") {
+      reasons.push("time_unformatted_timestamp");
+    }
+    if (
+      candidate.spec.aggregation === "sum" &&
+      candidate.spec.y &&
+      isNonAdditiveMetric(candidate.spec.y)
+    ) {
+      reasons.push("time_sum_non_additive");
+    }
+    if (candidate.spec.aggregation === "sum") {
+      const values = data
+        .map((entry) => entry.y)
+        .filter((value): value is number => typeof value === "number");
+      if (isMonotonicIncreasing(values)) {
+        reasons.push("time_monotonic_sum");
+      }
+    }
+  }
+
+  if (candidate.kind === "categorical") {
+    const stats = context.columnStats[candidate.spec.x];
+    if (isIdLikeColumn(candidate.spec.x)) {
+      reasons.push("group_by_id_like");
+    }
+    if (stats) {
+      if (stats.uniqueRatio > HIGH_UNIQUE_RATIO) {
+        reasons.push("group_by_unique_ratio");
+      }
+      if (stats.uniqueRatio > HIGH_CARDINALITY_RATIO) {
+        reasons.push("group_by_high_cardinality");
+      }
+    }
+    if (candidate.categoryMode === "with_other" && candidate.spec.aggregation !== "avg") {
+      const otherShare = getOtherShare(candidate.payload);
+      if (otherShare !== null && otherShare > OTHER_DOMINANCE_THRESHOLD) {
+        reasons.push("other_dominance");
+      }
+    }
+  }
+
+  return reasons;
+}
+
+function buildTimeCandidate(
+  rows: NormalizedRow[],
+  dateColumn: string,
+  metric: string | undefined
+): ChartCandidate {
+  const aggregation: "avg" | "count" = metric ? "avg" : "count";
+  const title = metric ? `Average ${metric} over time` : "Records over time";
+  const idBase = "chart_time";
+  const { payload, bucket } = selectTimeSeriesPayload(rows, dateColumn, metric, aggregation);
+  const spec: ChartSpec = {
+    id: idBase,
+    type: "line",
+    x: dateColumn,
+    y: metric ?? undefined,
+    title,
+    colorIntent: "time",
+    aggregation,
+  };
+  return {
+    idBase,
+    spec,
+    payload,
+    kind: "time",
+    bucket,
+    patternKey: buildPatternKey({ kind: "time", spec, bucket }),
+  };
+}
+
+function buildCategoricalCandidate(
+  rows: NormalizedRow[],
+  category: string,
+  metric: string | undefined,
+  aggregation: "sum" | "avg" | "count",
+  options: { includeOther: boolean; idBase: string; title: string; reason?: string }
+): ChartCandidate {
+  const spec: ChartSpec = {
+    id: options.idBase,
+    type: "bar",
+    x: category,
+    y: metric ?? undefined,
+    title: options.title,
+    colorIntent: "categorical",
+    aggregation,
+  };
+  const payload = buildCategoricalPayload(rows, spec.x, spec.y, aggregation, {
+    includeOther: options.includeOther,
+  });
+  return {
+    idBase: options.idBase,
+    spec,
+    payload,
+    kind: "categorical",
+    categoryMode: options.includeOther ? "with_other" : "top_only",
+    replacementReason: options.reason,
+    patternKey: buildPatternKey({
+      kind: "categorical",
+      spec,
+      categoryMode: options.includeOther ? "with_other" : "top_only",
+    }),
+  };
+}
+
+function buildDistributionCandidate(rows: NormalizedRow[], metric: string): ChartCandidate {
+  const idBase = "chart_distribution";
+  const spec: ChartSpec = {
+    id: idBase,
+    type: "bar",
+    x: metric,
+    title: `Distribution of ${metric}`,
+    colorIntent: "distribution",
+    aggregation: "count",
+  };
+  const values = rows
+    .map((row) => row[metric])
+    .filter((value): value is number => typeof value === "number");
+  const payload = buildDistributionPayload(values);
+  return {
+    idBase,
+    spec,
+    payload,
+    kind: "distribution",
+    replacementReason: "distribution",
+    patternKey: buildPatternKey({ kind: "distribution", spec }),
+  };
+}
+
+function buildTableCandidate(rows: NormalizedRow[], columns: string[]): ChartCandidate {
+  const idBase = "chart_table";
+  const spec: ChartSpec = {
+    id: idBase,
+    type: "table",
+    x: columns[0] ?? "column",
+    y: columns[1],
+    title: "Sample records",
+    colorIntent: "focus",
+    aggregation: "count",
+  };
+  const payload = buildTablePayload(rows, [spec.x, spec.y].filter(Boolean) as string[]);
+  return {
+    idBase,
+    spec,
+    payload,
+    kind: "table",
+    replacementReason: "table_preview",
+    patternKey: buildPatternKey({ kind: "table", spec }),
+  };
+}
+
+function selectCandidateWithFallback(
+  initial: ChartCandidate | undefined,
+  fallbacks: ChartCandidate[],
+  context: ChartValidationContext,
+  rejectedPatterns: Set<string>
+): { candidate?: ChartCandidate; rejections: ChartRejectionDebug[] } {
+  const chain: ChartRejectionDebug[] = [];
+  const candidates = [initial, ...fallbacks];
+  let selected: ChartCandidate | undefined;
+
+  for (const candidate of candidates) {
+    if (!candidate) {
+      continue;
+    }
+    if (rejectedPatterns.has(candidate.patternKey)) {
+      continue;
+    }
+    const reasons = validateCandidate(candidate, context);
+    if (reasons.length === 0) {
+      selected = candidate;
+      break;
+    }
+    rejectedPatterns.add(candidate.patternKey);
+    chain.push({
+      chartId: candidate.idBase,
+      chartTitle: candidate.spec.title,
+      rules: reasons,
+    });
+  }
+
+  if (selected) {
+    for (const rejection of chain) {
+      rejection.replacement = {
+        chartId: selected.idBase,
+        chartTitle: selected.spec.title,
+        chartType: selected.spec.type,
+        reason: selected.replacementReason ?? selected.kind,
+      };
+    }
+  }
+
+  return { candidate: selected, rejections: chain };
+}
+
+function finalizeCandidate(candidate: ChartCandidate, usedIds: Set<string>): DashboardChart {
+  const id = chartId(candidate.idBase, usedIds);
+  const spec: ChartSpec = { ...candidate.spec, id };
+  return { id, spec, payload: candidate.payload };
 }
 
 function computeKpis(rows: NormalizedRow[], types: Record<string, ColumnType>) {
