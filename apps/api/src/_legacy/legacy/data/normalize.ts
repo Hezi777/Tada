@@ -16,6 +16,17 @@ export type NormalizationDebug = {
   dateParseSuccess: Record<string, DateParseInfo>;
   durationUnitCounts: { minutes: number; seasons: number };
   warnings: string[];
+  chartRejections?: Array<{
+    chartId: string;
+    chartTitle: string;
+    rules: string[];
+    replacement?: {
+      chartId: string;
+      chartTitle: string;
+      chartType: string;
+      reason: string;
+    };
+  }>;
 };
 
 export type NormalizationResult = {

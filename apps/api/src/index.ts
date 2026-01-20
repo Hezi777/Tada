@@ -2,9 +2,9 @@ import "dotenv/config";
 import express from "express";
 import multer from "multer";
 import type { HealthResponse } from "@tada/shared";
-import { handleUpload } from "./pipeline/upload";
-import { handleChat } from "./pipeline/chat";
-import { getDatasetRecord } from "./state-store";
+import { handleChat } from "./core/chat";
+import { handleUpload } from "./core/upload";
+import { getDatasetState } from "./core/state";
 
 const app = express();
 const port = Number(process.env.PORT) || 3001;
@@ -33,24 +33,24 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     return;
   }
   try {
-    const result = await handleUpload(req.file);
-    res.json(result.dashboardState);
+    const state = await handleUpload(req.file);
+    res.json(state);
   } catch (error) {
-    res.status(500).json({ error: "upload_failed" });
+    res.status(400).json({ error: "upload_failed" });
   }
 });
 
 app.post("/api/chat", async (req, res) => {
-  const { datasetId, message, dashboardVersion } = req.body ?? {};
-  if (!datasetId || !message || typeof dashboardVersion !== "number") {
+  const { datasetId, message } = req.body ?? {};
+  if (!datasetId || !message) {
     res.status(400).json({ error: "invalid_request" });
     return;
   }
   try {
-    const result = await handleChat({ datasetId, message, dashboardVersion });
-    res.json(result);
+    const response = await handleChat({ datasetId, message });
+    res.json(response);
   } catch (error) {
-    res.status(500).json({ error: "chat_failed" });
+    res.status(400).json({ error: "chat_failed" });
   }
 });
 
@@ -60,32 +60,12 @@ app.get("/api/dashboard", (req, res) => {
     res.status(400).json({ error: "invalid_request" });
     return;
   }
-  const record = getDatasetRecord(datasetId);
-  if (!record) {
+  const state = getDatasetState(datasetId);
+  if (!state) {
     res.status(404).json({ error: "not_found" });
     return;
   }
-  res.json(record.dashboardState);
-});
-
-app.get("/api/debug/profile", (req, res) => {
-  const datasetId = typeof req.query.datasetId === "string" ? req.query.datasetId : null;
-  if (!datasetId) {
-    res.status(400).json({ error: "invalid_request" });
-    return;
-  }
-  const record = getDatasetRecord(datasetId);
-  if (!record) {
-    res.status(404).json({ error: "not_found" });
-    return;
-  }
-  res.json({
-    detectedColumnTypes: record.debug.detectedColumnTypes,
-    dateParseSuccess: record.debug.dateParseSuccess,
-    durationUnitCounts: record.debug.durationUnitCounts,
-    chartSpecs: record.dashboardState.charts.map((chart) => chart.spec),
-    warnings: record.debug.warnings,
-  });
+  res.json(state);
 });
 
 app.listen(port, () => {
