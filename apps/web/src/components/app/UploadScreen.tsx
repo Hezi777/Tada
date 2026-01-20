@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import tadaLogo from "@/assets/tada-logo.png";
 
 interface UploadScreenProps {
-  onFileUpload: () => void;
+  onFileUpload: (file: File) => void;
   onBack: () => void;
 }
 
@@ -25,7 +25,10 @@ export const UploadScreen = ({ onFileUpload, onBack }: UploadScreenProps) => {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    onFileUpload();
+    const [file] = Array.from(e.dataTransfer.files);
+    if (file) {
+      onFileUpload(file);
+    }
   };
 
   const handleFileSelect = () => {
@@ -34,7 +37,7 @@ export const UploadScreen = ({ onFileUpload, onBack }: UploadScreenProps) => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      onFileUpload();
+      onFileUpload(e.target.files[0]);
     }
   };
 
@@ -144,13 +147,6 @@ export const UploadScreen = ({ onFileUpload, onBack }: UploadScreenProps) => {
           </div>
         </div>
 
-        {/* Sample Data Option */}
-        <div className="mt-8 text-center">
-          <p className="text-sm text-muted-foreground mb-3">Don't have a file ready?</p>
-          <Button variant="outline" size="sm" onClick={onFileUpload}>
-            Try with sample data
-          </Button>
-        </div>
       </main>
     </div>
   );

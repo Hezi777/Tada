@@ -1,0 +1,26 @@
+{
+  "name": "@tada/api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@tada/shared": "0.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
+    "papaparse": "^5.4.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.12",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3"
+  }
+}

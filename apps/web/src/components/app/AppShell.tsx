@@ -3,12 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Dashboard } from "./Dashboard";
 import { FloatingChat } from "./FloatingChat";
 import tadaLogo from "@/assets/tada-logo.png";
+import type { DatasetState } from "@/lib/dataset";
+import type { DashboardState } from "@tada/shared";
 
 interface AppShellProps {
   onLogout: () => void;
+  dataset: DatasetState | null;
+  dashboardState: DashboardState | null;
+  onDashboardUpdate: (next: DashboardState) => void;
 }
 
-export function AppShell({ onLogout }: AppShellProps) {
+export function AppShell({ onLogout, dataset, dashboardState, onDashboardUpdate }: AppShellProps) {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* App Header */}
@@ -18,7 +23,7 @@ export function AppShell({ onLogout }: AppShellProps) {
           <span className="font-semibold text-foreground">Tada</span>
           <div className="hidden sm:flex items-center gap-2 ml-4 px-3 py-1.5 rounded-lg bg-secondary">
             <FileSpreadsheet className="h-4 w-4 text-primary" />
-            <span className="text-sm text-foreground">sales_data_2024.csv</span>
+            <span className="text-sm text-foreground">{dataset?.fileName ?? "No file loaded"}</span>
           </div>
         </div>
 
@@ -34,11 +39,15 @@ export function AppShell({ onLogout }: AppShellProps) {
 
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
-        <Dashboard />
+        <Dashboard dataset={dataset} dashboardState={dashboardState} />
       </div>
 
       {/* Floating Chat */}
-      <FloatingChat />
+      <FloatingChat
+        datasetId={dashboardState?.datasetId ?? null}
+        dashboardVersion={dashboardState?.version ?? 0}
+        onDashboardUpdate={onDashboardUpdate}
+      />
     </div>
   );
 }
