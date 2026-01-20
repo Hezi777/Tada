@@ -3,6 +3,7 @@ import { Loader2, Lightbulb, Check } from "lucide-react";
 
 interface ProcessingViewProps {
   onComplete: () => void;
+  isReady: boolean;
 }
 
 const processingSteps = [
@@ -14,9 +15,10 @@ const processingSteps = [
   "Building your dashboard...",
 ];
 
-export function ProcessingView({ onComplete }: ProcessingViewProps) {
+export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [stepsDone, setStepsDone] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -28,7 +30,7 @@ export function ProcessingView({ onComplete }: ProcessingViewProps) {
           clearInterval(interval);
           setTimeout(() => {
             setCompletedSteps((completed) => [...completed, prev]);
-            setTimeout(onComplete, 500);
+            setStepsDone(true);
           }, 800);
           return prev;
         }
@@ -36,7 +38,15 @@ export function ProcessingView({ onComplete }: ProcessingViewProps) {
     }, 700);
 
     return () => clearInterval(interval);
-  }, [onComplete]);
+  }, []);
+
+  useEffect(() => {
+    if (stepsDone && isReady) {
+      const timeout = setTimeout(onComplete, 500);
+      return () => clearTimeout(timeout);
+    }
+    return undefined;
+  }, [stepsDone, isReady, onComplete]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
