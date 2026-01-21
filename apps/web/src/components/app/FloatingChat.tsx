@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Send, Sparkles, X, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { sendChat } from "@/lib/api";
-import type { DashboardState } from "@tada/shared";
+import { sendChat, type DashboardState } from "@/lib/api";
 
 interface Message {
   id: string;

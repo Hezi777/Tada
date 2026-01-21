@@ -19,7 +19,7 @@ import {
   getPrimaryMetricLabel,
   type DatasetState,
 } from "@/lib/dataset";
-import type { DashboardState, DashboardChart } from "@tada/shared";
+import type { DashboardState, DashboardChart } from "@/lib/api";
 
 interface DashboardProps {
   dataset: DatasetState | null;
@@ -40,12 +40,43 @@ const tertiaryColor = "hsl(210, 60%, 50%)";
 const chartColors = [primaryColor, accentColor, secondaryColor, tertiaryColor];
 
 function hasChartData(chart: DashboardChart): boolean {
-  if (chart.spec.type === "table") {
+  if (chart.type === "table") {
     const rows = (chart.payload as { rows?: unknown[] }).rows ?? [];
     return rows.length > 0;
   }
-  const data = (chart.payload as { data?: unknown[] }).data ?? [];
-  return Array.isArray(data) && data.length > 0;
+  const values = (chart.payload as { values?: unknown[] }).values ?? [];
+  return Array.isArray(values) && values.length > 0;
+}
+
+function buildChartSeries(chart: DashboardChart): {
+  data: Array<{ label: string; value: number }>;
+  xKey: "label";
+  yKey: "value";
+} | null {
+  if (chart.type === "table") {
+    return null;
+  }
+  const payload = chart.payload as { labels?: unknown[]; values?: unknown[] };
+  if (!Array.isArray(payload.labels) || !Array.isArray(payload.values)) {
+    return null;
+  }
+  const size = Math.min(payload.labels.length, payload.values.length);
+  const data = Array.from({ length: size }, (_value, index) => {
+    const rawValue = payload.values[index];
+    const numericValue = typeof rawValue === "number" ? rawValue : Number(rawValue);
+    return {
+      label: String(payload.labels[index]),
+      value: Number.isFinite(numericValue) ? numericValue : 0,
+    };
+  });
+  return { data, xKey: "label", yKey: "value" };
+}
+
+function formatKpiValue(value: string | number): string | number {
+  if (typeof value === "number") {
+    return formatNumber(value) ?? value;
+  }
+  return value;
 }
 
 export function Dashboard({ dataset, dashboardState }: DashboardProps) {
@@ -96,16 +127,22 @@ export function Dashboard({ dataset, dashboardState }: DashboardProps) {
   );
   const chartsWithData = visibleCharts.filter((chart) => hasChartData(chart));
 
+  const kpisById = new Map((dashboardState?.kpis ?? []).map((kpi) => [kpi.id, kpi.value]));
+  const totalRowsValue = kpisById.get("total_rows") ?? dataset.rows.length;
+  const primaryMetricKpi = kpisById.get("primary_metric") ?? primaryMetricValue ?? "—";
+  const topCategoryKpi = kpisById.get("top_category") ?? topCategory ?? "—";
+  const timeSpanKpi = kpisById.get("time_span") ?? dateRange ?? "—";
+
   const kpis = [
     {
       title: "Total Rows",
-      value: formatNumber(dataset.rows.length) ?? "0",
+      value: formatKpiValue(totalRowsValue),
       subtitle: "Count of records",
       icon: Hash,
     },
     {
       title: "Primary Metric",
-      value: primaryMetricValue ?? "—",
+      value: formatKpiValue(primaryMetricKpi),
       subtitle: numericColumn
         ? `${primaryMetricLabel === "sum" ? "Sum" : "Average"} of ${numericColumn.name}`
         : "No numeric column",
@@ -113,13 +150,13 @@ export function Dashboard({ dataset, dashboardState }: DashboardProps) {
     },
     {
       title: "Top Category",
-      value: topCategory ?? "—",
+      value: formatKpiValue(topCategoryKpi),
       subtitle: categoricalColumn ? categoricalColumn.name : "No categorical column",
       icon: Tag,
     },
     {
       title: "Time Span",
-      value: dateRange ?? "—",
+      value: formatKpiValue(timeSpanKpi),
       subtitle: dateRange ? dateColumn?.name ?? "" : "No datetime column",
       icon: CalendarRange,
     },
@@ -160,12 +197,12 @@ export function Dashboard({ dataset, dashboardState }: DashboardProps) {
             {chartsWithData.map((chart) => (
               <div key={chart.id} className="bg-card rounded-xl p-5 border border-border shadow-card">
                 <div className="mb-4">
-                  <h3 className="font-semibold text-foreground">{chart.spec.title}</h3>
+                  <h3 className="font-semibold text-foreground">{chart.title}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {chart.spec.type.toUpperCase()} chart
+                    {chart.type.toUpperCase()} chart
                   </p>
                 </div>
-                {chart.spec.type === "table" ? (
+                {chart.type === "table" ? (
                   <div className="h-64 overflow-auto rounded-lg border border-border">
                     <table className="w-full text-sm">
                       <thead className="sticky top-0 bg-secondary/60">
@@ -192,12 +229,22 @@ export function Dashboard({ dataset, dashboardState }: DashboardProps) {
                   </div>
                 ) : (
                   <div className="h-64">
+                    {(() => {
+                      const series = buildChartSeries(chart);
+                      if (!series) {
+                        return (
+                          <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                            Not enough data to visualize.
+                          </div>
+                        );
+                      }
+                      return (
                     <ResponsiveContainer width="100%" height="100%">
-                      {chart.spec.type === "line" ? (
-                        <LineChart data={(chart.payload as { data: Array<Record<string, string | number>> }).data}>
+                      {chart.type === "line" ? (
+                        <LineChart data={series.data}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 25%, 91%)" />
                           <XAxis
-                            dataKey={(chart.payload as { xKey: string }).xKey}
+                            dataKey={series.xKey}
                             stroke="hsl(215, 16%, 47%)"
                             fontSize={12}
                           />
@@ -205,24 +252,24 @@ export function Dashboard({ dataset, dashboardState }: DashboardProps) {
                           <Tooltip contentStyle={chartTooltipStyle} />
                           <Line
                             type="monotone"
-                            dataKey={(chart.payload as { yKey: string }).yKey}
+                            dataKey={series.yKey}
                             stroke={primaryColor}
                             strokeWidth={2}
                             dot={{ fill: primaryColor, strokeWidth: 2 }}
                           />
                         </LineChart>
-                      ) : chart.spec.type === "bar" ? (
-                        <BarChart data={(chart.payload as { data: Array<Record<string, string | number>> }).data}>
+                      ) : chart.type === "bar" ? (
+                        <BarChart data={series.data}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 25%, 91%)" />
                           <XAxis
-                            dataKey={(chart.payload as { xKey: string }).xKey}
+                            dataKey={series.xKey}
                             stroke="hsl(215, 16%, 47%)"
                             fontSize={12}
                           />
                           <YAxis stroke="hsl(215, 16%, 47%)" fontSize={12} />
                           <Tooltip contentStyle={chartTooltipStyle} />
                           <Bar
-                            dataKey={(chart.payload as { yKey: string }).yKey}
+                            dataKey={series.yKey}
                             fill={primaryColor}
                             radius={[4, 4, 0, 0]}
                           />
@@ -230,24 +277,21 @@ export function Dashboard({ dataset, dashboardState }: DashboardProps) {
                       ) : (
                         <PieChart>
                           <Pie
-                            data={(chart.payload as { data: Array<Record<string, string | number>> }).data}
-                            dataKey={(chart.payload as { yKey: string }).yKey}
-                            nameKey={(chart.payload as { xKey: string }).xKey}
+                            data={series.data}
+                            dataKey={series.yKey}
+                            nameKey={series.xKey}
                             outerRadius={90}
                           >
-                            {(chart.payload as { data: Array<Record<string, string | number>> }).data.map(
-                              (_entry, index) => (
-                                <Cell
-                                  key={`cell-${index}`}
-                                  fill={chartColors[index % chartColors.length]}
-                                />
-                              )
-                            )}
+                            {series.data.map((_entry, index) => (
+                              <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                            ))}
                           </Pie>
                           <Tooltip contentStyle={chartTooltipStyle} />
                         </PieChart>
                       )}
                     </ResponsiveContainer>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
