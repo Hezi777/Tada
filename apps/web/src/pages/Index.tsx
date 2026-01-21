@@ -9,8 +9,7 @@ import { ProcessingView } from "@/components/app/ProcessingView";
 import { AppShell } from "@/components/app/AppShell";
 import { UploadScreen } from "@/components/app/UploadScreen";
 import { parseDatasetFile, type DatasetState } from "@/lib/dataset";
-import { uploadDataset } from "@/lib/api";
-import type { DashboardState } from "@tada/shared";
+import { uploadDataset, type DashboardState } from "@/lib/api";
 
 type AppState = "landing" | "upload" | "processing" | "dashboard";
 

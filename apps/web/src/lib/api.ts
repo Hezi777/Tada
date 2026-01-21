@@ -1,4 +1,33 @@
-import type { DashboardState } from "@tada/shared";
+export type ColumnKind = "numeric" | "categorical" | "date" | "ignored";
+
+export type DashboardColumn = {
+  name: string;
+  kind: ColumnKind;
+};
+
+export type DashboardKpi = {
+  id: string;
+  label: string;
+  value: string | number;
+};
+
+export type DashboardChartType = "bar" | "line" | "table";
+
+export type DashboardChart = {
+  id: string;
+  type: DashboardChartType;
+  title: string;
+  payload: unknown;
+};
+
+export type DashboardState = {
+  datasetId: string;
+  version: number;
+  columns: DashboardColumn[];
+  kpis: DashboardKpi[];
+  charts: DashboardChart[];
+  hiddenChartIds: string[];
+};
 
 const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
 

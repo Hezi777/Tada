@@ -4,7 +4,7 @@ import { Dashboard } from "./Dashboard";
 import { FloatingChat } from "./FloatingChat";
 import tadaLogo from "@/assets/tada-logo.png";
 import type { DatasetState } from "@/lib/dataset";
-import type { DashboardState } from "@tada/shared";
+import type { DashboardState } from "@/lib/api";
 
 interface AppShellProps {
   onLogout: () => void;
