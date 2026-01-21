@@ -520,7 +520,7 @@ export function Dashboard({ dataset, dashboardState }: DashboardProps) {
                 });
               }}
             >
-              <div className="bg-card rounded-xl p-4 border border-border">
+              <div className="rounded-xl p-4 border border-border bg-[hsl(var(--sidebar-background))]">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-foreground">Dashboard Structure</h3>
                   <span className="text-xs text-muted-foreground">{orderedCharts.length}</span>
