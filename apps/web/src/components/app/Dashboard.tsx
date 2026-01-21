@@ -1,4 +1,21 @@
-import { Hash, Sigma, Tag, CalendarRange } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Hash, Sigma, Tag, CalendarRange, GripVertical, EyeOff, Eye } from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   BarChart,
   Bar,
@@ -79,6 +96,140 @@ function formatKpiValue(value: string | number): string | number {
   return value;
 }
 
+type SortableChartCardProps = {
+  chart: DashboardChart;
+  onToggleHidden: (chartId: string) => void;
+};
+
+function SortableChartCard({ chart, onToggleHidden }: SortableChartCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: chart.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`bg-card rounded-xl p-5 border border-border shadow-card ${
+        isDragging ? "opacity-70 ring-2 ring-primary/30" : ""
+      }`}
+    >
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2">
+          <button
+            ref={setActivatorNodeRef}
+            type="button"
+            aria-label="Drag chart"
+            className="mt-1 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary cursor-grab active:cursor-grabbing"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <div>
+            <h3 className="font-semibold text-foreground">{chart.title}</h3>
+            <p className="text-sm text-muted-foreground">{chart.type.toUpperCase()} chart</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onToggleHidden(chart.id)}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary"
+          aria-label="Hide chart"
+        >
+          <EyeOff className="h-4 w-4" />
+        </button>
+      </div>
+      {chart.type === "table" ? (
+        <div className="h-64 overflow-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-secondary/60">
+              <tr>
+                {(chart.payload as { columns: string[] }).columns.map((column) => (
+                  <th key={column} className="px-3 py-2 text-left font-medium text-foreground">
+                    {column}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(chart.payload as { rows: Array<Record<string, unknown>> }).rows.map((row, index) => (
+                <tr key={`${chart.id}-${index}`} className="border-t border-border">
+                  {(chart.payload as { columns: string[] }).columns.map((column) => (
+                    <td key={column} className="px-3 py-2 text-muted-foreground">
+                      {row[column] === null || row[column] === undefined ? "-" : String(row[column])}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="h-64">
+          {(() => {
+            const series = buildChartSeries(chart);
+            if (!series) {
+              return (
+                <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                  Not enough data to visualize.
+                </div>
+              );
+            }
+            return (
+              <ResponsiveContainer width="100%" height="100%">
+                {chart.type === "line" ? (
+                  <LineChart data={series.data}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 25%, 91%)" />
+                    <XAxis dataKey={series.xKey} stroke="hsl(215, 16%, 47%)" fontSize={12} />
+                    <YAxis stroke="hsl(215, 16%, 47%)" fontSize={12} />
+                    <Tooltip contentStyle={chartTooltipStyle} />
+                    <Line
+                      type="monotone"
+                      dataKey={series.yKey}
+                      stroke={primaryColor}
+                      strokeWidth={2}
+                      dot={{ fill: primaryColor, strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                ) : chart.type === "bar" ? (
+                  <BarChart data={series.data}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 25%, 91%)" />
+                    <XAxis dataKey={series.xKey} stroke="hsl(215, 16%, 47%)" fontSize={12} />
+                    <YAxis stroke="hsl(215, 16%, 47%)" fontSize={12} />
+                    <Tooltip contentStyle={chartTooltipStyle} />
+                    <Bar dataKey={series.yKey} fill={primaryColor} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                ) : (
+                  <PieChart>
+                    <Pie data={series.data} dataKey={series.yKey} nameKey={series.xKey} outerRadius={90}>
+                      {series.data.map((_entry, index) => (
+                        <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={chartTooltipStyle} />
+                  </PieChart>
+                )}
+              </ResponsiveContainer>
+            );
+          })()}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Dashboard({ dataset, dashboardState }: DashboardProps) {
   if (!dataset) {
     return (
@@ -122,10 +273,50 @@ export function Dashboard({ dataset, dashboardState }: DashboardProps) {
       ? formatDateRange(dataset.stats.dateRanges[dateColumn.name])
       : null;
 
-  const visibleCharts = (dashboardState?.charts ?? []).filter(
-    (chart) => !dashboardState?.hiddenChartIds.includes(chart.id)
+  const [chartOrder, setChartOrder] = useState<string[]>([]);
+  const [hiddenChartIds, setHiddenChartIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!dashboardState) {
+      setChartOrder([]);
+      setHiddenChartIds([]);
+      return;
+    }
+    setChartOrder(dashboardState.charts.map((chart) => chart.id));
+    setHiddenChartIds(dashboardState.hiddenChartIds ?? []);
+  }, [dashboardState?.datasetId]);
+
+  useEffect(() => {
+    if (!dashboardState) {
+      return;
+    }
+    const nextIds = dashboardState.charts.map((chart) => chart.id);
+    setChartOrder((prev) => {
+      if (prev.length === 0) {
+        return nextIds;
+      }
+      const kept = prev.filter((id) => nextIds.includes(id));
+      const additions = nextIds.filter((id) => !kept.includes(id));
+      return [...kept, ...additions];
+    });
+    setHiddenChartIds((prev) => prev.filter((id) => nextIds.includes(id)));
+  }, [dashboardState?.charts]);
+
+  const chartMap = useMemo(() => {
+    return new Map((dashboardState?.charts ?? []).map((chart) => [chart.id, chart]));
+  }, [dashboardState?.charts]);
+
+  const orderedCharts = chartOrder.length
+    ? chartOrder.map((id) => chartMap.get(id)).filter(Boolean)
+    : dashboardState?.charts ?? [];
+
+  const visibleCharts = (orderedCharts as DashboardChart[]).filter(
+    (chart) => !hiddenChartIds.includes(chart.id)
   );
   const chartsWithData = visibleCharts.filter((chart) => hasChartData(chart));
+  const hiddenCharts = (orderedCharts as DashboardChart[]).filter((chart) =>
+    hiddenChartIds.includes(chart.id)
+  );
 
   const kpisById = new Map((dashboardState?.kpis ?? []).map((kpi) => [kpi.id, kpi.value]));
   const totalRowsValue = kpisById.get("total_rows") ?? dataset.rows.length;
@@ -162,6 +353,17 @@ export function Dashboard({ dataset, dashboardState }: DashboardProps) {
     },
   ];
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleToggleHidden = (chartId: string) => {
+    setHiddenChartIds((prev) =>
+      prev.includes(chartId) ? prev.filter((id) => id !== chartId) : [...prev, chartId]
+    );
+  };
+
   return (
     <div className="h-full max-h-[calc(100vh-3.5rem)] overflow-y-auto p-6 bg-surface">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -188,115 +390,60 @@ export function Dashboard({ dataset, dashboardState }: DashboardProps) {
           ))}
         </div>
 
+        {hiddenCharts.length > 0 && (
+          <div className="bg-card rounded-xl p-4 border border-border">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-foreground">Hidden charts</span>
+              {hiddenCharts.map((chart) => (
+                <button
+                  key={chart.id}
+                  type="button"
+                  onClick={() => handleToggleHidden(chart.id)}
+                  className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  {chart.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+
         {chartsWithData.length === 0 ? (
           <div className="bg-card rounded-xl p-6 border border-border text-center text-muted-foreground">
             Not enough data to visualize.
           </div>
         ) : (
-          <div className="grid lg:grid-cols-2 gap-6">
-            {chartsWithData.map((chart) => (
-              <div key={chart.id} className="bg-card rounded-xl p-5 border border-border shadow-card">
-                <div className="mb-4">
-                  <h3 className="font-semibold text-foreground">{chart.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {chart.type.toUpperCase()} chart
-                  </p>
-                </div>
-                {chart.type === "table" ? (
-                  <div className="h-64 overflow-auto rounded-lg border border-border">
-                    <table className="w-full text-sm">
-                      <thead className="sticky top-0 bg-secondary/60">
-                        <tr>
-                          {(chart.payload as { columns: string[] }).columns.map((column) => (
-                            <th key={column} className="px-3 py-2 text-left font-medium text-foreground">
-                              {column}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(chart.payload as { rows: Array<Record<string, unknown>> }).rows.map((row, index) => (
-                          <tr key={`${chart.id}-${index}`} className="border-t border-border">
-                            {(chart.payload as { columns: string[] }).columns.map((column) => (
-                              <td key={column} className="px-3 py-2 text-muted-foreground">
-                                {row[column] === null || row[column] === undefined ? "—" : String(row[column])}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="h-64">
-                    {(() => {
-                      const series = buildChartSeries(chart);
-                      if (!series) {
-                        return (
-                          <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-                            Not enough data to visualize.
-                          </div>
-                        );
-                      }
-                      return (
-                    <ResponsiveContainer width="100%" height="100%">
-                      {chart.type === "line" ? (
-                        <LineChart data={series.data}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 25%, 91%)" />
-                          <XAxis
-                            dataKey={series.xKey}
-                            stroke="hsl(215, 16%, 47%)"
-                            fontSize={12}
-                          />
-                          <YAxis stroke="hsl(215, 16%, 47%)" fontSize={12} />
-                          <Tooltip contentStyle={chartTooltipStyle} />
-                          <Line
-                            type="monotone"
-                            dataKey={series.yKey}
-                            stroke={primaryColor}
-                            strokeWidth={2}
-                            dot={{ fill: primaryColor, strokeWidth: 2 }}
-                          />
-                        </LineChart>
-                      ) : chart.type === "bar" ? (
-                        <BarChart data={series.data}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(210, 25%, 91%)" />
-                          <XAxis
-                            dataKey={series.xKey}
-                            stroke="hsl(215, 16%, 47%)"
-                            fontSize={12}
-                          />
-                          <YAxis stroke="hsl(215, 16%, 47%)" fontSize={12} />
-                          <Tooltip contentStyle={chartTooltipStyle} />
-                          <Bar
-                            dataKey={series.yKey}
-                            fill={primaryColor}
-                            radius={[4, 4, 0, 0]}
-                          />
-                        </BarChart>
-                      ) : (
-                        <PieChart>
-                          <Pie
-                            data={series.data}
-                            dataKey={series.yKey}
-                            nameKey={series.xKey}
-                            outerRadius={90}
-                          >
-                            {series.data.map((_entry, index) => (
-                              <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip contentStyle={chartTooltipStyle} />
-                        </PieChart>
-                      )}
-                    </ResponsiveContainer>
-                      );
-                    })()}
-                  </div>
-                )}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={({ active, over }) => {
+              if (!over || active.id === over.id) {
+                return;
+              }
+              setChartOrder((prev) => {
+                const activeIndex = prev.indexOf(String(active.id));
+                const overIndex = prev.indexOf(String(over.id));
+                if (activeIndex === -1 || overIndex === -1) {
+                  return prev;
+                }
+                return arrayMove(prev, activeIndex, overIndex);
+              });
+            }}
+          >
+            <SortableContext items={chartsWithData.map((chart) => chart.id)} strategy={rectSortingStrategy}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {chartsWithData.map((chart) => (
+                  <SortableChartCard
+                    key={chart.id}
+                    chart={chart}
+                    onToggleHidden={handleToggleHidden}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </div>
