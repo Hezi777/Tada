@@ -2,6 +2,15 @@
 
 Tada Instant Insights is a monorepo MVP that turns uploaded CSV or Excel files into an AI-styled dashboard with charts, KPIs, and a copilot chat UI. The web app handles the guided flow (upload -> processing -> dashboard), while the API parses files, infers column types, and generates chart/KPI state that the UI renders and iterates on.
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Tailwind-3-38B2AC?logo=tailwindcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white" />
+  <img src="https://img.shields.io/badge/HuggingFace-API-FFD21E?logo=huggingface&logoColor=black" />
+</p>
+
 ## Features
 
 - CSV/XLSX upload with automatic parsing and column inference.
