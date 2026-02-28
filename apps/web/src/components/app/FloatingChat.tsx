@@ -1,23 +1,14 @@
 import { useEffect, useState } from "react";
-import { MessageCircle, Send, Sparkles } from "lucide-react";
+import { MessageCircle, Send, Sparkles, WandSparkles, X } from "lucide-react";
 import type { ChatKpiValue } from "@tada/shared";
 import { Card } from "@/components/ui/card";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { sendChat } from "@/lib/api";
 import { computeKpiValue } from "@/lib/dashboard-runtime";
-import {
-  applyChatbotPatch,
-  useDashboardStore,
-} from "@/lib/dashboard-store";
+import { applyChatbotPatch, useDashboardStore } from "@/lib/dashboard-store";
 
 interface Message {
   id: string;
@@ -46,6 +37,7 @@ export function FloatingChat() {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const canChat = Boolean(datasetId);
+
   const liveKpis: ChatKpiValue[] = kpiConfigs.map((kpi) => ({
     id: kpi.id,
     column: kpi.column,
@@ -98,7 +90,7 @@ export function FloatingChat() {
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      let content = "Chat is unavailable right now. Make sure the API is running.";
+      let content = "TADA Wiz is unavailable right now. Make sure the API is running.";
       if (error instanceof Error) {
         if (error.message === "not_found" || error.message === "missing_rows") {
           content = "Your session expired on the server. Please re-upload the file.";
@@ -122,88 +114,129 @@ export function FloatingChat() {
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button
-          type="button"
-          className={`fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl border border-[var(--color-border)] bg-[var(--color-accent)] text-white shadow-[var(--dashboard-shadow-lg)] transition-all duration-150 hover:bg-[var(--color-accent-hover)] ${isOpen ? "pointer-events-none scale-95 opacity-0" : "opacity-100"}`}
-          aria-label="Open chat assistant"
-        >
-          <MessageCircle className="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent
-        side="right"
-        className="flex h-full w-[min(30rem,calc(100vw-1rem))] max-w-none flex-col gap-0 border-l-[var(--color-border)] bg-[var(--color-bg)] p-0 text-[var(--color-text-primary)] shadow-[var(--dashboard-shadow-lg)] lg:w-[30rem]"
+    <>
+      <style>{`
+        @keyframes wizOpen {
+          from { opacity: 0; transform: translateY(10px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes wizDot {
+          0%, 80%, 100% { transform: scale(0.6); opacity: 0.35; }
+          40% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+
+      <Button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full border-0 bg-[var(--color-accent)] text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)] transition-all duration-200 ease-in-out hover:scale-[1.02] hover:bg-[#1D4ED8]"
+        aria-label={isOpen ? "Close TADA Wiz" : "Open TADA Wiz"}
       >
-        <div className="flex h-full flex-col">
-          <SheetHeader className="border-b border-[var(--color-border)] bg-white px-6 py-5 text-left">
-            <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-accent-light)] text-[var(--color-accent)]">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div>
-                <SheetTitle className="text-xl font-semibold text-[var(--color-text-primary)]">
-                  Tada Copilot
-                </SheetTitle>
-                <SheetDescription className="mt-1 text-sm text-[var(--color-text-muted)]">
-                  Edit dashboard views conversationally.
-                </SheetDescription>
+        <Sparkles className="h-5 w-5" />
+      </Button>
+
+      {isOpen ? (
+        <div
+          className="fixed bottom-20 right-6 z-50 h-[500px] w-[360px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
+          style={{ animation: "wizOpen 200ms ease" }}
+        >
+          <div className="flex h-full flex-col">
+            <div className="bg-[var(--color-accent)] px-4 py-4 text-white">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
+                    <WandSparkles className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <div className="text-base font-bold">TADA Wiz</div>
+                    <p className="mt-1 text-[13px] text-white/80">Ask anything about your data</p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsOpen(false)}
+                  className="h-8 w-8 rounded-full text-white hover:bg-white/10 hover:text-white"
+                  aria-label="Close TADA Wiz"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-          </SheetHeader>
 
-          <div className="flex-1 space-y-4 overflow-y-auto bg-[var(--color-bg)] px-5 py-5">
-            {!canChat && (
-              <Card className="dashboard-surface rounded-3xl px-5 py-8 text-center text-sm text-[var(--color-text-muted)]">
-                Upload a file to chat about it.
-              </Card>
-            )}
-            {canChat && messages.length === 0 && (
-              <Card className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-accent-light)] px-5 py-8 text-center text-sm text-[var(--color-text-muted)] shadow-sm">
-                Ask for a chart edit, a new view, or a more specific framing of an insight.
-              </Card>
-            )}
-            {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[88%] rounded-3xl px-4 py-3 text-sm leading-7 ${
-                    message.role === "user"
-                      ? "bg-[var(--color-accent)] text-white"
-                      : "border border-[var(--color-border)] bg-white text-[var(--color-text-primary)] shadow-sm"
-                  }`}
-                >
-                  {message.content}
-                </div>
+            <ScrollArea className="dashboard-scroll flex-1 bg-white">
+              <div className="space-y-4 px-4 py-4">
+                {!canChat ? (
+                  <Card className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
+                    Upload a file to start chatting with TADA Wiz.
+                  </Card>
+                ) : null}
+
+                {canChat && messages.length === 0 ? (
+                  <Card className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
+                    Ask about your data, request a chart change, or get help reading a view.
+                  </Card>
+                ) : null}
+
+                {messages.map((message) => (
+                  <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`max-w-[88%] px-4 py-3 text-sm leading-6 ${
+                        message.role === "user"
+                          ? "rounded-[12px_12px_2px_12px] bg-[var(--color-accent)] text-white"
+                          : "rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-primary)]"
+                      }`}
+                    >
+                      {message.content}
+                    </div>
+                  </div>
+                ))}
+
+                {isSending ? (
+                  <div className="flex justify-start">
+                    <div className="flex items-center gap-1 rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
+                      {[0, 1, 2].map((index) => (
+                        <span
+                          key={index}
+                          className="h-2 w-2 rounded-full bg-[var(--color-text-muted)]"
+                          style={{ animation: `wizDot 1s ease-in-out ${index * 0.12}s infinite` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            ))}
-          </div>
+            </ScrollArea>
 
-          <div className="border-t border-[var(--color-border)] bg-white p-4">
-            <Card className="dashboard-surface flex items-center gap-2 rounded-[1.35rem] p-2">
-              <Input
-                type="text"
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={(event) => event.key === "Enter" && handleSend()}
-                placeholder={canChat ? "Ask to edit a chart..." : "Upload a file to chat"}
-                className="flex-1 border-0 bg-transparent px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                aria-label="Type your message"
-                disabled={!canChat || isSending}
-              />
-              <Button
-                size="icon"
-                onClick={handleSend}
-                disabled={!canChat || isSending || !input.trim()}
-                className="h-11 w-11 rounded-[1rem] bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]"
-                aria-label="Send message"
-              >
-                {isSending ? <Sparkles className="h-4 w-4" /> : <Send className="h-4 w-4" />}
-              </Button>
-            </Card>
+            <Separator className="bg-[var(--color-border)]" />
+
+            <div className="px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Input
+                  type="text"
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={(event) => event.key === "Enter" && handleSend()}
+                  placeholder="Ask TADA Wiz..."
+                  className="h-11 flex-1 rounded-xl border-[var(--color-border)] bg-white px-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
+                  aria-label="Type your message"
+                  disabled={!canChat || isSending}
+                />
+                <Button
+                  size="icon"
+                  onClick={handleSend}
+                  disabled={!canChat || isSending || !input.trim()}
+                  className="h-9 w-9 rounded-full bg-[var(--color-accent)] text-white hover:bg-[#1D4ED8]"
+                  aria-label="Send message"
+                >
+                  {isSending ? <MessageCircle className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      ) : null}
+    </>
   );
 }
