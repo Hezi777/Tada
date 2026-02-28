@@ -2,9 +2,9 @@ import Papa from "papaparse";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import XLSX from "xlsx";
-import type { DashboardState } from "./types";
+import type { DashboardState, DatasetMeta } from "./types";
 import { inferColumns } from "./infer";
-import { buildCharts } from "./charts";
+import { buildChartsWithLLM } from "./charts";
 import { buildKpis } from "./kpis";
 import { createDatasetState, setDatasetRows } from "./state";
 
@@ -39,6 +39,16 @@ function parseFile(file: Express.Multer.File): Row[] {
   return parseCsv(file.buffer);
 }
 
+const SAMPLE_ROW_LIMIT = 5;
+
+function buildDatasetMeta(rows: Row[], columns: DashboardState["columns"]): DatasetMeta {
+  return {
+    columns,
+    rowCount: rows.length,
+    sampleRows: rows.slice(0, SAMPLE_ROW_LIMIT),
+  };
+}
+
 export async function handleUpload(file: Express.Multer.File): Promise<DashboardState> {
   if (!file.buffer?.length) {
     throw new Error("empty_file");
@@ -46,8 +56,9 @@ export async function handleUpload(file: Express.Multer.File): Promise<Dashboard
   const rows = parseFile(file);
   const columns = inferColumns(rows);
   const kpis = buildKpis(rows, columns);
-  const charts = buildCharts(rows, columns);
+  const charts = await buildChartsWithLLM(rows, columns);
   const datasetId = randomUUID();
+  const datasetMeta = buildDatasetMeta(rows, columns);
   setDatasetRows(datasetId, rows);
-  return createDatasetState(datasetId, columns, kpis, charts);
+  return createDatasetState(datasetId, columns, kpis, charts, datasetMeta);
 }

@@ -18,13 +18,16 @@ const Index = () => {
   const [dataset, setDataset] = useState<DatasetState | null>(null);
   const [dashboardState, setDashboardState] = useState<DashboardState | null>(null);
   const [isUploadReady, setIsUploadReady] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleGetStarted = () => {
+    setUploadError(null);
     setAppState("upload");
   };
 
   const handleFileUpload = async (file: File) => {
     setIsUploadReady(false);
+    setUploadError(null);
     setAppState("processing");
 
     try {
@@ -34,11 +37,12 @@ const Index = () => {
       ]);
       setDataset(nextDataset);
       setDashboardState(nextDashboard);
+      setIsUploadReady(true);
     } catch {
       setDataset(null);
       setDashboardState(null);
-    } finally {
-      setIsUploadReady(true);
+      setUploadError("Upload failed. Check the API server and HF_API_KEY, then try again.");
+      setAppState("upload");
     }
   };
 
@@ -50,11 +54,18 @@ const Index = () => {
     setDataset(null);
     setDashboardState(null);
     setIsUploadReady(false);
+    setUploadError(null);
     setAppState("landing");
   };
 
   if (appState === "upload") {
-    return <UploadScreen onFileUpload={handleFileUpload} onBack={handleLogout} />;
+    return (
+      <UploadScreen
+        onFileUpload={handleFileUpload}
+        onBack={handleLogout}
+        errorMessage={uploadError}
+      />
+    );
   }
 
   if (appState === "processing") {

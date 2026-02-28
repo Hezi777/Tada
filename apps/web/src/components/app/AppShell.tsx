@@ -101,6 +101,7 @@ export function AppShell({ onLogout, dataset, dashboardState, onDashboardUpdate 
       <FloatingChat
         datasetId={dashboardState?.datasetId ?? null}
         dashboardVersion={dashboardState?.version ?? 0}
+        dashboardState={dashboardState}
         onDashboardUpdate={onDashboardUpdate}
       />
     </div>
