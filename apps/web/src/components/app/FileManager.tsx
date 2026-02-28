@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowUpDown,
+  ArrowLeft,
   ChevronDown,
   FileText,
   LayoutGrid,
   List,
   Loader2,
   MoreHorizontal,
+  Palette,
+  Pencil,
+  Plus,
   Search,
+  Smile,
   Table,
   Trash2,
   Upload,
@@ -27,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,537 +39,753 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { removeChainedDatasetFile, uploadChainedDataset } from "@/lib/api";
-import { applyDatasetChainSnapshot, useDashboardStore } from "@/lib/dashboard-store";
+import {
+  listDashboards,
+  createDashboard,
+  updateDashboard,
+  deleteDashboard,
+  uploadToDashboard,
+  removeFileFromDashboard,
+  loadDashboard,
+} from "@/lib/api";
+import {
+  initializeDashboardStore,
+  setActiveDashboard,
+  useDashboardStore,
+} from "@/lib/dashboard-store";
+import CreateDashboardModal, {
+  getIconComponent,
+} from "@/components/app/CreateDashboardModal";
+import {
+  DASHBOARD_ICON_OPTIONS,
+  DASHBOARD_COLOR_OPTIONS,
+  type DashboardListItem,
+} from "@tada/shared";
 
+type View = "dashboards" | "files";
 type FileView = "card" | "list";
-type SortKey = "name" | "date" | "rows" | "type";
 
-const SORT_LABELS: Record<SortKey, string> = {
-  name: "Name",
-  date: "Date",
-  rows: "Rows",
-  type: "Type",
-};
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 function formatApiMessage(message: string): string {
   return message.includes("_") ? message.replace(/_/g, " ") : message;
 }
 
-function formatRowCount(count: number): string {
-  return `${count.toLocaleString()} rows`;
-}
+// ── File item for the scoped file view ──
 
-function formatUploadedDate(value: string | null): string {
-  const date = value ? new Date(value) : new Date();
-  return new Intl.DateTimeFormat("en-US", {
-    month: "numeric",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  }).format(date);
-}
+type ScopedFile = {
+  id: string;
+  fileName: string;
+  rowCount: number;
+  isPrimary: boolean;
+};
 
-function formatUploadedDateShort(value: string | null): string {
-  const date = value ? new Date(value) : new Date();
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
+// ── Main component ──
 
-function getFileKind(fileName: string): "csv" | "excel" {
-  return fileName.toLowerCase().endsWith(".csv") ? "csv" : "excel";
-}
+export default function FileManager() {
+  // ── Top-level: dashboards vs scoped files ──
+  const [view, setView] = useState<View>("dashboards");
+  const [dashboards, setDashboards] = useState<DashboardListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
 
-function getFileExtensionLabel(fileName: string): string {
-  return getFileKind(fileName) === "csv" ? "CSV" : "XLSX";
-}
-
-/* ─── Card-style file icon (large, for card view) ─── */
-function FileCardIcon({ fileName }: { fileName: string }) {
-  const kind = getFileKind(fileName);
-  const isCsv = kind === "csv";
-  const Icon = isCsv ? FileText : Table;
-
-  return (
-    <div className="relative flex h-[120px] items-center justify-center bg-gradient-to-b from-[#F8FAFF] to-[#EEF2FF]">
-      {/* Decorative page shape behind icon */}
-      <div className="flex h-[72px] w-[56px] flex-col items-center justify-center rounded-[6px] bg-white shadow-[0_2px_8px_rgba(99,102,241,0.10)]">
-        <Icon
-          className={`h-7 w-7 ${isCsv ? "text-[#6366F1]" : "text-[#16A34A]"}`}
-        />
-      </div>
-    </div>
-  );
-}
-
-/* ─── Compact row icon (for list view) ─── */
-function FileRowIcon({ fileName }: { fileName: string }) {
-  const kind = getFileKind(fileName);
-  const isCsv = kind === "csv";
-  const Icon = isCsv ? FileText : Table;
-
-  return (
-    <span
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${isCsv
-          ? "bg-[#EEF2FF] text-[#6366F1]"
-          : "bg-[#F0FDF4] text-[#16A34A]"
-        }`}
-    >
-      <Icon className="h-4 w-4" />
-    </span>
-  );
-}
-
-export function FileManager() {
-  const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
-  const files = useDashboardStore((snapshot) => snapshot.files);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const uploadDatesRef = useRef<Record<string, string>>({});
-  const [view, setView] = useState<FileView>("card");
+  // ── Scoped file view state ──
+  const [activeDash, setActiveDash] = useState<DashboardListItem | null>(null);
+  const [scopedFiles, setScopedFiles] = useState<ScopedFile[]>([]);
+  const [fileView, setFileView] = useState<FileView>("card");
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Rename / edit popovers ──
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirmName, setDeleteConfirmName] = useState("");
+  const [deleteFileConfirm, setDeleteFileConfirm] = useState<ScopedFile | null>(null);
+
+  // ── Icon / color pickers ──
+  const [iconPickerId, setIconPickerId] = useState<string | null>(null);
+  const [colorPickerId, setColorPickerId] = useState<string | null>(null);
+
+  // ── Load dashboards ──
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const items = await listDashboards();
+      setDashboards(items);
+    } catch {
+      // silent
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const now = new Date().toISOString();
-    for (const file of files) {
-      if (!uploadDatesRef.current[file.id]) {
-        uploadDatesRef.current[file.id] = now;
-      }
-    }
-  }, [files]);
+    refresh();
+  }, [refresh]);
 
-  const primaryFile = useMemo(
-    () => files.find((file) => file.isPrimary) ?? files[0] ?? null,
-    [files],
-  );
+  // ── Handlers: dashboard CRUD ──
 
-  const pendingRemoveFile = useMemo(
-    () => files.find((file) => file.id === pendingRemoveId) ?? null,
-    [files, pendingRemoveId],
-  );
-
-  const visibleFiles = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    let filtered = files;
-    if (query) {
-      filtered = files.filter((file) =>
-        file.fileName.toLowerCase().includes(query),
-      );
-    }
-
-    const sorted = [...filtered].sort((a, b) => {
-      switch (sortKey) {
-        case "name":
-          return a.fileName.localeCompare(b.fileName);
-        case "date": {
-          const da = uploadDatesRef.current[a.id] ?? "";
-          const db = uploadDatesRef.current[b.id] ?? "";
-          return db.localeCompare(da); // newest first
-        }
-        case "rows":
-          return b.rowCount - a.rowCount;
-        case "type": {
-          const ta = a.isPrimary ? 0 : 1;
-          const tb = b.isPrimary ? 0 : 1;
-          return ta - tb;
-        }
-        default:
-          return 0;
-      }
-    });
-
-    return sorted;
-  }, [files, searchQuery, sortKey]);
-
-  async function handleAddFile(file: File) {
-    if (!datasetId) {
-      return;
-    }
-
-    setErrorMessage(null);
-    setIsLoading(true);
+  async function handleCreate(input: {
+    name: string;
+    icon: string;
+    color: string;
+  }) {
     try {
-      const snapshot = await uploadChainedDataset({ datasetId, file });
-      applyDatasetChainSnapshot(snapshot);
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error && error.message
-          ? formatApiMessage(error.message)
-          : "Unable to add that file to the current dataset.",
-      );
-    } finally {
-      setIsLoading(false);
+      const created = await createDashboard(input);
+      setDashboards((prev) => [created, ...prev]);
+      setCreateOpen(false);
+      // Drill into the new dashboard
+      handleDrillIn(created);
+    } catch {
+      // silent
     }
   }
 
-  async function handleRemoveFile(fileId: string) {
-    if (!datasetId) {
-      return;
-    }
-
-    setErrorMessage(null);
-    setIsLoading(true);
+  async function handleRename(id: string) {
+    if (!renameValue.trim()) return;
     try {
-      const snapshot = await removeChainedDatasetFile({ datasetId, fileId });
-      applyDatasetChainSnapshot(snapshot);
-      setPendingRemoveId(null);
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error && error.message
-          ? formatApiMessage(error.message)
-          : "Unable to remove that chained file.",
+      await updateDashboard(id, { name: renameValue.trim() });
+      setDashboards((prev) =>
+        prev.map((d) =>
+          d.id === id ? { ...d, name: renameValue.trim() } : d,
+        ),
       );
-    } finally {
-      setIsLoading(false);
+      setRenamingId(null);
+    } catch {
+      // silent
     }
   }
 
-  return (
-    <TooltipProvider>
-      <div className="flex h-full flex-col p-6">
-        <div className="dashboard-surface flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
-          {/* ───── Toolbar ───── */}
-          <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4">
-            {/* Left: Upload + Search */}
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                className="gap-2 rounded-lg bg-[#6366F1] px-4 text-white shadow-sm hover:bg-[#4F46E5]"
-                onClick={() => inputRef.current?.click()}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4" />
-                )}
-                Upload
-              </Button>
+  async function handleChangeIcon(id: string, icon: string) {
+    try {
+      await updateDashboard(id, { icon });
+      setDashboards((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, icon } : d)),
+      );
+      setIconPickerId(null);
+    } catch {
+      // silent
+    }
+  }
 
-              <div className="relative w-56">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]" />
-                <Input
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder="Search folder or file"
-                  className="h-9 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] pl-9 pr-3 text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:bg-white"
-                />
-              </div>
+  async function handleChangeColor(id: string, color: string) {
+    try {
+      await updateDashboard(id, { color });
+      setDashboards((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, color } : d)),
+      );
+      setColorPickerId(null);
+    } catch {
+      // silent
+    }
+  }
+
+  async function handleDeleteDashboard() {
+    if (!deleteConfirmId) return;
+    try {
+      await deleteDashboard(deleteConfirmId);
+      setDashboards((prev) => prev.filter((d) => d.id !== deleteConfirmId));
+      setDeleteConfirmId(null);
+    } catch {
+      // silent
+    }
+  }
+
+  // ── Drill into a dashboard's files ──
+
+  async function handleDrillIn(dash: DashboardListItem) {
+    setActiveDash(dash);
+    setView("files");
+    setSearchQuery("");
+    setUploadError(null);
+    try {
+      const result = await loadDashboard(dash.id);
+      if ("empty" in result) {
+        setScopedFiles([]);
+      } else {
+        setScopedFiles(
+          result.files.map((f) => ({
+            id: f.id,
+            fileName: f.fileName,
+            rowCount: f.rowCount,
+            isPrimary: f.isPrimary,
+          })),
+        );
+      }
+    } catch {
+      setScopedFiles([]);
+    }
+  }
+
+  function handleBack() {
+    setView("dashboards");
+    setActiveDash(null);
+    setScopedFiles([]);
+    refresh();
+  }
+
+  // ── File operations scoped to a dashboard ──
+
+  async function handleUploadFile(file: File) {
+    if (!activeDash) return;
+    setIsUploading(true);
+    setUploadError(null);
+    try {
+      const result = await uploadToDashboard(activeDash.id, file);
+      setScopedFiles(
+        result.files.map((f) => ({
+          id: f.id,
+          fileName: f.fileName,
+          rowCount: f.rowCount,
+          isPrimary: f.isPrimary,
+        })),
+      );
+      // Update the dashboard store so the chart view is current
+      initializeDashboardStore(result, {
+        id: activeDash.id,
+        name: activeDash.name,
+        icon: activeDash.icon,
+        color: activeDash.color,
+      });
+      setActiveDashboard({
+        id: activeDash.id,
+        name: activeDash.name,
+        icon: activeDash.icon,
+        color: activeDash.color,
+      });
+    } catch (err) {
+      setUploadError(
+        err instanceof Error ? formatApiMessage(err.message) : "Upload failed",
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  async function handleRemoveFile() {
+    if (!deleteFileConfirm || !activeDash) return;
+    try {
+      await removeFileFromDashboard(activeDash.id, deleteFileConfirm.id);
+      setScopedFiles((prev) =>
+        prev.filter((f) => f.id !== deleteFileConfirm.id),
+      );
+      setDeleteFileConfirm(null);
+    } catch {
+      // silent
+    }
+  }
+
+  const filteredFiles = useMemo(() => {
+    if (!searchQuery.trim()) return scopedFiles;
+    const q = searchQuery.toLowerCase();
+    return scopedFiles.filter((f) =>
+      f.fileName.toLowerCase().includes(q),
+    );
+  }, [scopedFiles, searchQuery]);
+
+  // ── RENDER: Dashboard card grid ──
+
+  if (view === "dashboards") {
+    return (
+      <div className="flex h-full flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5">
+          <h1 className="font-display text-[20px] text-[var(--color-text-primary)]">
+            Dashboards
+          </h1>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-5">
+          {isLoading ? (
+            <div className="flex h-48 items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-[var(--color-text-muted)]" />
             </div>
-
-            {/* Right: Sort + View toggle */}
-            <div className="flex items-center gap-3">
-              {/* Sort By */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-9 gap-1.5 rounded-lg border-[#E2E8F0] px-3 text-sm font-medium text-[#475569]"
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {dashboards.map((dash) => {
+                const IconComp = getIconComponent(dash.icon);
+                return (
+                  <Card
+                    key={dash.id}
+                    className="group relative cursor-pointer overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)]"
+                    onClick={() => handleDrillIn(dash)}
                   >
-                    <ArrowUpDown className="h-3.5 w-3.5" />
-                    Sort by
-                    <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-36">
-                  {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
-                    <DropdownMenuItem
-                      key={key}
-                      className={sortKey === key ? "bg-[#EEF2FF] text-[#6366F1] font-medium" : ""}
-                      onSelect={() => setSortKey(key)}
+                    {/* Colored header area */}
+                    <div
+                      className="flex h-[72px] items-center justify-center"
+                      style={{ backgroundColor: dash.color + "18" }}
                     >
-                      {SORT_LABELS[key]}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      <div
+                        className="flex h-12 w-12 items-center justify-center rounded-[14px]"
+                        style={{
+                          backgroundColor: dash.color + "30",
+                          color: dash.color,
+                        }}
+                      >
+                        <IconComp className="h-6 w-6" />
+                      </div>
+                    </div>
 
-              <Separator orientation="vertical" className="h-6 bg-[#E2E8F0]" />
+                    {/* Body */}
+                    <div className="px-4 pb-4 pt-3">
+                      {/* Inline rename */}
+                      {renamingId === dash.id ? (
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleRename(dash.id);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="mb-1"
+                        >
+                          <Input
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            className="h-7 text-sm font-semibold"
+                            onBlur={() => handleRename(dash.id)}
+                            autoFocus
+                          />
+                        </form>
+                      ) : (
+                        <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                          {dash.name}
+                        </p>
+                      )}
 
-              {/* View toggles */}
-              <div className="flex items-center gap-1 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-0.5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      className={`inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors ${view === "card"
-                          ? "bg-white text-[#6366F1] shadow-sm"
-                          : "text-[#94A3B8] hover:text-[#64748B]"
-                        }`}
-                      onClick={() => setView("card")}
+                      <div className="mt-1.5 flex items-center gap-3 text-[11px] text-[var(--color-text-muted)]">
+                        <span>
+                          {dash.fileCount} {dash.fileCount === 1 ? "file" : "files"}
+                        </span>
+                        <span>·</span>
+                        <span>{formatDate(dash.updatedAt)}</span>
+                      </div>
+                    </div>
+
+                    {/* ⋯ menu */}
+                    <div
+                      className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <LayoutGrid className="h-3.5 w-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>Card view</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      className={`inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors ${view === "list"
-                          ? "bg-white text-[#6366F1] shadow-sm"
-                          : "text-[#94A3B8] hover:text-[#64748B]"
-                        }`}
-                      onClick={() => setView("list")}
-                    >
-                      <List className="h-3.5 w-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>List view</TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-          </div>
-
-          <Separator className="bg-[#F1F5F9]" />
-
-          {/* Hidden file input */}
-          <Input
-            ref={inputRef}
-            type="file"
-            accept=".csv,.xls,.xlsx"
-            className="hidden"
-            onChange={async (event) => {
-              const file = event.target.files?.[0];
-              event.target.value = "";
-              if (file) {
-                await handleAddFile(file);
-              }
-            }}
-          />
-
-          {/* Error banner */}
-          {errorMessage ? (
-            <div className="px-6 pt-4">
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-                {errorMessage}
-              </div>
-            </div>
-          ) : null}
-
-          {/* ───── Content Area ───── */}
-          {visibleFiles.length === 0 ? (
-            <div className="mt-20 flex flex-1 items-start justify-center px-6 py-8">
-              <div className="flex flex-col items-center text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EEF2FF]">
-                  <UploadCloud className="h-8 w-8 text-[#6366F1]" />
-                </div>
-                <h2 className="mt-5 text-lg font-semibold text-[#0F172A]">
-                  {files.length === 0 ? "No files yet" : "No matching files"}
-                </h2>
-                <p className="mt-2 max-w-xs text-sm text-[#64748B]">
-                  {files.length === 0
-                    ? "Upload a CSV or Excel file to generate your dashboard"
-                    : "Try a different search term to find your file"}
-                </p>
-                {files.length === 0 ? (
-                  <Button
-                    type="button"
-                    className="mt-6 gap-2 rounded-lg bg-[#6366F1] text-white hover:bg-[#4F46E5]"
-                    onClick={() => inputRef.current?.click()}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Upload className="h-4 w-4" />
-                    )}
-                    Upload file
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          ) : view === "card" ? (
-            /* ───── Card View ───── */
-            <div className="dashboard-scroll flex-1 overflow-y-auto px-6 py-5">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                {visibleFiles.map((file) => (
-                  <div
-                    key={file.id}
-                    className="group relative overflow-hidden rounded-xl border border-[#E8ECF4] bg-white transition-all duration-200 hover:border-[#C7D2FE] hover:shadow-[0_4px_16px_rgba(99,102,241,0.08)]"
-                  >
-                    {/* Three-dot menu overlay */}
-                    <div className="absolute right-2 top-2 z-10">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white/80 text-[#94A3B8] opacity-0 backdrop-blur-sm transition-all hover:bg-white hover:text-[#475569] group-hover:opacity-100"
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 rounded-full bg-white/80 text-[var(--color-text-muted)] shadow-sm backdrop-blur-sm hover:bg-white"
                           >
                             <MoreHorizontal className="h-4 w-4" />
-                          </button>
+                          </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {file.isPrimary ? (
-                            <DropdownMenuItem disabled>
-                              Primary — cannot remove
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem
-                              className="gap-2 text-red-600 focus:text-red-600"
-                              onSelect={() => setPendingRemoveId(file.id)}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Remove file
-                            </DropdownMenuItem>
-                          )}
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              setRenamingId(dash.id);
+                              setRenameValue(dash.name);
+                            }}
+                          >
+                            <Pencil className="mr-2 h-3.5 w-3.5" />
+                            Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() =>
+                              setIconPickerId(
+                                iconPickerId === dash.id ? null : dash.id,
+                              )
+                            }
+                          >
+                            <Smile className="mr-2 h-3.5 w-3.5" />
+                            Change Icon
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() =>
+                              setColorPickerId(
+                                colorPickerId === dash.id ? null : dash.id,
+                              )
+                            }
+                          >
+                            <Palette className="mr-2 h-3.5 w-3.5" />
+                            Change Color
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              setDeleteConfirmId(dash.id);
+                              setDeleteConfirmName(dash.name);
+                            }}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-3.5 w-3.5" />
+                            Delete
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
 
-                    {/* Icon area */}
-                    <FileCardIcon fileName={file.fileName} />
-
-                    {/* Info area */}
-                    <div className="space-y-1 px-3.5 pb-3.5 pt-3">
-                      <p className="truncate text-[13px] font-semibold text-[#0F172A]">
-                        {file.fileName}
-                      </p>
-                      <p className="text-xs text-[#94A3B8]">
-                        {getFileExtensionLabel(file.fileName)},{" "}
-                        {formatRowCount(file.rowCount)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            /* ───── List View ───── */
-            <div className="dashboard-scroll flex-1 overflow-y-auto px-6 py-5">
-              <div className="overflow-hidden rounded-xl border border-[#E8ECF4] bg-white">
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-[#F1F5F9] text-left">
-                      <th className="w-8 px-4 py-3" />
-                      <th className="px-4 py-3 text-xs font-medium text-[#94A3B8]">
-                        Name
-                      </th>
-                      <th className="px-4 py-3 text-xs font-medium text-[#94A3B8]">
-                        Last modified
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-[#94A3B8]">
-                        Size
-                      </th>
-                      <th className="w-11 px-4 py-3" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleFiles.map((file) => (
-                      <tr
-                        key={file.id}
-                        className="group h-[52px] border-b border-[#F1F5F9] transition-colors last:border-b-0 hover:bg-[#FAFAFB]"
+                    {/* Icon picker popover */}
+                    {iconPickerId === dash.id && (
+                      <div
+                        className="absolute right-2 top-10 z-10 rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-lg"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {/* Icon */}
-                        <td className="px-4 py-2">
-                          <FileRowIcon fileName={file.fileName} />
-                        </td>
+                        <div className="grid grid-cols-5 gap-1.5">
+                          {DASHBOARD_ICON_OPTIONS.map((iconName) => {
+                            const IC = getIconComponent(iconName);
+                            return (
+                              <button
+                                key={iconName}
+                                type="button"
+                                onClick={() => handleChangeIcon(dash.id, iconName)}
+                                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${iconName === dash.icon
+                                  ? "bg-blue-50 text-[#3B82F6]"
+                                  : "text-[var(--color-text-muted)] hover:bg-slate-50"
+                                  }`}
+                              >
+                                <IC className="h-4 w-4" />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
-                        {/* Name */}
-                        <td className="px-4 py-2">
-                          <div className="flex items-center gap-2">
-                            <span className="truncate font-medium text-[#0F172A]">
-                              {file.fileName}
-                            </span>
-                            {file.isPrimary && (
-                              <Badge className="border-0 bg-[#EEF2FF] text-[10px] font-semibold text-[#6366F1] hover:bg-[#EEF2FF]">
-                                Primary
-                              </Badge>
-                            )}
-                          </div>
-                        </td>
+                    {/* Color picker popover */}
+                    {colorPickerId === dash.id && (
+                      <div
+                        className="absolute right-2 top-10 z-10 rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-lg"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex gap-1.5">
+                          {DASHBOARD_COLOR_OPTIONS.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              onClick={() => handleChangeColor(dash.id, color)}
+                              className={`h-7 w-7 rounded-full transition-all ${color === dash.color
+                                ? "ring-2 ring-offset-1"
+                                : "hover:scale-110"
+                                }`}
+                              style={{
+                                backgroundColor: color,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
 
-                        {/* Last modified */}
-                        <td className="whitespace-nowrap px-4 py-2 text-[#64748B]">
-                          {formatUploadedDate(
-                            uploadDatesRef.current[file.id] ?? null,
-                          )}
-                        </td>
-
-                        {/* Size (rows) */}
-                        <td className="whitespace-nowrap px-4 py-2 text-right text-[#64748B]">
-                          {formatRowCount(file.rowCount)}
-                        </td>
-
-                        {/* Delete action */}
-                        <td className="px-4 py-2 text-right">
-                          {!file.isPrimary ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button
-                                  type="button"
-                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#CBD5E1] opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
-                                  onClick={() => setPendingRemoveId(file.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent>Remove file</TooltipContent>
-                            </Tooltip>
-                          ) : null}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {/* + New Dashboard card */}
+              <Card
+                className="flex h-full min-h-[148px] cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-[var(--color-border)] bg-transparent transition-all duration-200 hover:border-[#3B82F6] hover:bg-blue-50/30"
+                onClick={() => setCreateOpen(true)}
+              >
+                <div className="flex flex-col items-center gap-2 text-[var(--color-text-muted)]">
+                  <Plus className="h-8 w-8" />
+                  <span className="text-sm font-medium">New Dashboard</span>
+                </div>
+              </Card>
             </div>
           )}
         </div>
 
-        {/* ───── Remove confirmation dialog ───── */}
+        {/* Create modal */}
+        <CreateDashboardModal
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          onCreated={handleCreate}
+        />
+
+        {/* Delete confirmation */}
         <AlertDialog
-          open={Boolean(pendingRemoveFile)}
-          onOpenChange={(open) => {
-            if (!open) {
-              setPendingRemoveId(null);
-            }
-          }}
+          open={!!deleteConfirmId}
+          onOpenChange={(open) => !open && setDeleteConfirmId(null)}
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Remove file?</AlertDialogTitle>
+              <AlertDialogTitle>Delete dashboard</AlertDialogTitle>
               <AlertDialogDescription>
-                {pendingRemoveFile
-                  ? `This will remove "${pendingRemoveFile.fileName}" from the current dataset.`
-                  : "This action cannot be undone."}
+                Are you sure you want to delete &quot;{deleteConfirmName}&quot;?
+                This will remove the dashboard and unlink all attached files. The
+                files themselves will not be deleted.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
+                onClick={handleDeleteDashboard}
                 className="bg-red-600 text-white hover:bg-red-700"
-                onClick={() => {
-                  if (pendingRemoveFile) {
-                    void handleRemoveFile(pendingRemoveFile.id);
-                  }
-                }}
               >
-                Remove
+                Delete
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </TooltipProvider>
+    );
+  }
+
+  // ── RENDER: Scoped file view (drilled into a dashboard) ──
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* Header with back arrow */}
+      <div className="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5">
+        <TooltipProvider delayDuration={100}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleBack}
+                className="h-8 w-8 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[#3B82F6]"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Back to dashboards</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        {activeDash && (
+          <div className="flex items-center gap-2">
+            <div
+              className="flex h-7 w-7 items-center justify-center rounded-lg"
+              style={{
+                backgroundColor: activeDash.color + "20",
+                color: activeDash.color,
+              }}
+            >
+              {(() => {
+                const IC = getIconComponent(activeDash.icon);
+                return <IC className="h-3.5 w-3.5" />;
+              })()}
+            </div>
+            <h1 className="font-display text-[16px] text-[var(--color-text-primary)]">
+              {activeDash.name}
+            </h1>
+          </div>
+        )}
+
+        <div className="ml-auto flex items-center gap-2">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-text-muted)]" />
+            <Input
+              placeholder="Search files…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8 w-48 rounded-lg border-[var(--color-border)] bg-[var(--color-bg)] pl-8 text-xs"
+            />
+          </div>
+
+          {/* View toggle */}
+          <div className="flex gap-0.5 rounded-lg border border-[var(--color-border)] p-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setFileView("card")}
+              className={`h-7 w-7 rounded-md ${fileView === "card"
+                ? "bg-[#3B82F6] text-white"
+                : "text-[var(--color-text-muted)]"
+                }`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setFileView("list")}
+              className={`h-7 w-7 rounded-md ${fileView === "list"
+                ? "bg-[#3B82F6] text-white"
+                : "text-[var(--color-text-muted)]"
+                }`}
+            >
+              <List className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+
+          {/* Upload button */}
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="h-8 gap-1.5 rounded-lg bg-[#3B82F6] px-3 text-xs font-medium text-white hover:bg-[#2563EB]"
+          >
+            {isUploading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Upload className="h-3.5 w-3.5" />
+            )}
+            Upload
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleUploadFile(f);
+              e.target.value = "";
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Error banner */}
+      {uploadError && (
+        <div className="border-b border-red-200 bg-red-50 px-5 py-2 text-xs text-red-700">
+          {uploadError}
+        </div>
+      )}
+
+      {/* File grid / list */}
+      <div className="flex-1 overflow-y-auto p-5">
+        {filteredFiles.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-blue-50 text-[#3B82F6]">
+              <UploadCloud className="h-7 w-7" />
+            </div>
+            <h2 className="font-display text-lg text-[var(--color-text-primary)]">
+              No files yet
+            </h2>
+            <p className="max-w-xs text-sm text-[var(--color-text-muted)]">
+              Upload a CSV or Excel file to start building charts for this
+              dashboard.
+            </p>
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-2 h-9 gap-2 rounded-lg bg-[#3B82F6] px-4 text-sm text-white hover:bg-[#2563EB]"
+            >
+              <Upload className="h-4 w-4" />
+              Upload File
+            </Button>
+          </div>
+        ) : fileView === "card" ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {filteredFiles.map((f) => (
+              <Card
+                key={f.id}
+                className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.06)]"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B82F6]">
+                    {f.fileName.endsWith(".csv") ? (
+                      <Table className="h-5 w-5" />
+                    ) : (
+                      <FileText className="h-5 w-5" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                      {f.fileName}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2 text-[11px] text-[var(--color-text-muted)]">
+                      <span>{f.rowCount.toLocaleString()} rows</span>
+                      {f.isPrimary && (
+                        <Badge className="rounded bg-[#3B82F6]/10 px-1.5 py-0 text-[10px] font-medium text-[#3B82F6]">
+                          Primary
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delete on hover */}
+                <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setDeleteFileConfirm(f)}
+                    className="h-7 w-7 rounded-full text-[var(--color-text-muted)] hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {filteredFiles.map((f) => (
+              <div
+                key={f.id}
+                className="group flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-slate-50"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-[#3B82F6]">
+                  {f.fileName.endsWith(".csv") ? (
+                    <Table className="h-4 w-4" />
+                  ) : (
+                    <FileText className="h-4 w-4" />
+                  )}
+                </div>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-text-primary)]">
+                  {f.fileName}
+                </span>
+                <span className="text-[11px] text-[var(--color-text-muted)]">
+                  {f.rowCount.toLocaleString()} rows
+                </span>
+                {f.isPrimary && (
+                  <Badge className="rounded bg-[#3B82F6]/10 px-1.5 py-0 text-[10px] font-medium text-[#3B82F6]">
+                    Primary
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setDeleteFileConfirm(f)}
+                  className="h-7 w-7 rounded-full text-[var(--color-text-muted)] opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Delete file confirmation */}
+      <AlertDialog
+        open={!!deleteFileConfirm}
+        onOpenChange={(open) => !open && setDeleteFileConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove file</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove &quot;{deleteFileConfirm?.fileName}&quot; from this
+              dashboard? The underlying data will remain in your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRemoveFile}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
-

@@ -170,3 +170,41 @@ export const BI_GENERATION_RULES = [
   "Every chart title must reference the actual column name or names shown in the chart.",
   "Every insight string must include a specific value or finding, not a generic description.",
 ] as const;
+
+// ── Multi-Dashboard ──
+
+export const DASHBOARD_ICON_OPTIONS = [
+  "bar-chart", "pie-chart", "trending-up", "store", "shopping-cart",
+  "users", "activity", "target", "zap", "layers",
+] as const;
+
+export const DASHBOARD_COLOR_OPTIONS = [
+  "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6",
+  "#EC4899", "#EF4444", "#06B6D4", "#84CC16",
+] as const;
+
+export const DashboardListItemSchema = z.object({
+  id: z.string().min(1),
+  name: z.string(),
+  icon: z.string(),
+  color: z.string(),
+  fileCount: z.number().int().nonnegative(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type DashboardListItem = z.infer<typeof DashboardListItemSchema>;
+
+export const CreateDashboardRequestSchema = z.object({
+  name: z.string().min(1),
+  icon: z.string().min(1),
+  color: z.string().min(1),
+  datasetIds: z.array(z.string()).optional(),
+});
+export type CreateDashboardRequest = z.infer<typeof CreateDashboardRequestSchema>;
+
+export const UpdateDashboardRequestSchema = z.object({
+  name: z.string().min(1).optional(),
+  icon: z.string().min(1).optional(),
+  color: z.string().min(1).optional(),
+});
+export type UpdateDashboardRequest = z.infer<typeof UpdateDashboardRequestSchema>;

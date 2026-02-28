@@ -11,10 +11,14 @@ import {
   getDashboardStoreState,
   initializeDashboardStore,
   resetDashboardStore,
+  setActiveDashboard,
   useDashboardStore,
 } from "@/lib/dashboard-store";
 import {
+  listDashboards,
+  loadDashboard,
   loadLatestDashboard,
+  createDashboard,
   persistDashboardCharts,
   uploadDataset,
 } from "@/lib/api";
@@ -35,7 +39,7 @@ function DashboardUploadEmptyState({
       <div className="dashboard-surface flex h-full flex-col overflow-hidden">
         <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-5">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Dashboard</h1>
+            <h1 className="font-display text-2xl text-[var(--color-text-primary)]">Dashboard</h1>
             <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               Upload a dataset to start building your workspace.
             </p>
@@ -45,10 +49,10 @@ function DashboardUploadEmptyState({
         <div className="flex flex-1 items-center justify-center px-6 py-8">
           <Card className="w-full max-w-2xl rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-none">
             <div className="mx-auto flex max-w-xl flex-col items-center text-center">
-              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-[var(--color-accent-light)] text-[var(--color-accent)]">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-blue-50 text-[#3B82F6]">
                 <Upload className="h-8 w-8" />
               </div>
-              <h2 className="text-3xl font-semibold text-[var(--color-text-primary)]">
+              <h2 className="font-display text-3xl text-[var(--color-text-primary)]">
                 Upload your first dataset
               </h2>
               <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]">
@@ -105,6 +109,7 @@ function DashboardLoadingState() {
 export default function DashboardPage() {
   const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
   const charts = useDashboardStore((snapshot) => snapshot.charts);
+  const activeDashboardId = useDashboardStore((s) => s.activeDashboardId);
   const [pageState, setPageState] = useState<DashboardPageState>("loading");
   const [isUploadReady, setIsUploadReady] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -115,13 +120,39 @@ export default function DashboardPage() {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadDashboard() {
+    async function loadInitialDashboard() {
       setLoadError(null);
       try {
-        const response = await loadLatestDashboard();
-        if (cancelled) {
+        // Try loading dashboards first
+        const dashboards = await listDashboards();
+        if (cancelled) return;
+
+        if (dashboards.length > 0) {
+          // Load the most recently updated dashboard
+          const mostRecent = dashboards[0];
+          const result = await loadDashboard(mostRecent.id);
+          if (cancelled) return;
+
+          if ("empty" in result) {
+            // Dashboard exists but has no files
+            setActiveDashboard(result.dashboard);
+            resetDashboardStore();
+            lastPersistedChartsRef.current = null;
+            setPageState("empty");
+            return;
+          }
+
+          isHydratingRef.current = true;
+          lastPersistedChartsRef.current = JSON.stringify(result.charts);
+          initializeDashboardStore(result, result.dashboard);
+          setActiveDashboard(result.dashboard);
+          setPageState("loaded");
           return;
         }
+
+        // Fallback: try old loadLatestDashboard (for users without dashboards yet)
+        const response = await loadLatestDashboard();
+        if (cancelled) return;
         if ("empty" in response) {
           resetDashboardStore();
           lastPersistedChartsRef.current = null;
@@ -133,9 +164,7 @@ export default function DashboardPage() {
         initializeDashboardStore(response);
         setPageState("loaded");
       } catch (error) {
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
         setLoadError(
           error instanceof Error && error.message
             ? error.message.replace(/_/g, " ")
@@ -148,7 +177,7 @@ export default function DashboardPage() {
       }
     }
 
-    void loadDashboard();
+    void loadInitialDashboard();
 
     return () => {
       cancelled = true;
@@ -183,7 +212,24 @@ export default function DashboardPage() {
     setPageState("processing");
 
     try {
-      const snapshot = await uploadDataset(file);
+      // If no active dashboard, auto-create one
+      let dashboardId = activeDashboardId;
+      if (!dashboardId) {
+        const created = await createDashboard({
+          name: file.name.replace(/\.[^.]+$/, ""),
+          icon: "bar-chart",
+          color: "#3B82F6",
+        });
+        dashboardId = created.id;
+        setActiveDashboard({
+          id: created.id,
+          name: created.name,
+          icon: created.icon,
+          color: created.color,
+        });
+      }
+
+      const snapshot = await uploadDataset(file, dashboardId);
       isHydratingRef.current = true;
       lastPersistedChartsRef.current = JSON.stringify(snapshot.charts);
       initializeDashboardStore(snapshot);
@@ -225,3 +271,4 @@ export default function DashboardPage() {
     />
   );
 }
+

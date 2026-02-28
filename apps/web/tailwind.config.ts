@@ -15,8 +15,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Manrope', 'system-ui', 'sans-serif'],
-        display: ['Fraunces', 'Georgia', 'serif'],
+        sans: ['Instrument Sans', 'system-ui', 'sans-serif'],
+        display: ['DM Serif Text', 'Georgia', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -89,10 +89,21 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "card-lift": {
+          from: { transform: "translateY(0)", boxShadow: "0 2px 6px hsl(215 74% 31% / 0.05)" },
+          to: { transform: "translateY(-2px)", boxShadow: "0 8px 24px hsl(215 74% 31% / 0.12)" },
+        },
+        "fab-pulse": {
+          "0%": { transform: "scale(1)", opacity: "0.6" },
+          "50%": { transform: "scale(1.8)", opacity: "0" },
+          "100%": { transform: "scale(1.8)", opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "card-lift": "card-lift 0.2s ease forwards",
+        "fab-pulse": "fab-pulse 2.5s ease-in-out infinite",
       },
     },
   },
