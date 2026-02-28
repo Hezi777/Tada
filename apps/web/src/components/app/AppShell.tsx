@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Dashboard } from "./Dashboard";
 import { FileManager } from "./FileManager";
+import { SettingsPanel } from "./SettingsPanel";
 import { FloatingChat } from "./FloatingChat";
 import tadaLogo from "@/assets/tada-logo.png";
 import { useDashboardStore } from "@/lib/dashboard-store";
@@ -15,7 +16,7 @@ interface AppShellProps {
 }
 
 type ThemeMode = "system" | "light" | "dark";
-type NavTab = "dashboard" | "files";
+type NavTab = "dashboard" | "files" | "settings";
 
 const THEME_STORAGE_KEY = "tada-theme";
 
@@ -38,11 +39,10 @@ function SidebarItem({
       variant="ghost"
       onClick={onClick}
       disabled={disabled}
-      className={`relative h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold transition-all duration-150 ${
-        active
+      className={`relative h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold transition-all duration-150 ${active
           ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
           : "text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
-      }`}
+        }`}
     >
       {active ? <span className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-[var(--color-accent)]" /> : null}
       <Icon className="h-[18px] w-[18px]" />
@@ -118,13 +118,12 @@ export function AppShell({ dashboardContent, showFloatingChat = true }: AppShell
         <Separator className="mb-4 bg-[var(--color-border)]" />
 
         <div className="space-y-2">
-          <Button
-            variant="ghost"
-            className="h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
-          >
-            <Settings className="h-[18px] w-[18px]" />
-            Settings
-          </Button>
+          <SidebarItem
+            icon={Settings}
+            label="Settings"
+            active={activeTab === "settings"}
+            onClick={() => setActiveTab("settings")}
+          />
           <form action={logout}>
             <Button
               type="submit"
@@ -139,7 +138,15 @@ export function AppShell({ dashboardContent, showFloatingChat = true }: AppShell
       </aside>
 
       <div className="ml-[240px] h-screen">
-        {activeTab === "files" ? <FileManager /> : dashboardContent ? dashboardContent : <Dashboard />}
+        {activeTab === "settings" ? (
+          <SettingsPanel />
+        ) : activeTab === "files" ? (
+          <FileManager />
+        ) : dashboardContent ? (
+          dashboardContent
+        ) : (
+          <Dashboard />
+        )}
       </div>
 
       {showFloatingChat ? <FloatingChat /> : null}
