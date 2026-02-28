@@ -28,6 +28,14 @@ export type SerializedValue = z.infer<typeof SerializedValueSchema>;
 export const SerializedRowSchema = z.record(SerializedValueSchema);
 export type SerializedRow = z.infer<typeof SerializedRowSchema>;
 
+export const LoadedDatasetFileSchema = z.object({
+  id: z.string().min(1),
+  fileName: z.string().min(1),
+  rowCount: z.number().int().nonnegative(),
+  isPrimary: z.boolean(),
+});
+export type LoadedDatasetFile = z.infer<typeof LoadedDatasetFileSchema>;
+
 export const ChartTypeSchema = z.enum(["area", "bar", "donut", "scatter", "kpi"]);
 export type ChartType = z.infer<typeof ChartTypeSchema>;
 
@@ -100,8 +108,15 @@ export type ChatbotChartPatch = z.infer<typeof ChatbotChartPatchSchema>;
 export const UploadDashboardResponseSchema = DashboardConfigSnapshotSchema.extend({
   fileName: z.string().min(1),
   rows: z.array(SerializedRowSchema),
+  files: z.array(LoadedDatasetFileSchema),
 });
 export type UploadDashboardResponse = z.infer<typeof UploadDashboardResponseSchema>;
+
+export const DeleteChainedFileRequestSchema = z.object({
+  datasetId: z.string().min(1),
+  fileId: z.string().min(1),
+});
+export type DeleteChainedFileRequest = z.infer<typeof DeleteChainedFileRequestSchema>;
 
 export const ChatDashboardRequestSchema = z.object({
   datasetId: z.string().min(1),

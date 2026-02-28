@@ -5,6 +5,7 @@ import type {
   DashboardColumn,
   DatasetMeta,
   KPIConfig,
+  LoadedDatasetFile,
   SerializedRow,
   UploadDashboardResponse,
 } from "@tada/shared";
@@ -20,6 +21,7 @@ type DashboardStoreState = {
   fileName: string | null;
   columns: DashboardColumn[];
   datasetMeta?: DatasetMeta;
+  files: LoadedDatasetFile[];
   rows: SerializedRow[];
   charts: ChartConfig[];
   kpis: KPIConfig[];
@@ -35,6 +37,7 @@ let state: DashboardStoreState = {
   fileName: null,
   columns: [],
   datasetMeta: undefined,
+  files: [],
   rows: [],
   charts: [],
   kpis: [],
@@ -94,6 +97,7 @@ function prepareInitialState(
     fileName: snapshot.fileName,
     columns: snapshot.columns,
     datasetMeta: snapshot.datasetMeta,
+    files: snapshot.files,
     rows: snapshot.rows,
     charts: normalizeOrders(snapshot.charts),
     kpis: [...snapshot.kpis],
@@ -113,6 +117,7 @@ export function resetDashboardStore(): void {
     fileName: null,
     columns: [],
     datasetMeta: undefined,
+    files: [],
     rows: [],
     charts: [],
     kpis: [],
@@ -121,6 +126,31 @@ export function resetDashboardStore(): void {
 
 export function getDashboardStoreState(): DashboardStoreState {
   return state;
+}
+
+export function applyDatasetChainSnapshot(snapshot: UploadDashboardResponse): void {
+  const keepCurrentCharts =
+    state.datasetId === snapshot.datasetId && state.charts.length > 0
+      ? normalizeOrders(state.charts)
+      : normalizeOrders(snapshot.charts);
+
+  const next: DashboardStoreState = {
+    datasetId: snapshot.datasetId,
+    version:
+      state.datasetId === snapshot.datasetId
+        ? Math.max(state.version + 1, snapshot.version)
+        : snapshot.version,
+    fileName: snapshot.fileName,
+    columns: snapshot.columns,
+    datasetMeta: snapshot.datasetMeta,
+    files: snapshot.files,
+    rows: snapshot.rows,
+    charts: keepCurrentCharts,
+    kpis: [...snapshot.kpis],
+  };
+
+  validateNextState(next);
+  setState(next);
 }
 
 export function addChart(config: ChartConfig): void {

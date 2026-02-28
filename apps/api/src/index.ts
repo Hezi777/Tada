@@ -5,10 +5,11 @@ import express from "express";
 import multer from "multer";
 import {
   ChatDashboardRequestSchema,
+  DeleteChainedFileRequestSchema,
   type HealthResponse,
 } from "@tada/shared";
 import { handleChat } from "./core/chat.js";
-import { handleUpload } from "./core/upload.js";
+import { handleChainRemove, handleChainUpload, handleUpload } from "./core/upload.js";
 import { getDatasetState } from "./core/state.js";
 
 const envCandidates = [
@@ -30,7 +31,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 app.use(express.json({ limit: "2mb" }));
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") {
     res.status(204).end();
@@ -59,6 +60,51 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       return;
     }
     res.status(400).json({ error: "upload_failed" });
+  }
+});
+
+app.post("/api/upload/chain", upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ error: "file_missing" });
+    return;
+  }
+
+  const datasetId = typeof req.body.datasetId === "string" ? req.body.datasetId : null;
+  if (!datasetId) {
+    res.status(400).json({ error: "dataset_id_missing" });
+    return;
+  }
+
+  try {
+    const state = await handleChainUpload(datasetId, req.file);
+    res.json(state);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("[upload-chain] failed:", error.message);
+      res.status(400).json({ error: error.message || "upload_chain_failed" });
+      return;
+    }
+    res.status(400).json({ error: "upload_chain_failed" });
+  }
+});
+
+app.delete("/api/upload/chain", (req, res) => {
+  const parsed = DeleteChainedFileRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "invalid_request" });
+    return;
+  }
+
+  try {
+    const state = handleChainRemove(parsed.data.datasetId, parsed.data.fileId);
+    res.json(state);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("[upload-chain-delete] failed:", error.message);
+      res.status(400).json({ error: error.message || "upload_chain_remove_failed" });
+      return;
+    }
+    res.status(400).json({ error: "upload_chain_remove_failed" });
   }
 });
 

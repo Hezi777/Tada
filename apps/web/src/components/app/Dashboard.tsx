@@ -1,4 +1,4 @@
-import { memo, useMemo, type CSSProperties } from "react";
+import { memo, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   Hash,
   Sigma,
@@ -7,6 +7,9 @@ import {
   GripVertical,
   EyeOff,
   Eye,
+  Loader2,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import {
   DndContext,
@@ -40,10 +43,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { ChartConfig, KPIConfig, SerializedRow } from "@tada/shared";
+import type { ChartConfig, KPIConfig, LoadedDatasetFile, SerializedRow } from "@tada/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { removeChainedDatasetFile, uploadChainedDataset } from "@/lib/api";
 import {
   buildAreaSeries,
   buildGroupedSeries,
@@ -53,7 +57,12 @@ import {
   hasRenderableChartData,
 } from "@/lib/dashboard-runtime";
 import { calculateLayout, type LayoutItem } from "@/lib/chart-layout";
-import { reorderCharts, updateChart, useDashboardStore } from "@/lib/dashboard-store";
+import {
+  applyDatasetChainSnapshot,
+  reorderCharts,
+  updateChart,
+  useDashboardStore,
+} from "@/lib/dashboard-store";
 
 const chartColors = [
   "hsl(var(--primary))",
@@ -74,6 +83,13 @@ function formatMetric(value: string | number): string | number {
   }
 
   return legacyFormatNumber(value) ?? value;
+}
+
+function formatApiMessage(message: string): string {
+  if (!message.includes("_")) {
+    return message;
+  }
+  return message.replace(/_/g, " ");
 }
 
 function getKpiIcon(kpi: KPIConfig) {
@@ -367,7 +383,23 @@ function ChartCard({ chart, rows }: ChartCardProps) {
   );
 }
 
-function ChartStructureCard({ charts }: { charts: ChartConfig[] }) {
+function ChartStructureCard({
+  charts,
+  files,
+  isChainLoading,
+  chainError,
+  onAddFile,
+  onRemoveFile,
+}: {
+  charts: ChartConfig[];
+  files: LoadedDatasetFile[];
+  isChainLoading: boolean;
+  chainError: string | null;
+  onAddFile: (file: File) => Promise<void>;
+  onRemoveFile: (fileId: string) => Promise<void>;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between gap-3">
@@ -378,6 +410,73 @@ function ChartStructureCard({ charts }: { charts: ChartConfig[] }) {
         <Badge variant="secondary" className="rounded-full">
           {charts.filter((chart) => chart.visible).length} visible
         </Badge>
+      </div>
+
+      <div className="mt-5 rounded-[1.2rem] border border-white/80 bg-white/70 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Loaded files</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Chain CSV or Excel files only when their column names and kinds match.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            onClick={() => inputRef.current?.click()}
+            disabled={isChainLoading}
+          >
+            {isChainLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+            Add file
+          </Button>
+        </div>
+
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".csv,.xls,.xlsx"
+          className="hidden"
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (!file) {
+              return;
+            }
+            await onAddFile(file);
+          }}
+        />
+
+        <div className="mt-4 space-y-2">
+          {files.map((file) => (
+            <div
+              key={file.id}
+              className="flex items-center justify-between gap-3 rounded-[1rem] border border-white/80 bg-background/70 px-3 py-3"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">{file.fileName}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {file.rowCount} rows {file.isPrimary ? "· primary file" : "· chained file"}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-xl text-muted-foreground"
+                onClick={() => void onRemoveFile(file.id)}
+                disabled={isChainLoading || file.isPrimary}
+                aria-label={file.isPrimary ? `${file.fileName} is the primary file` : `Remove ${file.fileName}`}
+                title={file.isPrimary ? "Primary file cannot be removed" : "Remove file"}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        {chainError ? <p className="mt-3 text-xs font-medium text-destructive">{chainError}</p> : null}
       </div>
 
       <div className="mt-5 space-y-3">
@@ -425,6 +524,9 @@ export function Dashboard() {
   const charts = useDashboardStore((snapshot) => snapshot.charts);
   const kpiConfigs = useDashboardStore((snapshot) => snapshot.kpis);
   const fileName = useDashboardStore((snapshot) => snapshot.fileName);
+  const files = useDashboardStore((snapshot) => snapshot.files);
+  const [chainError, setChainError] = useState<string | null>(null);
+  const [isChainLoading, setIsChainLoading] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -438,6 +540,48 @@ export function Dashboard() {
   );
   const layoutItems = useMemo(() => calculateLayout(visibleCharts), [visibleCharts]);
   const isLoading = Boolean(datasetId) && (kpiConfigs.length === 0 || charts.length === 0);
+
+  async function handleChainAdd(file: File): Promise<void> {
+    if (!datasetId) {
+      return;
+    }
+
+    setChainError(null);
+    setIsChainLoading(true);
+    try {
+      const snapshot = await uploadChainedDataset({ datasetId, file });
+      applyDatasetChainSnapshot(snapshot);
+    } catch (error) {
+      setChainError(
+        error instanceof Error && error.message
+          ? formatApiMessage(error.message)
+          : "Unable to add that file to the current dataset.",
+      );
+    } finally {
+      setIsChainLoading(false);
+    }
+  }
+
+  async function handleChainRemove(fileId: string): Promise<void> {
+    if (!datasetId) {
+      return;
+    }
+
+    setChainError(null);
+    setIsChainLoading(true);
+    try {
+      const snapshot = await removeChainedDatasetFile({ datasetId, fileId });
+      applyDatasetChainSnapshot(snapshot);
+    } catch (error) {
+      setChainError(
+        error instanceof Error && error.message
+          ? formatApiMessage(error.message)
+          : "Unable to remove that chained file.",
+      );
+    } finally {
+      setIsChainLoading(false);
+    }
+  }
 
   if (!datasetId) {
     return (
@@ -483,7 +627,14 @@ export function Dashboard() {
 
           <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
             <div className="min-w-0">
-              <ChartStructureCard charts={orderedCharts} />
+              <ChartStructureCard
+                charts={orderedCharts}
+                files={files}
+                isChainLoading={isChainLoading}
+                chainError={chainError}
+                onAddFile={handleChainAdd}
+                onRemoveFile={handleChainRemove}
+              />
             </div>
 
             <div className="min-w-0">
