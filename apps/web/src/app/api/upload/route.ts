@@ -100,6 +100,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // If a dashboardId was provided, attach this dataset to that dashboard
+    const dashboardId = formData.get("dashboardId");
+    if (dashboardId && typeof dashboardId === "string") {
+      await supabaseAdmin.from("dashboard_datasets").insert({
+        dashboard_id: dashboardId,
+        dataset_id: datasetId,
+      });
+      // Touch the dashboard's updated_at
+      await supabaseAdmin
+        .from("dashboards")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", dashboardId);
+    }
+
     return NextResponse.json({
       ...state,
       datasetId,

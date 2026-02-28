@@ -80,7 +80,7 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
                 Step 1 of 2
               </div>
 
-              <h1 className="text-4xl text-foreground sm:text-5xl">
+              <h1 className="font-display text-4xl text-foreground sm:text-5xl">
                 Upload your <span className="text-gradient">data file</span>
               </h1>
 
@@ -97,7 +97,7 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
                 ].map((item) => (
                   <Card
                     key={item}
-                    className="flex items-center gap-3 rounded-full border border-white/80 bg-white/75 px-4 py-3 text-sm font-medium text-foreground shadow-card"
+                    className="flex items-center gap-3 rounded-full border border-white/80 bg-white/75 px-4 py-3 text-sm font-medium text-foreground shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
                   >
                     <span className="h-2.5 w-2.5 rounded-full bg-primary" />
                     {item}
@@ -133,7 +133,7 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
                   <Upload className="h-8 w-8" />
                 </div>
 
-                <h2 className="font-display text-3xl font-semibold text-foreground">Drop your file here</h2>
+                <h2 className="font-display text-3xl text-foreground">Drop your file here</h2>
                 <p className="mt-3 text-sm text-muted-foreground">or click to browse from your computer</p>
                 <p className="mb-8 mt-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground/80">
                   Maximum file size: 100MB
@@ -153,17 +153,17 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
                 />
 
                 <div className="mt-10 grid w-full max-w-xl gap-3 border-t border-border/80 pt-8 sm:grid-cols-3">
-                  <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card">
+                  <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-primary" />
                     <p className="text-sm font-semibold text-foreground">CSV</p>
                     <p className="mt-1 text-xs text-muted-foreground">Fast ingestion for flat files</p>
                   </Card>
-                  <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card">
+                  <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-sky-500" />
                     <p className="text-sm font-semibold text-foreground">Excel (.xlsx)</p>
                     <p className="mt-1 text-xs text-muted-foreground">Modern workbook support</p>
                   </Card>
-                  <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card">
+                  <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-indigo-500" />
                     <p className="text-sm font-semibold text-foreground">Excel (.xls)</p>
                     <p className="mt-1 text-xs text-muted-foreground">Legacy spreadsheet imports</p>

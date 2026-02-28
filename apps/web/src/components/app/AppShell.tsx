@@ -3,7 +3,7 @@ import { Files, LayoutDashboard, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Dashboard } from "./Dashboard";
-import { FileManager } from "./FileManager";
+import FileManager from "./FileManager";
 import { SettingsPanel } from "./SettingsPanel";
 import { FloatingChat } from "./FloatingChat";
 import tadaLogo from "@/assets/tada-logo.png";
@@ -39,12 +39,12 @@ function SidebarItem({
       variant="ghost"
       onClick={onClick}
       disabled={disabled}
-      className={`relative h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold transition-all duration-150 ${active
-          ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
-          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+      className={`relative h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold transition-all duration-200 ${active
+        ? "bg-blue-50 text-[#3B82F6]"
+        : "text-[var(--color-text-secondary)] hover:bg-blue-50/60 hover:text-[#3B82F6]"
         }`}
     >
-      {active ? <span className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-[var(--color-accent)]" /> : null}
+      {active ? <span className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-[#3B82F6]" /> : null}
       <Icon className="h-[18px] w-[18px]" />
       <span>{label}</span>
     </Button>
@@ -84,20 +84,20 @@ export function AppShell({ dashboardContent, showFloatingChat = true }: AppShell
 
   return (
     <div className="h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text-primary)]">
-      <aside className="fixed inset-y-0 left-0 z-30 flex w-[240px] flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-6">
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent-light)]">
-            <img src={tadaLogo} alt="TADA" className="h-6 w-6" />
+      <aside className="fixed inset-y-0 left-0 z-30 flex w-[260px] flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-6">
+        <div className="flex items-center gap-3 px-1">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3B82F6] shadow-[0_2px_8px_rgba(59,130,246,0.25)]">
+            <img src={tadaLogo} alt="TADA" className="h-5 w-5 brightness-0 invert" />
           </div>
           <div>
-            <div className="text-xl font-extrabold tracking-tight text-[var(--color-accent)]">TADA</div>
-            <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
+            <div className="font-display text-[22px] font-normal tracking-tight text-[#0F172A]">TADA</div>
+            <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
               Workspace
             </div>
           </div>
         </div>
 
-        <nav className="mt-10 space-y-2">
+        <nav className="mt-10 space-y-1">
           <SidebarItem
             icon={LayoutDashboard}
             label="Dashboard"
@@ -117,7 +117,7 @@ export function AppShell({ dashboardContent, showFloatingChat = true }: AppShell
 
         <Separator className="mb-4 bg-[var(--color-border)]" />
 
-        <div className="space-y-2">
+        <div className="space-y-1">
           <SidebarItem
             icon={Settings}
             label="Settings"
@@ -128,7 +128,7 @@ export function AppShell({ dashboardContent, showFloatingChat = true }: AppShell
             <Button
               type="submit"
               variant="ghost"
-              className="h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+              className="h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-blue-50/60 hover:text-[#3B82F6]"
             >
               <LogOut className="h-[18px] w-[18px]" />
               Logout
@@ -137,7 +137,7 @@ export function AppShell({ dashboardContent, showFloatingChat = true }: AppShell
         </div>
       </aside>
 
-      <div className="ml-[240px] h-screen">
+      <div className="ml-[260px] h-screen">
         {activeTab === "settings" ? (
           <SettingsPanel />
         ) : activeTab === "files" ? (

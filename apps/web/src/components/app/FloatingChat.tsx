@@ -126,22 +126,29 @@ export function FloatingChat() {
         }
       `}</style>
 
-      <Button
-        type="button"
-        onClick={() => setIsOpen((current) => !current)}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full border-0 bg-[var(--color-accent)] text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)] transition-all duration-200 ease-in-out hover:scale-[1.02] hover:bg-[#1D4ED8]"
-        aria-label={isOpen ? "Close TADA Wiz" : "Open TADA Wiz"}
-      >
-        <Sparkles className="h-5 w-5" />
-      </Button>
+      {/* FAB with pulse ring */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {!isOpen && (
+          <span className="fab-pulse-ring absolute inset-0 rounded-full" />
+        )}
+        <Button
+          type="button"
+          onClick={() => setIsOpen((current) => !current)}
+          className="relative h-14 w-14 rounded-full border-0 bg-[#3B82F6] text-white shadow-[0_4px_20px_rgba(59,130,246,0.35)] transition-all duration-200 ease-in-out hover:scale-105 hover:bg-[#2563EB] hover:shadow-[0_6px_28px_rgba(59,130,246,0.45)]"
+          aria-label={isOpen ? "Close TADA Wiz" : "Open TADA Wiz"}
+        >
+          <Sparkles className="h-5 w-5" />
+        </Button>
+      </div>
 
       {isOpen ? (
         <div
-          className="fixed bottom-20 right-6 z-50 h-[500px] w-[360px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_8px_32px_rgba(0,0,0,0.12)]"
+          className="fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14)]"
           style={{ animation: "wizOpen 200ms ease" }}
         >
           <div className="flex h-full flex-col">
-            <div className="bg-[var(--color-accent)] px-4 py-4 text-white">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#3B82F6] to-[#2563EB] px-5 py-4 text-white">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
@@ -149,7 +156,7 @@ export function FloatingChat() {
                   </div>
                   <div>
                     <div className="text-base font-bold">TADA Wiz</div>
-                    <p className="mt-1 text-[13px] text-white/80">Ask anything about your data</p>
+                    <p className="mt-0.5 text-[13px] text-white/75">Ask anything about your data</p>
                   </div>
                 </div>
                 <Button
@@ -165,6 +172,7 @@ export function FloatingChat() {
               </div>
             </div>
 
+            {/* Messages */}
             <ScrollArea className="dashboard-scroll flex-1 bg-white">
               <div className="space-y-4 px-4 py-4">
                 {!canChat ? (
@@ -182,11 +190,10 @@ export function FloatingChat() {
                 {messages.map((message) => (
                   <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`max-w-[88%] px-4 py-3 text-sm leading-6 ${
-                        message.role === "user"
-                          ? "rounded-[12px_12px_2px_12px] bg-[var(--color-accent)] text-white"
+                      className={`max-w-[88%] px-4 py-3 text-sm leading-6 ${message.role === "user"
+                          ? "rounded-[12px_12px_2px_12px] bg-[#3B82F6] text-white"
                           : "rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-primary)]"
-                      }`}
+                        }`}
                     >
                       {message.content}
                     </div>
@@ -211,6 +218,7 @@ export function FloatingChat() {
 
             <Separator className="bg-[var(--color-border)]" />
 
+            {/* Input */}
             <div className="px-4 py-3">
               <div className="flex items-center gap-2">
                 <Input
@@ -227,7 +235,7 @@ export function FloatingChat() {
                   size="icon"
                   onClick={handleSend}
                   disabled={!canChat || isSending || !input.trim()}
-                  className="h-9 w-9 rounded-full bg-[var(--color-accent)] text-white hover:bg-[#1D4ED8]"
+                  className="h-9 w-9 rounded-full bg-[#3B82F6] text-white hover:bg-[#2563EB]"
                   aria-label="Send message"
                 >
                   {isSending ? <MessageCircle className="h-4 w-4" /> : <Send className="h-4 w-4" />}

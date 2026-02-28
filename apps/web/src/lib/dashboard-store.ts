@@ -25,6 +25,10 @@ type DashboardStoreState = {
   rows: SerializedRow[];
   charts: ChartConfig[];
   kpis: KPIConfig[];
+  activeDashboardId: string | null;
+  activeDashboardName: string | null;
+  activeDashboardIcon: string | null;
+  activeDashboardColor: string | null;
 };
 
 type Listener = () => void;
@@ -41,6 +45,10 @@ let state: DashboardStoreState = {
   rows: [],
   charts: [],
   kpis: [],
+  activeDashboardId: null,
+  activeDashboardName: null,
+  activeDashboardIcon: null,
+  activeDashboardColor: null,
 };
 
 function emit(): void {
@@ -101,13 +109,52 @@ function prepareInitialState(
     rows: snapshot.rows,
     charts: normalizeOrders(snapshot.charts),
     kpis: [...snapshot.kpis],
+    activeDashboardId: null,
+    activeDashboardName: null,
+    activeDashboardIcon: null,
+    activeDashboardColor: null,
   };
   validateNextState(next);
   return next;
 }
 
-export function initializeDashboardStore(snapshot: UploadDashboardResponse): void {
-  setState(prepareInitialState(snapshot));
+export function initializeDashboardStore(
+  snapshot: UploadDashboardResponse,
+  dashboard?: { id: string; name: string; icon: string; color: string },
+): void {
+  const prepared = prepareInitialState(snapshot);
+  setState({
+    ...prepared,
+    activeDashboardId: dashboard?.id ?? state.activeDashboardId,
+    activeDashboardName: dashboard?.name ?? state.activeDashboardName,
+    activeDashboardIcon: dashboard?.icon ?? state.activeDashboardIcon,
+    activeDashboardColor: dashboard?.color ?? state.activeDashboardColor,
+  });
+}
+
+export function setActiveDashboard(dashboard: {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+}): void {
+  setState({
+    ...state,
+    activeDashboardId: dashboard.id,
+    activeDashboardName: dashboard.name,
+    activeDashboardIcon: dashboard.icon,
+    activeDashboardColor: dashboard.color,
+  });
+}
+
+export function clearActiveDashboard(): void {
+  setState({
+    ...state,
+    activeDashboardId: null,
+    activeDashboardName: null,
+    activeDashboardIcon: null,
+    activeDashboardColor: null,
+  });
 }
 
 export function resetDashboardStore(): void {
@@ -121,6 +168,10 @@ export function resetDashboardStore(): void {
     rows: [],
     charts: [],
     kpis: [],
+    activeDashboardId: null,
+    activeDashboardName: null,
+    activeDashboardIcon: null,
+    activeDashboardColor: null,
   });
 }
 
@@ -147,6 +198,10 @@ export function applyDatasetChainSnapshot(snapshot: UploadDashboardResponse): vo
     rows: snapshot.rows,
     charts: keepCurrentCharts,
     kpis: [...snapshot.kpis],
+    activeDashboardId: state.activeDashboardId,
+    activeDashboardName: state.activeDashboardName,
+    activeDashboardIcon: state.activeDashboardIcon,
+    activeDashboardColor: state.activeDashboardColor,
   };
 
   validateNextState(next);
@@ -176,10 +231,10 @@ export function updateChart(id: string, patch: Partial<ChartConfig>): void {
     charts: current.charts.map((chart) =>
       chart.id === id
         ? {
-            ...chart,
-            ...patch,
-            id: chart.id,
-          }
+          ...chart,
+          ...patch,
+          id: chart.id,
+        }
         : chart,
     ),
   }));

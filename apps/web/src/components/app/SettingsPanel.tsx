@@ -71,7 +71,7 @@ export function SettingsPanel() {
     return (
         <div className="flex h-full flex-col p-8">
             {/* Page title */}
-            <h1 className="text-2xl font-bold text-[#0F172A]">Settings</h1>
+            <h1 className="font-display text-2xl text-[#0F172A]">Settings</h1>
 
             {/* Tab bar */}
             <div className="mt-6 flex items-center gap-1 border-b border-[#F1F5F9]">
@@ -81,13 +81,13 @@ export function SettingsPanel() {
                         type="button"
                         onClick={() => setActiveTab(tab.key)}
                         className={`relative px-4 pb-3 pt-1 text-sm font-semibold transition-colors ${activeTab === tab.key
-                                ? "text-[#6366F1]"
-                                : "text-[#94A3B8] hover:text-[#64748B]"
+                            ? "text-[#3B82F6]"
+                            : "text-[#94A3B8] hover:text-[#64748B]"
                             }`}
                     >
                         {tab.label}
                         {activeTab === tab.key && (
-                            <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-[#6366F1]" />
+                            <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-[#3B82F6]" />
                         )}
                     </button>
                 ))}
@@ -105,7 +105,7 @@ export function SettingsPanel() {
                 {activeTab === "account" ? (
                     <div className="space-y-6">
                         {/* ── Profile Card ── */}
-                        <div className="overflow-hidden rounded-xl border border-[#E8ECF4] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                        <div className="overflow-hidden rounded-xl border border-[#E8ECF4] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
                             <div className="border-b border-[#F1F5F9] px-6 py-4">
                                 <h2 className="text-[15px] font-semibold text-[#0F172A]">
                                     Profile
@@ -114,7 +114,7 @@ export function SettingsPanel() {
                             <div className="space-y-4 px-6 py-5">
                                 {/* Email */}
                                 <div>
-                                    <label className="mb-1 block text-xs font-medium text-[#94A3B8]">
+                                    <label className="mb-1.5 block text-xs font-medium text-[#94A3B8]">
                                         Email
                                     </label>
                                     <div className="flex h-10 w-full max-w-sm items-center rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 text-sm text-[#0F172A]">
@@ -124,7 +124,7 @@ export function SettingsPanel() {
 
                                 {/* Account ID */}
                                 <div>
-                                    <label className="mb-1 block text-xs font-medium text-[#94A3B8]">
+                                    <label className="mb-1.5 block text-xs font-medium text-[#94A3B8]">
                                         Account ID
                                     </label>
                                     <div className="flex h-10 w-full max-w-sm items-center rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 font-mono text-sm text-[#64748B]">
@@ -166,7 +166,7 @@ export function SettingsPanel() {
                 ) : (
                     <div className="space-y-6">
                         {/* ── Theme Card ── */}
-                        <div className="overflow-hidden rounded-xl border border-[#E8ECF4] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                        <div className="overflow-hidden rounded-xl border border-[#E8ECF4] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
                             <div className="border-b border-[#F1F5F9] px-6 py-4">
                                 <h2 className="text-[15px] font-semibold text-[#0F172A]">
                                     Theme
@@ -176,15 +176,15 @@ export function SettingsPanel() {
                                 {/* Light — active */}
                                 <button
                                     type="button"
-                                    className="group relative flex flex-col items-center gap-3 rounded-xl border-2 border-[#6366F1] bg-white p-5 text-center shadow-[0_0_0_1px_rgba(99,102,241,0.12)] transition-all"
+                                    className="group relative flex flex-col items-center gap-3 rounded-xl border-2 border-[#3B82F6] bg-white p-5 text-center shadow-[0_0_0_1px_rgba(59,130,246,0.12)] transition-all"
                                 >
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EEF2FF]">
-                                        <Sun className="h-6 w-6 text-[#6366F1]" />
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50">
+                                        <Sun className="h-6 w-6 text-[#3B82F6]" />
                                     </div>
                                     <span className="text-sm font-semibold text-[#0F172A]">
                                         Light
                                     </span>
-                                    <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#6366F1]">
+                                    <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#3B82F6]">
                                         <Check className="h-3 w-3 text-white" />
                                     </span>
                                 </button>
@@ -205,21 +205,21 @@ export function SettingsPanel() {
                         </div>
 
                         {/* ── Accent Color Card ── */}
-                        <div className="overflow-hidden rounded-xl border border-[#E8ECF4] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                        <div className="overflow-hidden rounded-xl border border-[#E8ECF4] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)]">
                             <div className="border-b border-[#F1F5F9] px-6 py-4">
                                 <h2 className="text-[15px] font-semibold text-[#0F172A]">
                                     Accent Color
                                 </h2>
                             </div>
                             <div className="flex items-center gap-4 px-6 py-5">
-                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#6366F1] ring-2 ring-[#6366F1] ring-offset-2">
+                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#3B82F6] ring-2 ring-[#3B82F6] ring-offset-2">
                                     <Check className="h-4 w-4 text-white" />
                                 </span>
                                 <div>
                                     <p className="text-sm font-semibold text-[#0F172A]">
                                         TADA Blue
                                     </p>
-                                    <p className="text-xs text-[#94A3B8]">#6366F1</p>
+                                    <p className="text-xs text-[#94A3B8]">#3B82F6</p>
                                 </div>
                             </div>
                         </div>
