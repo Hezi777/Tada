@@ -1,15 +1,14 @@
-import { memo, useMemo, useRef, useState, type CSSProperties } from "react";
+import { memo, useMemo, useState, type CSSProperties } from "react";
 import {
+  CalendarRange,
+  Eye,
+  EyeOff,
+  GripVertical,
   Hash,
+  LayoutPanelLeft,
+  MoreHorizontal,
   Sigma,
   Tag,
-  CalendarRange,
-  GripVertical,
-  EyeOff,
-  Eye,
-  Loader2,
-  Plus,
-  Trash2,
 } from "lucide-react";
 import {
   DndContext,
@@ -34,20 +33,23 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Label,
   Pie,
   PieChart,
   ResponsiveContainer,
   Scatter,
   ScatterChart,
+  Sector,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import type { ChartConfig, KPIConfig, LoadedDatasetFile, SerializedRow } from "@tada/shared";
+import type { ChartConfig, KPIConfig, SerializedRow } from "@tada/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { removeChainedDatasetFile, uploadChainedDataset } from "@/lib/api";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip as ShadTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   buildAreaSeries,
   buildGroupedSeries,
@@ -57,21 +59,9 @@ import {
   hasRenderableChartData,
 } from "@/lib/dashboard-runtime";
 import { calculateLayout, type LayoutItem } from "@/lib/chart-layout";
-import {
-  applyDatasetChainSnapshot,
-  reorderCharts,
-  updateChart,
-  useDashboardStore,
-} from "@/lib/dashboard-store";
+import { reorderCharts, updateChart, useDashboardStore } from "@/lib/dashboard-store";
 
-const chartColors = [
-  "hsl(var(--primary))",
-  "hsl(205 89% 64%)",
-  "hsl(224 76% 57%)",
-  "hsl(262 83% 66%)",
-  "hsl(335 82% 62%)",
-  "hsl(36 94% 57%)",
-] as const;
+const donutPalette = ["#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE"] as const;
 
 function formatMetric(value: string | number): string | number {
   if (typeof value === "string") {
@@ -83,13 +73,6 @@ function formatMetric(value: string | number): string | number {
   }
 
   return legacyFormatNumber(value) ?? value;
-}
-
-function formatApiMessage(message: string): string {
-  if (!message.includes("_")) {
-    return message;
-  }
-  return message.replace(/_/g, " ");
 }
 
 function getKpiIcon(kpi: KPIConfig) {
@@ -121,13 +104,18 @@ function DashboardTooltip({
   const point = payload[0];
 
   return (
-    <div className="glass min-w-[9rem] rounded-2xl border border-white/80 px-3 py-2 shadow-card">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+    <div className="rounded-lg border border-[var(--color-border)] bg-white px-[14px] py-[10px] shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+      <p className="text-xs text-[var(--color-text-secondary)]">
         {point.payload?.label ?? label ?? "Value"}
       </p>
-      <div className="mt-2 flex items-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: point.color ?? chartColors[0] }} />
-        <span className="text-sm font-semibold text-foreground">{formatMetric(point.value ?? 0)}</span>
+      <div className="mt-1 flex items-center gap-2">
+        <span
+          className="h-2.5 w-2.5 rounded-full"
+          style={{ backgroundColor: point.color ?? "#2563EB" }}
+        />
+        <span className="text-sm font-bold text-[var(--color-text-primary)]">
+          {formatMetric(point.value ?? 0)}
+        </span>
       </div>
     </div>
   );
@@ -135,10 +123,9 @@ function DashboardTooltip({
 
 function ChartEmptyState() {
   return (
-    <div className="flex h-[18rem] flex-col items-center justify-center px-6 text-center">
-      <div className="eyebrow mb-3">No Data</div>
-      <p className="text-sm text-muted-foreground">
-        This chart does not have enough data to render for the current dataset.
+    <div className="flex h-[260px] items-center justify-center px-6 text-center">
+      <p className="text-sm text-[var(--color-text-muted)]">
+        This chart does not have enough data to render.
       </p>
     </div>
   );
@@ -151,6 +138,8 @@ const ChartContent = memo(function ChartContent({
   chart: ChartConfig;
   rows: SerializedRow[];
 }) {
+  const [activeSlice, setActiveSlice] = useState<number | undefined>(undefined);
+
   if (chart.type === "area") {
     const series = buildAreaSeries(chart, rows);
     if (series.length === 0) {
@@ -158,26 +147,38 @@ const ChartContent = memo(function ChartContent({
     }
 
     return (
-      <div className="h-80 px-2 pb-2">
+      <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={series}>
-            <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.55)" />
+          <AreaChart data={series} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
+            <defs>
+              <linearGradient id={`area-${chart.id}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#2563EB" stopOpacity={0.08} />
+                <stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke="#F1F5F9" strokeDasharray="3 3" />
             <XAxis
               dataKey="label"
               axisLine={false}
               tickLine={false}
-              fontSize={12}
-              stroke="hsl(var(--muted-foreground))"
+              fontSize={11}
+              stroke="#94A3B8"
             />
-            <YAxis axisLine={false} tickLine={false} fontSize={12} stroke="hsl(var(--muted-foreground))" />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              fontSize={11}
+              stroke="#94A3B8"
+            />
             <Tooltip content={<DashboardTooltip />} cursor={false} />
             <Area
               type="monotone"
               dataKey="value"
-              stroke={chartColors[0]}
-              strokeWidth={2.5}
-              fill={chartColors[0]}
-              fillOpacity={0.14}
+              stroke="#2563EB"
+              strokeWidth={2}
+              fill={`url(#area-${chart.id})`}
+              dot={false}
+              activeDot={{ r: 4, fill: "#2563EB", stroke: "#ffffff", strokeWidth: 2 }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -192,18 +193,18 @@ const ChartContent = memo(function ChartContent({
     }
 
     return (
-      <div className="h-80 px-2 pb-2">
+      <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart>
-            <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.55)" />
+          <ScatterChart margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke="#F1F5F9" strokeDasharray="3 3" />
             <XAxis
               type="number"
               dataKey="x"
               name={chart.columns[0]}
               axisLine={false}
               tickLine={false}
-              fontSize={12}
-              stroke="hsl(var(--muted-foreground))"
+              fontSize={11}
+              stroke="#94A3B8"
             />
             <YAxis
               type="number"
@@ -211,11 +212,11 @@ const ChartContent = memo(function ChartContent({
               name={chart.columns[1]}
               axisLine={false}
               tickLine={false}
-              fontSize={12}
-              stroke="hsl(var(--muted-foreground))"
+              fontSize={11}
+              stroke="#94A3B8"
             />
-            <Tooltip content={<DashboardTooltip />} cursor={{ stroke: "hsl(var(--border))", strokeDasharray: "4 4" }} />
-            <Scatter data={series} fill={chartColors[1]} />
+            <Tooltip content={<DashboardTooltip />} cursor={{ stroke: "#DBEAFE", strokeDasharray: "3 3" }} />
+            <Scatter data={series} fill="#2563EB" />
           </ScatterChart>
         </ResponsiveContainer>
       </div>
@@ -228,14 +229,46 @@ const ChartContent = memo(function ChartContent({
   }
 
   if (chart.type === "donut") {
+    const total = series.reduce((sum, entry) => sum + entry.value, 0);
     return (
-      <div className="h-80 px-2 pb-2">
+      <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={series} dataKey="value" nameKey="label" innerRadius={62} outerRadius={92} paddingAngle={2}>
+            <Pie
+              data={series}
+              dataKey="value"
+              nameKey="label"
+              paddingAngle={3}
+              innerRadius="60%"
+              outerRadius="80%"
+              activeIndex={activeSlice}
+              onMouseEnter={(_, index) => setActiveSlice(index)}
+              onMouseLeave={() => setActiveSlice(undefined)}
+              activeShape={(props) => (
+                <Sector {...props} outerRadius={Number(props.outerRadius) + 4} />
+              )}
+            >
               {series.map((_entry, index) => (
-                <Cell key={`${chart.id}-slice-${index}`} fill={chartColors[index % chartColors.length]} />
+                <Cell
+                  key={`${chart.id}-slice-${index}`}
+                  fill={donutPalette[index % donutPalette.length]}
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                />
               ))}
+              <Label
+                position="center"
+                content={() => (
+                  <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
+                    <tspan
+                      x="50%"
+                      className="fill-[var(--color-text-primary)] text-[18px] font-bold"
+                    >
+                      {formatMetric(total)}
+                    </tspan>
+                  </text>
+                )}
+              />
             </Pie>
             <Tooltip content={<DashboardTooltip />} />
           </PieChart>
@@ -245,88 +278,167 @@ const ChartContent = memo(function ChartContent({
   }
 
   return (
-    <div className="h-80 px-2 pb-2">
+    <div className="h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={series}>
-          <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.55)" />
+        <BarChart data={series} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
+          <CartesianGrid vertical={false} stroke="#F1F5F9" strokeDasharray="3 3" />
           <XAxis
             dataKey="label"
             axisLine={false}
             tickLine={false}
-            fontSize={12}
-            stroke="hsl(var(--muted-foreground))"
+            fontSize={11}
+            stroke="#94A3B8"
           />
-          <YAxis axisLine={false} tickLine={false} fontSize={12} stroke="hsl(var(--muted-foreground))" />
-          <Tooltip content={<DashboardTooltip />} cursor={{ fill: "hsl(var(--primary) / 0.05)" }} />
-          <Bar dataKey="value" fill={chartColors[0]} radius={[8, 8, 0, 0]} maxBarSize={42} />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            fontSize={11}
+            stroke="#94A3B8"
+          />
+          <Tooltip content={<DashboardTooltip />} cursor={{ fill: "#EFF6FF" }} />
+          <Bar dataKey="value" fill="#2563EB" fillOpacity={0.85} radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
   );
 });
 
-function KpiCard({ kpi, rows }: { kpi: KPIConfig; rows: SerializedRow[] }) {
-  const Icon = getKpiIcon(kpi);
-  const value = computeKpiValue(kpi, rows);
+function deriveFallbackCards(rows: SerializedRow[]): Array<{
+  id: string;
+  icon: typeof Hash;
+  value: string | number;
+  label: string;
+  description: string;
+}> {
+  const keys = Object.keys(rows[0] ?? {});
+  const categoricalColumn =
+    keys.find((key) =>
+      rows.some((row) => typeof row[key] === "string" && row[key] !== ""),
+    ) ?? null;
+  const dateColumn =
+    keys.find((key) =>
+      rows.some((row) => typeof row[key] === "string" && Number.isFinite(Date.parse(String(row[key])))),
+    ) ?? null;
 
+  const cards: Array<{
+    id: string;
+    icon: typeof Hash;
+    value: string | number;
+    label: string;
+    description: string;
+  }> = [];
+
+  if (categoricalColumn) {
+    const values = rows
+      .map((row) => row[categoricalColumn])
+      .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+    const uniqueCount = new Set(values).size;
+    const counts = new Map<string, number>();
+    for (const value of values) {
+      counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
+    const topValue = Array.from(counts.entries()).sort((left, right) => right[1] - left[1])[0];
+
+    cards.push({
+      id: "unique_category_count",
+      icon: Tag,
+      value: uniqueCount,
+      label: `${categoricalColumn} Categories`,
+      description: "Unique values in the main category column",
+    });
+
+    if (topValue) {
+      cards.push({
+        id: "top_category_value",
+        icon: Sigma,
+        value: topValue[0],
+        label: `Top ${categoricalColumn}`,
+        description: "Most common value in your data",
+      });
+    }
+  }
+
+  if (dateColumn) {
+    const dates = rows
+      .map((row) => {
+        const value = row[dateColumn];
+        return typeof value === "string" && Number.isFinite(Date.parse(value))
+          ? new Date(value)
+          : null;
+      })
+      .filter((value): value is Date => Boolean(value))
+      .sort((left, right) => left.getTime() - right.getTime());
+
+    if (dates.length > 0) {
+      const start = dates[0].toISOString().slice(0, 10);
+      const end = dates[dates.length - 1].toISOString().slice(0, 10);
+      cards.push({
+        id: "date_range",
+        icon: CalendarRange,
+        value: start === end ? start : `${start} - ${end}`,
+        label: "Date Range",
+        description: "Coverage span in your dataset",
+      });
+    }
+  }
+
+  cards.push({
+    id: "rows_loaded",
+    icon: Hash,
+    value: rows.length,
+    label: "Rows Loaded",
+    description: "Total dataset rows currently available",
+  });
+
+  return cards;
+}
+
+function KpiCard({
+  icon: Icon,
+  value,
+  label,
+  description,
+}: {
+  icon: typeof Hash;
+  value: string | number;
+  label: string;
+  description: string;
+}) {
   return (
-    <Card className={`overflow-hidden p-5 ${kpi.isPrimary ? "gradient-primary text-primary-foreground shadow-glow" : ""}`}>
-      <div className="flex items-start justify-between gap-4">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-[1rem] ${kpi.isPrimary ? "bg-white/18" : "bg-primary/[0.08] text-primary"}`}>
+    <Card className="dashboard-surface dashboard-hover h-[120px] shadow-none hover:shadow-none">
+      <CardContent className="flex items-start justify-between gap-4 px-6 py-5">
+        <div className="min-w-0">
+          <p className="text-[13px] font-medium text-[var(--color-text-secondary)]">{label}</p>
+          <div className="mt-3 text-[28px] font-extrabold leading-none text-[var(--color-text-primary)]">
+            {formatMetric(value)}
+          </div>
+          <p className="mt-3 text-xs text-[var(--color-text-muted)]">{description}</p>
+        </div>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent-light)] text-[var(--color-accent)]">
           <Icon className="h-5 w-5" />
         </div>
-        {kpi.isPrimary ? (
-          <Badge variant="secondary" className="rounded-full bg-white/16 text-primary-foreground hover:bg-white/16">
-            Primary KPI
-          </Badge>
-        ) : null}
-      </div>
-      <div className="mt-6">
-        <div className="text-3xl font-extrabold tracking-tight [font-variant-numeric:tabular-nums]">
-          {formatMetric(value)}
-        </div>
-        <p className={`mt-2 text-sm font-semibold ${kpi.isPrimary ? "text-primary-foreground" : "text-foreground"}`}>
-          {kpi.label}
-        </p>
-        <p className={`mt-1 text-sm leading-6 ${kpi.isPrimary ? "text-primary-foreground/85" : "text-muted-foreground"}`}>
-          {kpi.description}
-        </p>
-      </div>
+      </CardContent>
     </Card>
   );
 }
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div className="flex h-full flex-col">
+      <div className="flex h-16 items-center border-b border-[var(--color-border)] bg-[var(--color-surface)] px-6" />
+      <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="p-5">
-            <div className="animate-shimmer h-12 w-12 rounded-[1rem] bg-secondary" />
-            <div className="mt-6 h-8 w-24 animate-shimmer rounded-lg bg-secondary" />
-            <div className="mt-3 h-4 w-28 animate-shimmer rounded-lg bg-secondary" />
-            <div className="mt-2 h-4 w-full animate-shimmer rounded-lg bg-secondary" />
+          <Card key={index} className="dashboard-surface h-[120px]">
+            <CardContent className="px-6 py-5">
+              <div className="h-4 w-24 animate-shimmer rounded bg-slate-100" />
+              <div className="mt-5 h-8 w-28 animate-shimmer rounded bg-slate-100" />
+              <div className="mt-4 h-3 w-32 animate-shimmer rounded bg-slate-100" />
+            </CardContent>
           </Card>
         ))}
       </div>
-      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <Card className="p-5">
-          <div className="h-5 w-28 animate-shimmer rounded-lg bg-secondary" />
-          <div className="mt-5 space-y-3">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-14 animate-shimmer rounded-2xl bg-secondary" />
-            ))}
-          </div>
-        </Card>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Card key={index} className={`p-5 ${index === 0 ? "lg:col-span-12" : "lg:col-span-6"}`}>
-              <div className="h-5 w-40 animate-shimmer rounded-lg bg-secondary" />
-              <div className="mt-3 h-4 w-64 animate-shimmer rounded-lg bg-secondary" />
-              <div className="mt-6 h-72 animate-shimmer rounded-[1rem] bg-secondary" />
-            </Card>
-          ))}
-        </div>
+      <div className="flex-1 px-6 pb-6">
+        <Card className="dashboard-surface h-full" />
       </div>
     </div>
   );
@@ -345,188 +457,131 @@ function ChartCard({ chart, rows }: ChartCardProps) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    "--chart-col-span": String(chart.colSpan),
   } as CSSProperties;
 
   return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      className={`col-span-1 overflow-hidden lg:[grid-column:span_var(--chart-col-span)_/_span_var(--chart-col-span)] ${isDragging ? "opacity-80" : ""}`}
-    >
-      <div className="flex items-start justify-between gap-3 border-b border-white/80 px-5 py-4">
+    <TooltipProvider delayDuration={150}>
+      <Card
+        ref={setNodeRef}
+        style={style}
+        className={`dashboard-surface overflow-hidden p-0 shadow-none transition-all duration-200 ease-in-out hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] ${
+          chart.size === "large" ? "xl:col-span-2" : "xl:col-span-1"
+        } ${isDragging ? "opacity-75" : ""}`}
+      >
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 px-6 pb-0 pt-5">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="truncate text-base font-semibold text-foreground">{chart.title}</h3>
-            <Badge variant="outline" className="rounded-full text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-              {chart.type}
-            </Badge>
-          </div>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">{chart.insight}</p>
+          <h3 className="truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+            {chart.title}
+          </h3>
+          <p className="mt-3 text-xs text-[var(--color-text-muted)]">{chart.insight}</p>
         </div>
-        <Button
-          ref={setActivatorNodeRef}
-          variant="ghost"
-          size="icon"
-          type="button"
-          aria-label={`Drag ${chart.title}`}
-          title="Drag to reorder"
-          className="h-9 w-9 rounded-xl text-muted-foreground"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="h-4 w-4" />
-        </Button>
-      </div>
-      <ChartContent chart={chart} rows={rows} />
-    </Card>
+        <div className="flex items-center gap-2">
+          <Badge className="rounded-[4px] border-0 bg-[var(--color-accent-light)] px-2 py-1 text-[11px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
+            {chart.type}
+          </Badge>
+          <ShadTooltip>
+            <TooltipTrigger asChild>
+              <Button
+                ref={setActivatorNodeRef}
+                variant="ghost"
+                size="icon"
+                type="button"
+                aria-label={`Reorder ${chart.title}`}
+                className="h-8 w-8 rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+                {...attributes}
+                {...listeners}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Reorder chart</TooltipContent>
+          </ShadTooltip>
+        </div>
+        </CardHeader>
+        <CardContent className="px-6 pb-5 pt-4">
+        <ChartContent chart={chart} rows={rows} />
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 }
 
-function ChartStructureCard({
+function ChartStructurePopover({
   charts,
-  files,
-  isChainLoading,
-  chainError,
-  onAddFile,
-  onRemoveFile,
+  onClose,
 }: {
   charts: ChartConfig[];
-  files: LoadedDatasetFile[];
-  isChainLoading: boolean;
-  chainError: string | null;
-  onAddFile: (file: File) => Promise<void>;
-  onRemoveFile: (fileId: string) => Promise<void>;
+  onClose: () => void;
 }) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between gap-3">
+    <div className="absolute right-0 top-12 z-20 w-[280px] rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
+      <div className="mb-2 flex items-center justify-between px-1">
         <div>
-          <div className="eyebrow mb-2">Chart Structure</div>
-          <h2 className="text-lg font-semibold text-foreground">Visible dashboard order</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
+            Chart Structure
+          </p>
+          <p className="mt-1 text-sm font-semibold text-[var(--color-text-primary)]">
+            Dashboard order
+          </p>
         </div>
-        <Badge variant="secondary" className="rounded-full">
-          {charts.filter((chart) => chart.visible).length} visible
-        </Badge>
       </div>
 
-      <div className="mt-5 rounded-[1.2rem] border border-white/80 bg-white/70 p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Loaded files</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Chain CSV or Excel files only when their column names and kinds match.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="rounded-full"
-            onClick={() => inputRef.current?.click()}
-            disabled={isChainLoading}
-          >
-            {isChainLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-            Add file
-          </Button>
-        </div>
-
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".csv,.xls,.xlsx"
-          className="hidden"
-          onChange={async (event) => {
-            const file = event.target.files?.[0];
-            event.target.value = "";
-            if (!file) {
-              return;
-            }
-            await onAddFile(file);
-          }}
-        />
-
-        <div className="mt-4 space-y-2">
-          {files.map((file) => (
-            <div
-              key={file.id}
-              className="flex items-center justify-between gap-3 rounded-[1rem] border border-white/80 bg-background/70 px-3 py-3"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-foreground">{file.fileName}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {file.rowCount} rows {file.isPrimary ? "· primary file" : "· chained file"}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 rounded-xl text-muted-foreground"
-                onClick={() => void onRemoveFile(file.id)}
-                disabled={isChainLoading || file.isPrimary}
-                aria-label={file.isPrimary ? `${file.fileName} is the primary file` : `Remove ${file.fileName}`}
-                title={file.isPrimary ? "Primary file cannot be removed" : "Remove file"}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-
-        {chainError ? <p className="mt-3 text-xs font-medium text-destructive">{chainError}</p> : null}
-      </div>
-
-      <div className="mt-5 space-y-3">
+      <div className="dashboard-scroll max-h-[360px] space-y-2 overflow-y-auto pr-1">
         {charts.map((chart, index) => (
           <div
             key={chart.id}
-            className={`flex items-center justify-between gap-3 rounded-[1.2rem] border px-4 py-3 transition-colors ${
-              chart.visible
-                ? "border-primary/15 bg-primary/[0.05]"
-                : "border-white/80 bg-white/70"
-            }`}
+            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3"
           >
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <p className="truncate text-sm font-semibold text-foreground">{chart.title}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <GripVertical className="h-3.5 w-3.5 text-[var(--color-text-muted)]" />
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                </div>
+                <p className="mt-2 truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                  {chart.title}
+                </p>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  {chart.type} • {chart.size}
+                </p>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {chart.type} · {chart.size}
-              </p>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+                onClick={() => updateChart(chart.id, { visible: !chart.visible })}
+                aria-label={chart.visible ? `Hide ${chart.title}` : `Show ${chart.title}`}
+              >
+                {chart.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-xl text-muted-foreground"
-              onClick={() => updateChart(chart.id, { visible: !chart.visible })}
-              aria-label={chart.visible ? `Hide ${chart.title}` : `Show ${chart.title}`}
-              title={chart.visible ? "Hide chart" : "Show chart"}
-            >
-              {chart.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-            </Button>
           </div>
         ))}
       </div>
-    </Card>
+
+      <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-9 w-full justify-center rounded-lg text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+          onClick={onClose}
+        >
+          Close
+        </Button>
+      </div>
+    </div>
   );
 }
 
 export function Dashboard() {
   const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
-  const version = useDashboardStore((snapshot) => snapshot.version);
   const rows = useDashboardStore((snapshot) => snapshot.rows);
   const charts = useDashboardStore((snapshot) => snapshot.charts);
   const kpiConfigs = useDashboardStore((snapshot) => snapshot.kpis);
   const fileName = useDashboardStore((snapshot) => snapshot.fileName);
-  const files = useDashboardStore((snapshot) => snapshot.files);
-  const [chainError, setChainError] = useState<string | null>(null);
-  const [isChainLoading, setIsChainLoading] = useState(false);
+  const [isStructureOpen, setIsStructureOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -541,58 +596,48 @@ export function Dashboard() {
   const layoutItems = useMemo(() => calculateLayout(visibleCharts), [visibleCharts]);
   const isLoading = Boolean(datasetId) && (kpiConfigs.length === 0 || charts.length === 0);
 
-  async function handleChainAdd(file: File): Promise<void> {
-    if (!datasetId) {
-      return;
-    }
+  const kpiCards = useMemo(() => {
+    const realKpis = kpiConfigs.slice(1, 4).map((kpi) => ({
+      id: kpi.id,
+      icon: getKpiIcon(kpi),
+      value: computeKpiValue(kpi, rows),
+      label: kpi.label,
+      description: kpi.description,
+    }));
 
-    setChainError(null);
-    setIsChainLoading(true);
-    try {
-      const snapshot = await uploadChainedDataset({ datasetId, file });
-      applyDatasetChainSnapshot(snapshot);
-    } catch (error) {
-      setChainError(
-        error instanceof Error && error.message
-          ? formatApiMessage(error.message)
-          : "Unable to add that file to the current dataset.",
-      );
-    } finally {
-      setIsChainLoading(false);
-    }
-  }
+    const fallbackCards = deriveFallbackCards(rows).filter(
+      (fallback) => !realKpis.some((kpi) => kpi.id === fallback.id),
+    );
 
-  async function handleChainRemove(fileId: string): Promise<void> {
-    if (!datasetId) {
-      return;
-    }
-
-    setChainError(null);
-    setIsChainLoading(true);
-    try {
-      const snapshot = await removeChainedDatasetFile({ datasetId, fileId });
-      applyDatasetChainSnapshot(snapshot);
-    } catch (error) {
-      setChainError(
-        error instanceof Error && error.message
-          ? formatApiMessage(error.message)
-          : "Unable to remove that chained file.",
-      );
-    } finally {
-      setIsChainLoading(false);
-    }
-  }
+    return [
+      {
+        id: "total-records",
+        icon: Hash,
+        value: rows.length,
+        label: "Total Records",
+        description: "Rows in your dataset",
+      },
+      ...realKpis,
+      ...fallbackCards,
+    ].slice(0, 4);
+  }, [kpiConfigs, rows]);
 
   if (!datasetId) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-6 py-12">
-        <Card className="section-shell w-full px-8 py-12 text-center sm:px-12">
-          <div className="eyebrow mb-5">Dashboard Ready</div>
-          <h1 className="text-3xl font-semibold text-foreground">Upload a dataset to generate insights</h1>
-          <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-muted-foreground">
-            Start with a CSV or spreadsheet. The dashboard will populate from chart config state and stay editable through chat.
+      <div className="flex h-full items-center justify-center bg-[var(--color-bg)] p-8">
+        <Card className="dashboard-surface px-10 py-12 text-center shadow-none">
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">
+            Upload a dataset to begin
+          </h1>
+          <p className="mt-3 text-base text-[var(--color-text-secondary)]">
+            Your dashboard will render directly from centralized chart and KPI state.
           </p>
-          <Button className="mt-8" onClick={() => { window.location.href = "/"; }}>
+          <Button
+            className="mt-8 rounded-lg bg-[var(--color-accent)] px-5 hover:bg-[#1D4ED8]"
+            onClick={() => {
+              window.location.href = "/";
+            }}
+          >
             Choose a file
           </Button>
         </Card>
@@ -601,50 +646,62 @@ export function Dashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="eyebrow mb-3">Analytics Workspace</div>
-          <h1 className="text-3xl font-semibold text-foreground">{fileName ?? "Dataset dashboard"}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Charts render directly from centralized config state and adapt to the current dashboard order.
-          </p>
-        </div>
-        <Badge variant="outline" className="w-fit rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Dashboard v{version}
-        </Badge>
-      </div>
-
+    <div className="flex h-full flex-col">
       {isLoading ? (
         <DashboardSkeleton />
       ) : (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {kpiConfigs.map((kpi) => (
-              <KpiCard key={kpi.id} kpi={kpi} rows={rows} />
+        <>
+          <div className="flex h-16 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-6">
+            <div className="text-[24px] font-bold text-[var(--color-text-primary)]">Dashboard</div>
+            <div className="flex items-center gap-3">
+              <div className="rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-secondary)]">
+                {fileName ?? "No file loaded"}
+              </div>
+              <div className="relative">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsStructureOpen((current) => !current)}
+                  className="h-10 w-10 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+                  aria-label="Open chart structure"
+                >
+                  <LayoutPanelLeft className="h-[18px] w-[18px]" />
+                </Button>
+                {isStructureOpen ? (
+                  <ChartStructurePopover
+                    charts={orderedCharts}
+                    onClose={() => setIsStructureOpen(false)}
+                  />
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-4">
+            {kpiCards.map((card) => (
+              <KpiCard
+                key={card.id}
+                icon={card.icon}
+                value={card.value}
+                label={card.label}
+                description={card.description}
+              />
             ))}
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <div className="min-w-0">
-              <ChartStructureCard
-                charts={orderedCharts}
-                files={files}
-                isChainLoading={isChainLoading}
-                chainError={chainError}
-                onAddFile={handleChainAdd}
-                onRemoveFile={handleChainRemove}
-              />
-            </div>
-
-            <div className="min-w-0">
+          <div className="min-h-0 flex-1 px-6 pb-6">
+            <ScrollArea className="dashboard-scroll h-full">
               {layoutItems.length === 0 ? (
-                <Card className="section-shell px-8 py-12 text-center">
-                  <div className="eyebrow mb-4">No Visible Charts</div>
-                  <h2 className="text-xl font-semibold text-foreground">Nothing is currently rendering</h2>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Re-enable a hidden chart or adjust the underlying configuration.
-                  </p>
+                <Card className="dashboard-surface flex h-full min-h-[320px] items-center justify-center shadow-none">
+                  <div className="text-center">
+                    <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">
+                      No visible charts
+                    </h2>
+                    <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                      Re-enable a hidden chart to bring the dashboard back into view.
+                    </p>
+                  </div>
                 </Card>
               ) : (
                 <DndContext
@@ -672,7 +729,7 @@ export function Dashboard() {
                   }}
                 >
                   <SortableContext items={layoutItems.map((chart) => chart.id)} strategy={rectSortingStrategy}>
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                       {layoutItems.map((chart) => (
                         <ChartCard key={chart.id} chart={chart} rows={rows} />
                       ))}
@@ -680,9 +737,9 @@ export function Dashboard() {
                   </SortableContext>
                 </DndContext>
               )}
-            </div>
+            </ScrollArea>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

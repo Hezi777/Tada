@@ -16,6 +16,13 @@ export type DashboardRuntimeContext = {
 export type CategoricalChartSeries = Array<{ label: string; value: number }>;
 export type ScatterChartSeries = Array<{ x: number; y: number }>;
 
+const CHART_LIMITS = {
+  area: 100,
+  bar: 12,
+  donut: 8,
+  scatter: 500,
+} as const;
+
 const numericFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
@@ -184,10 +191,31 @@ function reduceAggregation(values: number[], aggregation: ChartConfig["aggregati
   return values.reduce((sum, value) => sum + value, 0);
 }
 
+function detectTimeGranularity(rows: SerializedRow[], timeColumn: string): "day" | "month" | "year" {
+  const timestamps = rows
+    .map((row) => {
+      const d = toDate(row[timeColumn]);
+      return d ? d.getTime() : null;
+    })
+    .filter((t): t is number => t !== null);
+  if (timestamps.length < 2) return "month";
+  const spanDays = (Math.max(...timestamps) - Math.min(...timestamps)) / (1000 * 60 * 60 * 24);
+  if (spanDays < 90) return "day";
+  if (spanDays < 730) return "month";
+  return "year";
+}
+
+function toBucketKey(date: Date, granularity: "day" | "month" | "year"): string {
+  if (granularity === "day") return date.toISOString().slice(0, 10);
+  if (granularity === "month") return date.toISOString().slice(0, 7);
+  return String(date.getUTCFullYear());
+}
+
 export function buildAreaSeries(chart: ChartConfig, rows: SerializedRow[]): CategoricalChartSeries {
   if (!chart.timeColumn) {
     return [];
   }
+  const granularity = detectTimeGranularity(rows, chart.timeColumn);
   const valueColumn = chart.columns.find((column) => column !== chart.timeColumn) ?? null;
   const buckets = new Map<string, number[]>();
 
@@ -196,7 +224,7 @@ export function buildAreaSeries(chart: ChartConfig, rows: SerializedRow[]): Cate
     if (!dateValue) {
       continue;
     }
-    const bucket = dateValue.toISOString().slice(0, 10);
+    const bucket = toBucketKey(dateValue, granularity);
     const values = buckets.get(bucket) ?? [];
     if (valueColumn) {
       const numericValue = toNumber(row[valueColumn]);
@@ -211,6 +239,7 @@ export function buildAreaSeries(chart: ChartConfig, rows: SerializedRow[]): Cate
 
   return Array.from(buckets.entries())
     .sort((left, right) => left[0].localeCompare(right[0]))
+    .slice(0, CHART_LIMITS.area)
     .map(([label, values]) => ({
       label,
       value: reduceAggregation(values, valueColumn ? chart.aggregation : "count"),
@@ -246,15 +275,15 @@ export function buildGroupedSeries(chart: ChartConfig, rows: SerializedRow[]): C
       }))
       .sort((left, right) => right.value - left.value);
 
-    if (chart.type === "donut" && series.length > BI_RULE_LIMITS.maxDonutSegments) {
-      const kept = series.slice(0, BI_RULE_LIMITS.maxDonutSegments - 1);
+    if (chart.type === "donut" && series.length > CHART_LIMITS.donut) {
+      const kept = series.slice(0, CHART_LIMITS.donut);
       const otherValue = series
-        .slice(BI_RULE_LIMITS.maxDonutSegments - 1)
+        .slice(CHART_LIMITS.donut)
         .reduce((sum, entry) => sum + entry.value, 0);
-      return [...kept, { label: "Other", value: otherValue }];
+      return otherValue > 0 ? [...kept, { label: "Other", value: otherValue }] : kept;
     }
 
-    return chart.type === "bar" ? series.slice(0, 12) : series;
+    return chart.type === "bar" ? series.slice(0, CHART_LIMITS.bar) : series;
   }
 
   const valueColumn = chart.columns[0] ?? null;
@@ -275,13 +304,24 @@ export function buildScatterSeries(chart: ChartConfig, rows: SerializedRow[]): S
   if (!leftColumn || !rightColumn) {
     return [];
   }
-  return rows
+  const series = rows
     .map((row) => {
       const x = toNumber(row[leftColumn]);
       const y = toNumber(row[rightColumn]);
       return x === null || y === null ? null : { x, y };
     })
     .filter((point): point is { x: number; y: number } => Boolean(point));
+
+  if (series.length <= CHART_LIMITS.scatter) {
+    return series;
+  }
+
+  const sampled: ScatterChartSeries = [];
+  const step = (series.length - 1) / (CHART_LIMITS.scatter - 1);
+  for (let index = 0; index < CHART_LIMITS.scatter; index += 1) {
+    sampled.push(series[Math.round(index * step)]);
+  }
+  return sampled;
 }
 
 export function computeScatterCorrelation(chart: ChartConfig, rows: SerializedRow[]): number | null {
