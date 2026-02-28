@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Send, Sparkles, X, MessageCircle } from "lucide-react";
+import { MessageCircle, Send, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { sendChat, type DashboardState } from "@/lib/api";
 
@@ -71,7 +71,7 @@ export function FloatingChat({
         } else if (error.message === "not_found" || error.message === "missing_rows") {
           content = "Your session expired on the server. Please re-upload the file.";
         } else if (error.message === "invalid_intent") {
-          content = "Chat couldn't interpret that. Try: “add a pie chart of <column>”.";
+          content = "Chat couldn't interpret that. Try: \"add a pie chart of <column>\".";
         } else if (error.message.startsWith("llm_error_")) {
           const code = error.message.replace("llm_error_", "");
           if (code === "401" || code === "403") {
@@ -79,7 +79,7 @@ export function FloatingChat({
           } else if (code === "429") {
             content = "The LLM is rate limited. Wait a bit and try again.";
           } else if (code === "503") {
-            content = "The model is warming up. Wait 30–60 seconds and try again.";
+            content = "The model is warming up. Wait 30-60 seconds and try again.";
           } else if (code === "504") {
             content = "The LLM timed out. Try a shorter request or try again.";
           } else {
@@ -104,17 +104,13 @@ export function FloatingChat({
 
   return (
     <>
-      {/* Floating Chat Button */}
       <button
         onClick={() => setIsOpen(true)}
         className={`
-          fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full gradient-primary shadow-glow
-          flex items-center justify-center
-          transition-all duration-300 ease-out
-          hover:scale-110 hover:shadow-[0_0_50px_-5px_hsl(var(--primary)/0.5)]
-          focus:outline-none focus:ring-4 focus:ring-primary/30
-          motion-reduce:transition-none motion-reduce:hover:scale-100
-          ${isOpen ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}
+          fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-[1.7rem] border border-white/80 gradient-primary shadow-glow
+          transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_30px_70px_-30px_hsl(var(--primary)/0.6)]
+          focus:outline-none focus:ring-4 focus:ring-primary/20 motion-reduce:transition-none motion-reduce:hover:translate-y-0
+          ${isOpen ? "pointer-events-none scale-0 opacity-0" : "scale-100 opacity-100"}
         `}
         aria-label="Open chat assistant"
         aria-expanded={isOpen}
@@ -122,68 +118,60 @@ export function FloatingChat({
         <MessageCircle className="h-6 w-6 text-primary-foreground" />
       </button>
 
-      {/* Chat Panel */}
       <div
         className={`
-          fixed bottom-6 right-6 z-50 w-[380px] max-h-[600px] rounded-2xl bg-card border border-border shadow-soft
-          flex flex-col overflow-hidden
-          transition-all duration-300 ease-out origin-bottom-right
-          motion-reduce:transition-none
-          ${isOpen 
-            ? 'scale-100 opacity-100 translate-y-0' 
-            : 'scale-95 opacity-0 translate-y-4 pointer-events-none'
-          }
+          fixed bottom-6 right-6 z-50 flex max-h-[680px] w-[min(420px,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[2rem] border border-white/80 bg-white/90 shadow-soft backdrop-blur-xl
+          transition-all duration-300 ease-out origin-bottom-right motion-reduce:transition-none
+          ${isOpen ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none translate-y-4 scale-95 opacity-0"}
         `}
         role="dialog"
         aria-modal="true"
         aria-label="Chat with Tada Copilot"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-primary-foreground" />
+        <div className="border-b border-border/80 px-5 py-4 shrink-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-[1rem] gradient-primary shadow-card">
+                <Sparkles className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h3 className="font-display text-2xl font-semibold text-foreground">Tada Copilot</h3>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Ask anything about your data
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-sm text-foreground">Tada Copilot</h3>
-              <p className="text-xs text-muted-foreground">Ask anything about your data</p>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsOpen(false)}
+              className="h-10 w-10 focus:ring-2 focus:ring-primary/30"
+              aria-label="Close chat"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setIsOpen(false)} 
-            className="h-8 w-8 focus:ring-2 focus:ring-primary/30"
-            aria-label="Close chat"
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px] max-h-[380px]">
+        <div className="min-h-[320px] flex-1 space-y-4 overflow-y-auto bg-[linear-gradient(180deg,hsl(var(--background)),hsl(var(--surface)))] p-5">
           {!canChat && (
-            <div className="text-sm text-muted-foreground text-center py-8">
+            <div className="rounded-[1.5rem] border border-white/80 bg-white/85 px-5 py-8 text-center text-sm text-muted-foreground shadow-card">
               Upload a file to chat about it.
             </div>
           )}
           {canChat && messages.length === 0 && (
-            <div className="text-sm text-muted-foreground text-center py-8">
+            <div className="rounded-[1.5rem] border border-primary/15 bg-primary/[0.06] px-5 py-8 text-center text-sm text-muted-foreground shadow-card">
               Ask a question about your dataset to update the dashboard.
             </div>
           )}
           {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-            >
+            <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
                 className={`
-                  max-w-[85%] px-4 py-3 rounded-2xl text-sm
+                  max-w-[88%] rounded-[1.4rem] px-4 py-3 text-sm leading-7 shadow-card
                   ${message.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-br-md"
-                    : "bg-secondary text-foreground rounded-bl-md"
-                  }
+                    ? "gradient-primary text-primary-foreground rounded-br-md"
+                    : "border border-white/80 bg-white/90 text-foreground rounded-bl-md"}
                 `}
               >
                 {message.content}
@@ -192,16 +180,15 @@ export function FloatingChat({
           ))}
         </div>
 
-        {/* Input */}
-        <div className="p-4 border-t border-border shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="shrink-0 border-t border-border/80 bg-white/80 p-4">
+          <div className="flex items-center gap-2 rounded-[1.35rem] border border-white/80 bg-white/95 p-2 shadow-card">
             <input
               type="text"
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => event.key === "Enter" && handleSend()}
               placeholder={canChat ? "Ask about your data..." : "Upload a file to chat"}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="flex-1 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
               aria-label="Type your message"
               disabled={!canChat || isSending}
             />
@@ -209,7 +196,7 @@ export function FloatingChat({
               size="icon"
               onClick={handleSend}
               disabled={!canChat || isSending || !input.trim()}
-              className="rounded-xl h-10 w-10 focus:ring-2 focus:ring-primary/30"
+              className="h-11 w-11 rounded-[1rem]"
               aria-label="Send message"
             >
               {isSending ? <Sparkles className="h-4 w-4" /> : <Send className="h-4 w-4" />}
@@ -218,10 +205,9 @@ export function FloatingChat({
         </div>
       </div>
 
-      {/* Backdrop for mobile */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-foreground/10 backdrop-blur-sm z-40 md:hidden"
+        <div
+          className="fixed inset-0 z-40 bg-foreground/10 backdrop-blur-sm md:hidden"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />

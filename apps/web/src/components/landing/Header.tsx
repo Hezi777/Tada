@@ -3,25 +3,44 @@ import tadaLogo from "@/assets/tada-logo.png";
 
 export function Header() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
-      <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <img src={tadaLogo} alt="Tada" className="h-8 w-8" />
-          <span className="font-semibold text-lg text-foreground">Tada</span>
-        </div>
-        
-        <nav className="hidden md:flex items-center gap-8">
-          <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
-            Features
-          </a>
-          <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
-            How it works
-          </a>
-        </nav>
+    <header className="fixed left-0 right-0 top-0 z-50 px-4 pt-4 sm:px-6">
+      <div className="container">
+        <div className="glass flex h-16 items-center justify-between rounded-full border border-white/80 px-4 shadow-soft sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white shadow-card">
+              <img src={tadaLogo} alt="Tada" className="h-7 w-7" />
+            </div>
+            <div className="flex flex-col leading-none">
+              <span className="font-display text-lg font-semibold text-foreground">Tada</span>
+              <span className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-primary/80">
+                Instant Insights
+              </span>
+            </div>
+          </div>
 
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm">Log in</Button>
-          <Button variant="default" size="sm">Get started</Button>
+          <nav className="hidden items-center gap-3 rounded-full border border-white/70 bg-white/70 px-2 py-1 md:flex">
+            <a
+              href="#features"
+              className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
+            >
+              Features
+            </a>
+            <a
+              href="#how-it-works"
+              className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
+            >
+              How it works
+            </a>
+          </nav>
+
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm">
+              Log in
+            </Button>
+            <Button variant="default" size="sm">
+              Get started
+            </Button>
+          </div>
         </div>
       </div>
     </header>
