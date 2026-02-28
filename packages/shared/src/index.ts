@@ -6,119 +6,141 @@ export const HealthSchema = z.object({
 
 export type HealthResponse = z.infer<typeof HealthSchema>;
 
-export const ColumnTypeSchema = z.enum(["metric", "dimension", "date", "categorical"]);
-export type ColumnType = z.infer<typeof ColumnTypeSchema>;
+export const ColumnKindSchema = z.enum(["numeric", "categorical", "date", "ignored"]);
+export type ColumnKind = z.infer<typeof ColumnKindSchema>;
 
-export const ColumnMetaSchema = z.object({
-  name: z.string(),
-  type: ColumnTypeSchema,
+export const DashboardColumnSchema = z.object({
+  name: z.string().min(1),
+  kind: ColumnKindSchema,
 });
-export type ColumnMeta = z.infer<typeof ColumnMetaSchema>;
-
-export const NumericStatsSchema = z.object({
-  min: z.number().nullable(),
-  max: z.number().nullable(),
-  mean: z.number().nullable(),
-  median: z.number().nullable(),
-});
-export type NumericStats = z.infer<typeof NumericStatsSchema>;
-
-export const CategoricalTopValueSchema = z.object({
-  value: z.string(),
-  count: z.number(),
-});
-export type CategoricalTopValue = z.infer<typeof CategoricalTopValueSchema>;
-
-export const DateRangeSchema = z.object({
-  min: z.number().nullable(),
-  max: z.number().nullable(),
-});
-export type DateRange = z.infer<typeof DateRangeSchema>;
+export type DashboardColumn = z.infer<typeof DashboardColumnSchema>;
 
 export const DatasetMetaSchema = z.object({
-  columns: z.array(ColumnMetaSchema),
-  rowCount: z.number(),
-  sampleRows: z.array(z.record(z.union([z.string(), z.number(), z.boolean(), z.null()]))),
-  numericStats: z.record(NumericStatsSchema),
-  topCategoricalValues: z.record(z.array(CategoricalTopValueSchema)),
-  dateRanges: z.record(DateRangeSchema),
+  columns: z.array(DashboardColumnSchema),
+  rowCount: z.number().int().nonnegative(),
+  sampleRows: z.array(z.record(z.unknown())),
 });
 export type DatasetMeta = z.infer<typeof DatasetMetaSchema>;
 
-export const ChartTypeSchema = z.enum(["line", "bar", "pie", "table"]);
+export const SerializedValueSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+export type SerializedValue = z.infer<typeof SerializedValueSchema>;
+
+export const SerializedRowSchema = z.record(SerializedValueSchema);
+export type SerializedRow = z.infer<typeof SerializedRowSchema>;
+
+export const ChartTypeSchema = z.enum(["area", "bar", "donut", "scatter", "kpi"]);
 export type ChartType = z.infer<typeof ChartTypeSchema>;
 
-export const ColorIntentSchema = z.enum([
-  "categorical",
-  "time",
-  "distribution",
-  "focus",
-]);
-export type ColorIntent = z.infer<typeof ColorIntentSchema>;
+export const ChartAggregationSchema = z.enum(["sum", "avg", "count", "min", "max"]);
+export type ChartAggregation = z.infer<typeof ChartAggregationSchema>;
 
-export const ChartSpecSchema = z.object({
-  id: z.string(),
+export const ChartSizeSchema = z.enum(["small", "medium", "large"]);
+export type ChartSize = z.infer<typeof ChartSizeSchema>;
+
+export const ChartSourceSchema = z.enum(["ai_initial", "chatbot", "user", "fallback"]);
+export type ChartSource = z.infer<typeof ChartSourceSchema>;
+
+export const ChartConfigSchema = z.object({
+  id: z.string().min(1),
   type: ChartTypeSchema,
-  x: z.string(),
-  y: z.string().optional(),
-  title: z.string(),
-  filters: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
-  colorIntent: ColorIntentSchema,
-  aggregation: z.enum(["sum", "avg", "count"]).optional(),
+  title: z.string().min(1),
+  insight: z.string().min(1),
+  columns: z.array(z.string().min(1)),
+  aggregation: ChartAggregationSchema.nullable(),
+  groupBy: z.string().min(1).nullable(),
+  timeColumn: z.string().min(1).nullable(),
+  size: ChartSizeSchema,
+  visible: z.boolean(),
+  order: z.number().int().nonnegative(),
+  source: ChartSourceSchema,
+  chatbotGenerated: z.boolean(),
+  generatedAt: z.string().datetime(),
 });
-export type ChartSpec = z.infer<typeof ChartSpecSchema>;
+export type ChartConfig = z.infer<typeof ChartConfigSchema>;
 
-export const ChartPayloadSchema = z.record(z.any());
-export type ChartPayload = z.infer<typeof ChartPayloadSchema>;
-
-export const DashboardChartSchema = z.object({
-  id: z.string(),
-  spec: ChartSpecSchema,
-  payload: ChartPayloadSchema,
+export const KPIConfigSchema = z.object({
+  id: z.string().min(1),
+  column: z.string().min(1),
+  aggregation: z.string().min(1),
+  label: z.string().min(1),
+  description: z.string().min(1),
+  isPrimary: z.boolean(),
 });
-export type DashboardChart = z.infer<typeof DashboardChartSchema>;
+export type KPIConfig = z.infer<typeof KPIConfigSchema>;
 
-export const DashboardStateSchema = z.object({
-  version: z.number(),
-  datasetId: z.string(),
-  datasetTopic: z.string(),
-  datasetMeta: DatasetMetaSchema,
-  charts: z.array(DashboardChartSchema),
-  hiddenChartIds: z.array(z.string()),
+export const DashboardConfigSnapshotSchema = z.object({
+  datasetId: z.string().min(1),
+  version: z.number().int().positive(),
+  columns: z.array(DashboardColumnSchema),
+  datasetMeta: DatasetMetaSchema.optional(),
+  charts: z.array(ChartConfigSchema),
+  kpis: z.array(KPIConfigSchema),
 });
-export type DashboardState = z.infer<typeof DashboardStateSchema>;
+export type DashboardConfigSnapshot = z.infer<typeof DashboardConfigSnapshotSchema>;
 
-export const LLMPlanResponseSchema = z.object({
-  datasetTopic: z.string(),
-  metrics: z.array(z.string()),
-  dimensions: z.array(z.string()),
-  charts: z.array(ChartSpecSchema).min(3).max(5),
-});
-export type LLMPlanResponse = z.infer<typeof LLMPlanResponseSchema>;
-
-export const ChatActionSchema = z.discriminatedUnion("type", [
+export const ChatbotChartPatchSchema = z.discriminatedUnion("action", [
   z.object({
-    type: z.literal("remove_chart"),
-    chartId: z.string(),
+    action: z.literal("add"),
+    config: ChartConfigSchema,
+    chartId: z.string().min(1).optional(),
   }),
   z.object({
-    type: z.literal("add_chart"),
-    chart: ChartSpecSchema,
+    action: z.literal("remove"),
+    chartId: z.string().min(1),
+    config: ChartConfigSchema.optional(),
   }),
   z.object({
-    type: z.literal("update_chart"),
-    chartId: z.string(),
-    patch: ChartSpecSchema.partial(),
-  }),
-  z.object({
-    type: z.literal("show_chart"),
-    chartId: z.string(),
+    action: z.literal("update"),
+    chartId: z.string().min(1),
+    config: ChartConfigSchema.partial(),
   }),
 ]);
-export type ChatAction = z.infer<typeof ChatActionSchema>;
+export type ChatbotChartPatch = z.infer<typeof ChatbotChartPatchSchema>;
 
-export const LLMChatResponseSchema = z.object({
-  assistantMessage: z.string(),
-  actions: z.array(ChatActionSchema),
+export const UploadDashboardResponseSchema = DashboardConfigSnapshotSchema.extend({
+  fileName: z.string().min(1),
+  rows: z.array(SerializedRowSchema),
 });
-export type LLMChatResponse = z.infer<typeof LLMChatResponseSchema>;
+export type UploadDashboardResponse = z.infer<typeof UploadDashboardResponseSchema>;
+
+export const ChatDashboardRequestSchema = z.object({
+  datasetId: z.string().min(1),
+  message: z.string().min(1),
+  chartConfigs: z.array(ChartConfigSchema),
+});
+export type ChatDashboardRequest = z.infer<typeof ChatDashboardRequestSchema>;
+
+export const ChatDashboardResponseSchema = z.object({
+  assistantMessage: z.string(),
+  patch: ChatbotChartPatchSchema.nullable(),
+});
+export type ChatDashboardResponse = z.infer<typeof ChatDashboardResponseSchema>;
+
+export const BI_RULE_LIMITS = {
+  minCharts: 2,
+  maxCharts: 6,
+  minKpis: 2,
+  maxKpis: 4,
+  maxDonutSegments: 6,
+  minScatterPoints: 5,
+  minScatterCorrelation: 0.35,
+} as const;
+
+export const BI_GENERATION_RULES = [
+  "Max 6 charts total, min 2.",
+  "No two charts of the same type on the same column set.",
+  "Area charts require a valid date or time column.",
+  "Donut charts must show at most 6 segments and group the remainder as Other.",
+  "The highest-priority insight must remain at order 0.",
+  "Chart titles must be specific and human-readable; insights must never be empty.",
+  "Scatter charts require two numeric columns with meaningful correlation.",
+  "The primary KPI must come from the highest-variance or most business-relevant column.",
+  "Chatbot patches must be validated before they are applied.",
+  "Every generated config must include generatedAt and source for auditability.",
+  "Never generate a chart where all values in the target column are identical; zero-variance visuals are meaningless.",
+  "Time series charts are allowed only when a date or datetime column exists and has at least 3 distinct values.",
+  "Scatter charts are allowed only when two numeric columns exist and both have distinct value ranges.",
+  "Prefer bar charts for categorical columns with 2 to 15 unique values; if a categorical column has more than 15 unique values, choose a different chart type.",
+  "Every chart title must reference the actual column name or names shown in the chart.",
+  "Every insight string must include a specific value or finding, not a generic description.",
+] as const;

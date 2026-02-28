@@ -8,15 +8,16 @@ import { Footer } from "@/components/landing/Footer";
 import { ProcessingView } from "@/components/app/ProcessingView";
 import { AppShell } from "@/components/app/AppShell";
 import { UploadScreen } from "@/components/app/UploadScreen";
-import { parseDatasetFile, type DatasetState } from "@/lib/dataset";
-import { uploadDataset, type DashboardState } from "@/lib/api";
+import { uploadDataset } from "@/lib/api";
+import {
+  initializeDashboardStore,
+  resetDashboardStore,
+} from "@/lib/dashboard-store";
 
 type AppState = "landing" | "upload" | "processing" | "dashboard";
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>("landing");
-  const [dataset, setDataset] = useState<DatasetState | null>(null);
-  const [dashboardState, setDashboardState] = useState<DashboardState | null>(null);
   const [isUploadReady, setIsUploadReady] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -31,17 +32,16 @@ const Index = () => {
     setAppState("processing");
 
     try {
-      const [nextDataset, nextDashboard] = await Promise.all([
-        parseDatasetFile(file),
-        uploadDataset(file),
-      ]);
-      setDataset(nextDataset);
-      setDashboardState(nextDashboard);
+      const nextDashboard = await uploadDataset(file);
+      initializeDashboardStore(nextDashboard);
       setIsUploadReady(true);
-    } catch {
-      setDataset(null);
-      setDashboardState(null);
-      setUploadError("Upload failed. Check the API server and HF_API_KEY, then try again.");
+    } catch (error) {
+      resetDashboardStore();
+      const message =
+        error instanceof Error && error.message
+          ? error.message.replace(/_/g, " ")
+          : "Upload failed. Check the API server and try again.";
+      setUploadError(message);
       setAppState("upload");
     }
   };
@@ -51,8 +51,7 @@ const Index = () => {
   };
 
   const handleLogout = () => {
-    setDataset(null);
-    setDashboardState(null);
+    resetDashboardStore();
     setIsUploadReady(false);
     setUploadError(null);
     setAppState("landing");
@@ -73,14 +72,7 @@ const Index = () => {
   }
 
   if (appState === "dashboard") {
-    return (
-      <AppShell
-        onLogout={handleLogout}
-        dataset={dataset}
-        dashboardState={dashboardState}
-        onDashboardUpdate={setDashboardState}
-      />
-    );
+    return <AppShell onLogout={handleLogout} />;
   }
 
   return (

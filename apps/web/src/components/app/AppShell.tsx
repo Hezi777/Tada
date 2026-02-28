@@ -13,21 +13,18 @@ import {
 import { Dashboard } from "./Dashboard";
 import { FloatingChat } from "./FloatingChat";
 import tadaLogo from "@/assets/tada-logo.png";
-import type { DatasetState } from "@/lib/dataset";
-import type { DashboardState } from "@/lib/api";
+import { useDashboardStore } from "@/lib/dashboard-store";
 
 interface AppShellProps {
   onLogout: () => void;
-  dataset: DatasetState | null;
-  dashboardState: DashboardState | null;
-  onDashboardUpdate: (next: DashboardState) => void;
 }
 
 type ThemeMode = "system" | "light" | "dark";
 
 const THEME_STORAGE_KEY = "tada-theme";
 
-export function AppShell({ onLogout, dataset, dashboardState, onDashboardUpdate }: AppShellProps) {
+export function AppShell({ onLogout }: AppShellProps) {
+  const fileName = useDashboardStore((snapshot) => snapshot.fileName);
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     if (typeof window === "undefined") {
       return "system";
@@ -57,7 +54,7 @@ export function AppShell({ onLogout, dataset, dashboardState, onDashboardUpdate 
   }, [themeMode]);
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <header className="shrink-0 px-4 pt-4 sm:px-6">
         <div className="container">
           <div className="glass flex min-h-16 items-center justify-between rounded-[1.75rem] border border-white/80 px-4 py-3 shadow-soft">
@@ -72,7 +69,7 @@ export function AppShell({ onLogout, dataset, dashboardState, onDashboardUpdate 
               <div className="ml-2 hidden min-w-0 items-center gap-2 rounded-full border border-white/80 bg-white/80 px-4 py-2 shadow-card sm:flex">
                 <FileSpreadsheet className="h-4 w-4 shrink-0 text-primary" />
                 <span className="truncate text-sm font-medium text-foreground">
-                  {dataset?.fileName ?? "No file loaded"}
+                  {fileName ?? "No file loaded"}
                 </span>
               </div>
             </div>
@@ -102,16 +99,11 @@ export function AppShell({ onLogout, dataset, dashboardState, onDashboardUpdate 
         </div>
       </header>
 
-      <div className="flex-1 overflow-hidden px-4 pb-4 pt-4 sm:px-6">
-        <Dashboard dataset={dataset} dashboardState={dashboardState} />
+      <div className="flex-1 px-4 pb-4 pt-4 sm:px-6">
+        <Dashboard />
       </div>
 
-      <FloatingChat
-        datasetId={dashboardState?.datasetId ?? null}
-        dashboardVersion={dashboardState?.version ?? 0}
-        dashboardState={dashboardState}
-        onDashboardUpdate={onDashboardUpdate}
-      />
+      <FloatingChat />
     </div>
   );
 }
