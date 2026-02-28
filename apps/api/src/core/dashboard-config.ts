@@ -8,11 +8,12 @@ import {
   type ChartType,
   type KPIConfig,
 } from "@tada/shared";
+import Groq from "groq-sdk";
 import type { Column } from "./types.js";
 
 type Row = Record<string, unknown>;
 
-type ColumnPromptStats = {
+export type ColumnPromptStats = {
   min: number | string | null;
   max: number | string | null;
   uniqueCount: number;
@@ -30,8 +31,6 @@ type IncomingChartConfig = {
   timeColumn: string | null;
   size: ChartConfig["size"];
 };
-
-const HF_API_URL = "https://api-inference.huggingface.co/models";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -145,7 +144,7 @@ function comparePromptValues(left: string | number | boolean, right: string | nu
   return String(left).localeCompare(String(right));
 }
 
-function buildColumnPromptStats(rows: Row[], columns: Column[]): Record<string, ColumnPromptStats> {
+export function buildColumnPromptStats(rows: Row[], columns: Column[]): Record<string, ColumnPromptStats> {
   const stats: Record<string, ColumnPromptStats> = {};
 
   for (const column of columns) {
@@ -590,7 +589,7 @@ function normalizeCharts(input: IncomingChartConfig[], source: ChartSource, chat
   );
 }
 
-function validateChartCollection(charts: ChartConfig[], columns: Column[], rows: Row[]): string | null {
+export function validateChartCollection(charts: ChartConfig[], columns: Column[], rows: Row[]): string | null {
   if (charts.length < BI_RULE_LIMITS.minCharts || charts.length > BI_RULE_LIMITS.maxCharts) {
     return "invalid_chart_count";
   }
@@ -712,13 +711,8 @@ function buildFallbackCharts(rows: Row[], columns: Column[]): ChartConfig[] {
 }
 
 function extractText(payload: unknown): string | null {
-  if (Array.isArray(payload) && payload.length > 0) {
-    const first = payload[0] as { generated_text?: string };
-    return typeof first?.generated_text === "string" ? first.generated_text : null;
-  }
-  if (typeof payload === "object" && payload !== null && "generated_text" in payload) {
-    const generatedText = (payload as { generated_text?: string }).generated_text;
-    return typeof generatedText === "string" ? generatedText : null;
+  if (typeof payload === "string") {
+    return payload;
   }
   return null;
 }
@@ -780,12 +774,16 @@ function normalizeSuggestedChart(chart: Record<string, unknown>): IncomingChartC
 }
 
 async function suggestChartsWithLLM(rows: Row[], columns: Column[]): Promise<ChartConfig[] | null> {
-  const apiKey = process.env.HF_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return null;
   }
 
-  const model = process.env.HF_MODEL || "HuggingFaceH4/zephyr-7b-beta";
+  const client = new Groq({ apiKey });
+  const model = process.env.GROQ_DASHBOARD_MODEL;
+  if (!model) {
+    return null;
+  }
   const prompt = [
     "Return strict JSON only. No prose.",
     `Follow these rules exactly: ${BI_GENERATION_RULES.join(" ")}`,
@@ -800,27 +798,18 @@ async function suggestChartsWithLLM(rows: Row[], columns: Column[]): Promise<Cha
   ].join("\n");
 
   try {
-    const response = await fetch(`${HF_API_URL}/${model}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        options: { wait_for_model: true },
-        parameters: {
-          max_new_tokens: 420,
-          temperature: 0.2,
+    const completion = await client.chat.completions.create({
+      model,
+      temperature: 0.2,
+      max_completion_tokens: 420,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
         },
-      }),
+      ],
     });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const payload = (await response.json()) as unknown;
+    const payload = completion.choices[0]?.message?.content ?? null;
     const text = extractText(payload);
     if (!text) {
       return null;

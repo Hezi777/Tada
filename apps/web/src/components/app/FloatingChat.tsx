@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { MessageCircle, Send, Sparkles } from "lucide-react";
+import type { ChatKpiValue } from "@tada/shared";
 import { Card } from "@/components/ui/card";
 import {
   Sheet,
@@ -12,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { sendChat } from "@/lib/api";
+import { computeKpiValue } from "@/lib/dashboard-runtime";
 import {
   applyChatbotPatch,
   useDashboardStore,
@@ -37,11 +39,21 @@ function emitChartPulse(chartId: string | undefined): void {
 export function FloatingChat() {
   const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
   const chartConfigs = useDashboardStore((snapshot) => snapshot.charts);
+  const kpiConfigs = useDashboardStore((snapshot) => snapshot.kpis);
+  const rows = useDashboardStore((snapshot) => snapshot.rows);
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const canChat = Boolean(datasetId);
+  const liveKpis: ChatKpiValue[] = kpiConfigs.map((kpi) => ({
+    id: kpi.id,
+    column: kpi.column,
+    aggregation: kpi.aggregation,
+    label: kpi.label,
+    isPrimary: kpi.isPrimary,
+    value: computeKpiValue(kpi, rows),
+  }));
 
   useEffect(() => {
     setMessages([]);
@@ -69,6 +81,7 @@ export function FloatingChat() {
         datasetId,
         message: userMessage.content,
         chartConfigs,
+        kpis: liveKpis,
       });
       applyChatbotPatch(response.patch);
       emitChartPulse(

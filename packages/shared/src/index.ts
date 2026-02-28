@@ -76,6 +76,16 @@ export const KPIConfigSchema = z.object({
 });
 export type KPIConfig = z.infer<typeof KPIConfigSchema>;
 
+export const ChatKpiValueSchema = z.object({
+  id: z.string().min(1),
+  column: z.string().min(1),
+  aggregation: z.string().min(1),
+  label: z.string().min(1),
+  isPrimary: z.boolean(),
+  value: SerializedValueSchema,
+});
+export type ChatKpiValue = z.infer<typeof ChatKpiValueSchema>;
+
 export const DashboardConfigSnapshotSchema = z.object({
   datasetId: z.string().min(1),
   version: z.number().int().positive(),
@@ -122,6 +132,7 @@ export const ChatDashboardRequestSchema = z.object({
   datasetId: z.string().min(1),
   message: z.string().min(1),
   chartConfigs: z.array(ChartConfigSchema),
+  kpis: z.array(ChatKpiValueSchema),
 });
 export type ChatDashboardRequest = z.infer<typeof ChatDashboardRequestSchema>;
 
