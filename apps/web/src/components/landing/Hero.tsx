@@ -1,5 +1,7 @@
 import { Sparkles, ArrowRight, BarChart3, MessageSquare, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 interface HeroProps {
   onGetStarted: () => void;
@@ -45,18 +47,18 @@ export function Hero({ onGetStarted }: HeroProps) {
               </div>
 
               <div className="mt-10 flex flex-wrap gap-3 animate-fade-in-delay-3">
-                <div className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card">
+                <Badge variant="outline" className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85">
                   <Zap className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium text-foreground">Instant dashboards</span>
-                </div>
-                <div className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card">
+                </Badge>
+                <Badge variant="outline" className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85">
                   <MessageSquare className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium text-foreground">Chat with your data</span>
-                </div>
-                <div className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card">
+                </Badge>
+                <Badge variant="outline" className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85">
                   <BarChart3 className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium text-foreground">Smart visualizations</span>
-                </div>
+                </Badge>
               </div>
 
               <p className="mt-12 text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground animate-fade-in-delay-3">
@@ -66,20 +68,20 @@ export function Hero({ onGetStarted }: HeroProps) {
 
             <div className="relative animate-fade-in-delay-2">
               <div className="absolute -left-4 top-8 h-28 w-28 rounded-[1.75rem] border border-primary/15 bg-primary/10 blur-2xl" />
-              <div className="surface-panel relative overflow-hidden rounded-[2rem] border border-white/80 p-5 shadow-soft">
-                <div className="mb-5 flex items-center justify-between rounded-[1.4rem] border border-white/80 bg-white/85 px-4 py-3 shadow-card">
+              <Card className="surface-panel relative overflow-hidden rounded-[2rem] border border-white/80 p-5 shadow-soft">
+                <Card className="mb-5 flex items-center justify-between rounded-[1.4rem] border border-white/80 bg-white/85 px-4 py-3 shadow-card">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary/80">Live Snapshot</p>
                     <p className="mt-1 text-sm font-medium text-foreground">Revenue performance this quarter</p>
                   </div>
-                  <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">+18.4%</div>
-                </div>
+                  <Badge variant="outline" className="rounded-full border-0 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/10">+18.4%</Badge>
+                </Card>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-[1.6rem] border border-white/80 bg-white/90 p-5 shadow-card">
+                  <Card className="rounded-[1.6rem] border border-white/80 bg-white/90 p-5 shadow-card">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Forecast</p>
                     <p className="mt-4 text-4xl font-extrabold text-foreground">$148K</p>
-                    <div className="mt-5 h-24 overflow-hidden rounded-[1.25rem] bg-secondary/75 p-4">
+                    <Card className="mt-5 h-24 overflow-hidden rounded-[1.25rem] bg-secondary/75 p-4">
                       <div className="flex h-full items-end gap-2">
                         {[44, 60, 58, 70, 75, 86, 94].map((height) => (
                           <div
@@ -89,31 +91,31 @@ export function Hero({ onGetStarted }: HeroProps) {
                           />
                         ))}
                       </div>
-                    </div>
-                  </div>
+                    </Card>
+                  </Card>
 
                   <div className="space-y-4">
-                    <div className="rounded-[1.6rem] border border-white/80 bg-white/90 p-5 shadow-card">
+                    <Card className="rounded-[1.6rem] border border-white/80 bg-white/90 p-5 shadow-card">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Questions asked</p>
                       <p className="mt-3 text-3xl font-bold text-foreground">214</p>
                       <p className="mt-2 text-sm leading-6 text-muted-foreground">
                         Teams iterate faster when every chart can be reshaped in conversation.
                       </p>
-                    </div>
+                    </Card>
 
-                    <div className="rounded-[1.6rem] border border-primary/15 bg-primary/[0.07] p-5 shadow-card">
+                    <Card className="rounded-[1.6rem] border border-primary/15 bg-primary/[0.07] p-5 shadow-card">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">Copilot prompt</p>
                       <p className="mt-3 text-sm leading-7 text-foreground">
                         Show me regional sales, highlight the outlier month, and add a category breakdown.
                       </p>
-                    </div>
+                    </Card>
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-[1.5rem] border border-dashed border-primary/20 bg-white/70 px-4 py-3 text-sm text-muted-foreground">
+                <Card className="mt-4 rounded-[1.5rem] border border-dashed border-primary/20 bg-white/70 px-4 py-3 text-sm text-muted-foreground">
                   Designed for calm, high-trust exploration instead of dashboard clutter.
-                </div>
-              </div>
+                </Card>
+              </Card>
             </div>
           </div>
         </div>

@@ -24,7 +24,8 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@tada/shared": ["../../packages/shared/src/index.ts"]
     }
   },
   "include": ["src"]

@@ -1,5 +1,7 @@
 import { ArrowRight, Lightbulb } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 interface CTAProps {
   onGetStarted: () => void;
@@ -13,10 +15,10 @@ export function CTA({ onGetStarted }: CTAProps) {
           <div className="absolute inset-0 gradient-primary opacity-[0.11]" />
           <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top,hsl(0_0%_100%/.86),transparent_55%)]" />
           <div className="relative mx-auto max-w-3xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-4 py-2 text-sm font-semibold text-primary shadow-card">
+            <Badge variant="outline" className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-4 py-2 text-sm font-semibold text-primary shadow-card hover:bg-white/80">
               <Lightbulb className="h-4 w-4" />
               Start free, no credit card
-            </div>
+            </Badge>
 
             <h2 className="mt-8 text-4xl text-foreground sm:text-5xl">
               Ready to understand your data?
@@ -32,9 +34,9 @@ export function CTA({ onGetStarted }: CTAProps) {
                 Get started for free
                 <ArrowRight className="ml-1 h-5 w-5" />
               </Button>
-              <div className="rounded-full border border-white/80 bg-white/80 px-5 py-3 text-sm font-medium text-muted-foreground shadow-card">
+              <Card className="rounded-full border border-white/80 bg-white/80 px-5 py-3 text-sm font-medium text-muted-foreground shadow-card">
                 Average first dashboard time: under 1 minute
-              </div>
+              </Card>
             </div>
           </div>
         </div>
