@@ -1,4 +1,4 @@
-import type { Column, ColumnKind } from "./types";
+import type { Column, ColumnKind } from "./types.js";
 
 type Row = Record<string, unknown>;
 

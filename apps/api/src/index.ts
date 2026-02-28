@@ -3,10 +3,13 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import multer from "multer";
-import type { HealthResponse } from "@tada/shared";
-import { handleChat } from "./core/chat";
-import { handleUpload } from "./core/upload";
-import { getDatasetState } from "./core/state";
+import {
+  ChatDashboardRequestSchema,
+  type HealthResponse,
+} from "@tada/shared";
+import { handleChat } from "./core/chat.js";
+import { handleUpload } from "./core/upload.js";
+import { getDatasetState } from "./core/state.js";
 
 const envCandidates = [
   path.resolve(process.cwd(), ".env"),
@@ -50,41 +53,30 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     const state = await handleUpload(req.file);
     res.json(state);
   } catch (error) {
+    if (error instanceof Error) {
+      console.error("[upload] failed:", error.message);
+      res.status(400).json({ error: error.message || "upload_failed" });
+      return;
+    }
     res.status(400).json({ error: "upload_failed" });
   }
 });
 
 app.post("/api/chat", async (req, res) => {
-  const { datasetId, message, dashboardState } = req.body ?? {};
-  if (!datasetId || !message) {
+  const parsed = ChatDashboardRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
     res.status(400).json({ error: "invalid_request" });
     return;
   }
   try {
-    const response = await handleChat({ datasetId, message, dashboardState });
+    const response = await handleChat(parsed.data);
     res.json(response);
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message === "missing_api_key") {
-        res.status(400).json({ error: "missing_api_key" });
-        return;
-      }
-      if (error.message.startsWith("llm_error_")) {
+      if (error.message === "not_found" || error.message === "missing_rows") {
         res.status(400).json({ error: error.message });
         return;
       }
-      if (
-        error.message === "not_found" ||
-        error.message === "missing_rows" ||
-        error.message === "invalid_intent" ||
-        error.message === "invalid_chart" ||
-        error.message === "invalid_column" ||
-        error.message === "missing_column"
-      ) {
-        res.status(400).json({ error: error.message });
-        return;
-      }
-      return;
     }
     res.status(400).json({ error: "chat_failed" });
   }

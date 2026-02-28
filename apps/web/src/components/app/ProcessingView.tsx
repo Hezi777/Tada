@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Check, Lightbulb, Loader2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 interface ProcessingViewProps {
   onComplete: () => void;
@@ -56,7 +57,7 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
       <div className="container relative">
         <div className="mx-auto max-w-5xl section-shell p-5 sm:p-7">
           <div className="grid items-center gap-8 lg:grid-cols-[0.8fr_1fr]">
-            <div className="rounded-[2rem] border border-white/80 bg-white/80 p-8 shadow-card">
+            <Card className="rounded-[2rem] border border-white/80 bg-white/80 p-8 shadow-card">
               <div className="eyebrow mb-6">Generating Dashboard</div>
               <h2 className="text-4xl text-foreground sm:text-5xl">Analyzing your data</h2>
               <p className="mt-5 text-lg leading-8 text-muted-foreground">
@@ -64,7 +65,7 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
                 a dashboard that&apos;s ready to explore.
               </p>
 
-              <div className="mt-8 rounded-[1.6rem] border border-primary/15 bg-primary/[0.07] p-5 shadow-card">
+              <Card className="mt-8 rounded-[1.6rem] border border-primary/15 bg-primary/[0.07] p-5 shadow-card">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] gradient-primary shadow-glow">
                     <Lightbulb className="h-6 w-6 text-primary-foreground animate-pulse-soft motion-reduce:animate-none" />
@@ -76,10 +77,10 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
                     </p>
                   </div>
                 </div>
-              </div>
-            </div>
+              </Card>
+            </Card>
 
-            <div className="surface-panel rounded-[2rem] border border-white/80 p-6 shadow-soft sm:p-8">
+            <Card className="surface-panel rounded-[2rem] border border-white/80 p-6 shadow-soft sm:p-8">
               <div className="mb-8 flex items-center justify-center">
                 <div className="relative inline-flex h-28 w-28 items-center justify-center">
                   <div className="absolute inset-0 rounded-full border border-primary/15 bg-primary/[0.08] animate-ping motion-reduce:animate-none" />
@@ -92,7 +93,7 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
 
               <div className="space-y-3 text-left">
                 {processingSteps.map((step, index) => (
-                  <div
+                  <Card
                     key={step}
                     className={`
                       flex items-center gap-4 rounded-[1.25rem] border px-4 py-4 transition-all duration-300
@@ -113,10 +114,10 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
                     <span className={`text-sm ${index === currentStep ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
                       {step}
                     </span>
-                  </div>
+                  </Card>
                 ))}
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       </div>

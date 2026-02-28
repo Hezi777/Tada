@@ -1,143 +1,39 @@
-# AGENTS.md — TADA MVP Repository Guide
+# TADA — Codex Agent Instructions
 
-Scope: This file governs all automated and human contributions to this repository.
+## Product Context
+TADA is a zero-config dashboard tool for non-technical users.
+User uploads CSV/Excel -> AI generates BI-quality dashboard.
+Chatbot can modify the dashboard and answer data questions.
+Target user: small business owners, not data analysts.
 
-Read this first before making JS/TS changes.  
-If anything here conflicts with ad-hoc instructions, this file takes precedence unless the user explicitly states otherwise.
+## Stack
+- Frontend: React 18 + TypeScript + Vite + Tailwind CSS
+- Backend: Express + TypeScript
+- Shared: @tada/shared package for types/contracts
+- AI: HuggingFace Inference API (backend only)
+- Charts: Recharts -> migrating to shadcn Charts
+- State: React Query (server) + Zustand (chart config)
+- Validation: Zod on all AI outputs and API responses
 
----
+## Critical Rules
+- AI output is always validated with Zod before touching state
+- Never call the AI from the frontend — backend API only
+- Chart config is centralized state — never hardcode charts
+- BI rules are a structured constant, not inline prompts
+- _legacy/ directory is dead code — do not modify or reference it
+- Do not add features before the architecture audit is complete
 
-## Repository structure
+## Code Standards
+- TypeScript strict mode — no any, no unknown casts
+- Zod for all runtime validation
+- React Query for all server state
+- Zustand for all client-side dashboard state
+- Error boundaries on all AI-dependent components
+- No silent failures — propagate or surface errors explicitly
 
-This is a monorepo using **npm workspaces**.
-
-Workspaces:
-- `apps/web` — Vite + React + Tailwind
-- `apps/api` — Express + TypeScript
-- `packages/shared` — shared TypeScript types and utilities (contract boundary)
-
-Dependency direction:
-- `apps/web` → `packages/shared`
-- `apps/api` → `packages/shared`
-
-Shared types **must not** be duplicated in web or api.
-
----
-
-## Golden rules
-
-- Run npm commands **from the repo root only**.
-- Use npm workspaces: `npm -w <workspace> run <script>`.
-- Keep changes scoped to the relevant workspace(s).
-- If shared contracts change, update dependents in the **same session**.
-- Update `package-lock.json` whenever dependencies change.
-- Do **not** edit `node_modules` or generated build output.
-- Never commit secrets, API keys, or `.env` files.
-
----
-
-## Common commands
-
-From the repo root:
-
-- Dev (web + api):  
-  `npm run dev`
-
-- Build (shared + api + web):  
-  `npm run build`
-
-- Lint (web):  
-  `npm -w apps/web run lint`
-
-- Web tests:  
-  `npm -w apps/web run test`
-
-- Typecheck:
-  - `npm -w apps/web run typecheck`
-  - `npm -w apps/api run typecheck`
-  - `npm -w packages/shared run typecheck`
-
----
-
-## Change-based checks (required)
-
-Run checks based on what you changed:
-
-### If `apps/web` changed
-- `npm -w apps/web run lint`
-- `npm -w apps/web run test`
-- `npm -w apps/web run typecheck`
-
-### If `apps/api` changed
-- `npm -w apps/api run typecheck`
-
-### If `packages/shared` changed
-- `npm -w packages/shared run typecheck`
-- `npm -w packages/shared run build`
-
-### If multiple workspaces changed
-- `npm run build`
-
-Do not skip checks that apply to your changes.
-
----
-
-## Change protocol
-
-### Contract-first changes (preferred)
-Use when request/response shapes or shared data models change.
-
-1. Update or add types in `packages/shared`.
-2. Typecheck shared.
-3. Update API to match the new contract.
-4. Update Web to match the new contract.
-5. Typecheck all touched workspaces.
-
-### API changes
-- Validate inputs at the boundary.
-- Do not silently change response shapes.
-- Avoid leaking internal errors or stack traces.
-
-### Web changes
-- Import shared types instead of redefining them.
-- Keep API calls centralized and typed.
-- Always handle loading and error states.
-
----
-
-## Environment
-
-Web:
-- `VITE_API_BASE_URL` (defaults to `http://localhost:3001`)
-
-API:
-- `HF_API_KEY` (required)
-- `HF_MODEL` (optional)
-
-Guidelines:
-- Fail fast if required env vars are missing.
-- Never log secret values.
-
----
-
-## Quality bar
-
-Before considering a change “done”:
-
-- All relevant typechecks pass.
-- Lint passes for web changes.
-- Tests pass for web changes.
-- No unused dependencies or imports.
-- No debug console noise left behind.
-- No contract drift between shared, api, and web.
-
----
-
-## Session handoff
-
-At the end of a coding session (PR description or issue comment), summarize:
-
-- What changed (brief bullets)
-- Which workspaces were touched
-- Which commands were run
-- Any follow-ups, risks, or TODOs
+## What Not To Do
+- Do not rewrite working code without a clear reason
+- Do not add new dependencies without checking if one exists
+- Do not modify _legacy/ code
+- Do not make AI calls from the frontend
+- Do not skip Zod validation on AI responses

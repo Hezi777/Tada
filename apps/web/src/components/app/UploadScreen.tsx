@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { ArrowLeft, FileSpreadsheet, Lightbulb, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import tadaLogo from "@/assets/tada-logo.png";
 
 interface UploadScreenProps {
@@ -93,13 +95,13 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
                   "Clean KPI and chart generation",
                   "Natural-language follow-up questions",
                 ].map((item) => (
-                  <div
+                  <Card
                     key={item}
                     className="flex items-center gap-3 rounded-full border border-white/80 bg-white/75 px-4 py-3 text-sm font-medium text-foreground shadow-card"
                   >
                     <span className="h-2.5 w-2.5 rounded-full bg-primary" />
                     {item}
-                  </div>
+                  </Card>
                 ))}
               </div>
             </div>
@@ -117,9 +119,9 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
                 `}
               >
                 {errorMessage ? (
-                  <div className="mb-6 w-full max-w-md rounded-[1.2rem] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  <Card className="mb-6 w-full max-w-md rounded-[1.2rem] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                     {errorMessage}
-                  </div>
+                  </Card>
                 ) : null}
 
                 <div
@@ -142,7 +144,7 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
                   Choose File
                 </Button>
 
-                <input
+                <Input
                   ref={fileInputRef}
                   type="file"
                   accept=".csv,.xlsx,.xls"
@@ -151,21 +153,21 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
                 />
 
                 <div className="mt-10 grid w-full max-w-xl gap-3 border-t border-border/80 pt-8 sm:grid-cols-3">
-                  <div className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card">
+                  <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-primary" />
                     <p className="text-sm font-semibold text-foreground">CSV</p>
                     <p className="mt-1 text-xs text-muted-foreground">Fast ingestion for flat files</p>
-                  </div>
-                  <div className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card">
+                  </Card>
+                  <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-sky-500" />
                     <p className="text-sm font-semibold text-foreground">Excel (.xlsx)</p>
                     <p className="mt-1 text-xs text-muted-foreground">Modern workbook support</p>
-                  </div>
-                  <div className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card">
+                  </Card>
+                  <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-indigo-500" />
                     <p className="text-sm font-semibold text-foreground">Excel (.xls)</p>
                     <p className="mt-1 text-xs text-muted-foreground">Legacy spreadsheet imports</p>
-                  </div>
+                  </Card>
                 </div>
               </div>
             </div>

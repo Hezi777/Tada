@@ -1,5 +1,7 @@
 import { Upload, Cpu, LayoutDashboard } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 const steps = [
   {
@@ -70,9 +72,9 @@ export function HowItWorks() {
                 From messy spreadsheet to actionable dashboard in under a minute.
               </p>
             </div>
-            <div className="max-w-sm rounded-[1.5rem] border border-primary/15 bg-primary/[0.07] px-5 py-4 text-sm leading-7 text-foreground shadow-card">
+            <Card className="max-w-sm rounded-[1.5rem] border border-primary/15 bg-primary/[0.07] px-5 py-4 text-sm leading-7 text-foreground shadow-card">
               The experience stays simple on purpose: one upload, one generated dashboard, one conversational loop.
-            </div>
+            </Card>
           </div>
 
           <div className="relative grid gap-8 md:grid-cols-3">
@@ -87,7 +89,7 @@ export function HowItWorks() {
                 `}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
-                <div
+                <Card
                   className="surface-panel group relative z-10 rounded-[1.9rem] border border-white/80 p-7 shadow-card transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-soft focus-within:-translate-y-1.5 focus-within:shadow-soft motion-reduce:hover:translate-y-0 motion-reduce:transition-none"
                   tabIndex={0}
                 >
@@ -95,11 +97,11 @@ export function HowItWorks() {
                     <div className="flex h-16 w-16 items-center justify-center rounded-[1.45rem] border border-white/80 bg-white shadow-card">
                       <step.icon className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110 motion-reduce:group-hover:scale-100" />
                     </div>
-                    <div className="text-sm font-semibold uppercase tracking-[0.24em] text-primary/80">{step.step}</div>
+                    <Badge variant="outline" className="border-0 bg-transparent p-0 text-sm font-semibold uppercase tracking-[0.24em] text-primary/80 shadow-none hover:bg-transparent">{step.step}</Badge>
                   </div>
                   <h3 className="font-display text-3xl font-semibold text-foreground">{step.title}</h3>
                   <p className="mt-4 text-sm leading-7 text-muted-foreground">{step.description}</p>
-                </div>
+                </Card>
               </div>
             ))}
           </div>

@@ -1,4 +1,5 @@
 import { FileSpreadsheet, BarChart3, MessageSquare, Zap } from "lucide-react";
+import { Card } from "@/components/ui/card";
 
 const features = [
   {
@@ -40,7 +41,7 @@ export function Features() {
 
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {features.map((feature, index) => (
-              <div
+              <Card
                 key={feature.title}
                 className="group surface-panel relative overflow-hidden rounded-[1.75rem] border border-white/80 p-6 shadow-card transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-soft focus-within:-translate-y-1.5 focus-within:shadow-soft motion-reduce:hover:translate-y-0 motion-reduce:transition-none"
                 style={{ animationDelay: `${index * 0.1}s` }}
@@ -52,7 +53,7 @@ export function Features() {
                 </div>
                 <h3 className="font-display text-2xl font-semibold text-foreground">{feature.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">{feature.description}</p>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
