@@ -6,11 +6,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm -w apps/web run dev\" \"npm -w apps/api run dev\"",
-    "build": "npm -w packages/shared run build && npm -w apps/api run build && npm -w apps/web run build",
+    "dev": "cd apps/web && next dev",
+    "build": "npm -w packages/shared run build && cd apps/web && next build",
     "lint": "npm -w apps/web run lint"
-  },
-  "devDependencies": {
-    "concurrently": "^9.0.1"
   }
 }
