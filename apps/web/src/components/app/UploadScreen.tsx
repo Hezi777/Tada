@@ -6,9 +6,10 @@ import tadaLogo from "@/assets/tada-logo.png";
 interface UploadScreenProps {
   onFileUpload: (file: File) => void;
   onBack: () => void;
+  errorMessage?: string | null;
 }
 
-export const UploadScreen = ({ onFileUpload, onBack }: UploadScreenProps) => {
+export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScreenProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -87,6 +88,11 @@ export const UploadScreen = ({ onFileUpload, onBack }: UploadScreenProps) => {
             }
           `}
         >
+          {errorMessage ? (
+            <div className="mb-6 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {errorMessage}
+            </div>
+          ) : null}
           <div className="flex flex-col items-center text-center">
             {/* Upload Icon */}
             <div className={`

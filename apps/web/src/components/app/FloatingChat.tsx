@@ -12,10 +12,16 @@ interface Message {
 interface FloatingChatProps {
   datasetId: string | null;
   dashboardVersion: number;
+  dashboardState: DashboardState | null;
   onDashboardUpdate: (next: DashboardState) => void;
 }
 
-export function FloatingChat({ datasetId, dashboardVersion, onDashboardUpdate }: FloatingChatProps) {
+export function FloatingChat({
+  datasetId,
+  dashboardVersion,
+  dashboardState,
+  onDashboardUpdate,
+}: FloatingChatProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -48,6 +54,7 @@ export function FloatingChat({ datasetId, dashboardVersion, onDashboardUpdate }:
         datasetId,
         message: userMessage.content,
         dashboardVersion,
+        dashboardState: dashboardState ?? undefined,
       });
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
@@ -56,11 +63,38 @@ export function FloatingChat({ datasetId, dashboardVersion, onDashboardUpdate }:
       };
       setMessages((prev) => [...prev, assistantMessage]);
       onDashboardUpdate(response.dashboardState);
-    } catch {
+    } catch (error) {
+      let content = "Chat is unavailable right now. Make sure the API is running and HF_API_KEY is set.";
+      if (error instanceof Error) {
+        if (error.message === "missing_api_key") {
+          content = "Chat needs HF_API_KEY. Set it for the API server, then try again.";
+        } else if (error.message === "not_found" || error.message === "missing_rows") {
+          content = "Your session expired on the server. Please re-upload the file.";
+        } else if (error.message === "invalid_intent") {
+          content = "Chat couldn't interpret that. Try: “add a pie chart of <column>”.";
+        } else if (error.message.startsWith("llm_error_")) {
+          const code = error.message.replace("llm_error_", "");
+          if (code === "401" || code === "403") {
+            content = "The HF_API_KEY looks invalid. Update it and restart the API server.";
+          } else if (code === "429") {
+            content = "The LLM is rate limited. Wait a bit and try again.";
+          } else if (code === "503") {
+            content = "The model is warming up. Wait 30–60 seconds and try again.";
+          } else if (code === "504") {
+            content = "The LLM timed out. Try a shorter request or try again.";
+          } else {
+            content = "The LLM is unavailable right now. Try again shortly.";
+          }
+        } else if (error.message === "chat_failed") {
+          content = "Chat failed on the server. Check the API logs for details.";
+        } else if (error.message.includes("fetch")) {
+          content = "Cannot reach the API server. Check VITE_API_BASE_URL and that the API is running.";
+        }
+      }
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        content: "AI is limited right now, but the dashboard is still available.",
+        content,
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } finally {

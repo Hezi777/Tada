@@ -1,4 +1,4 @@
-import type { Chart, Column, DashboardState, Kpi } from "./types";
+import type { Chart, Column, DashboardState, DatasetMeta, Kpi } from "./types";
 
 type Row = Record<string, unknown>;
 
@@ -10,6 +10,7 @@ export function createDatasetState(
   columns: Column[] = [],
   kpis: Kpi[] = [],
   charts: Chart[] = [],
+  datasetMeta?: DatasetMeta,
 ): DashboardState {
   const state: DashboardState = {
     datasetId,
@@ -18,6 +19,7 @@ export function createDatasetState(
     kpis: [...kpis],
     charts: [...charts],
     hiddenChartIds: [],
+    datasetMeta,
   };
   datasetStateStore.set(datasetId, state);
   return state;
@@ -53,6 +55,7 @@ export function updateDatasetState(
     kpis: [...next.kpis],
     charts: [...next.charts],
     hiddenChartIds: [...next.hiddenChartIds],
+    datasetMeta: next.datasetMeta ?? current.datasetMeta,
   };
   datasetStateStore.set(datasetId, updated);
   return updated;

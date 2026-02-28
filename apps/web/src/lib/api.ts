@@ -11,13 +11,27 @@ export type DashboardKpi = {
   value: string | number;
 };
 
-export type DashboardChartType = "bar" | "line" | "table";
+export type DashboardChartType = "bar" | "line" | "pie" | "table";
+export type DashboardChartAggregation = "sum" | "avg" | "count";
+
+export type DashboardChartConfig = {
+  x?: string;
+  y?: string;
+  aggregation?: DashboardChartAggregation;
+};
 
 export type DashboardChart = {
   id: string;
   type: DashboardChartType;
   title: string;
   payload: unknown;
+  config?: DashboardChartConfig;
+};
+
+export type DatasetMeta = {
+  columns: DashboardColumn[];
+  rowCount: number;
+  sampleRows: Array<Record<string, unknown>>;
 };
 
 export type DashboardState = {
@@ -27,6 +41,7 @@ export type DashboardState = {
   kpis: DashboardKpi[];
   charts: DashboardChart[];
   hiddenChartIds: string[];
+  datasetMeta?: DatasetMeta;
 };
 
 const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3001";
@@ -56,6 +71,7 @@ export async function sendChat(input: {
   datasetId: string;
   message: string;
   dashboardVersion: number;
+  dashboardState?: DashboardState;
 }): Promise<ChatResponse> {
   const response = await fetch(`${apiBase}/api/chat`, {
     method: "POST",
@@ -66,7 +82,16 @@ export async function sendChat(input: {
   });
 
   if (!response.ok) {
-    throw new Error("Chat failed");
+    let message = "Chat failed";
+    try {
+      const payload = (await response.json()) as { error?: string };
+      if (payload?.error) {
+        message = payload.error;
+      }
+    } catch {
+      // ignore parse errors
+    }
+    throw new Error(message);
   }
 
   return response.json();
