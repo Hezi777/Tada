@@ -59,44 +59,47 @@ export function HowItWorks() {
   }, []);
 
   return (
-    <section id="how-it-works" className="py-24 bg-surface relative" ref={sectionRef}>
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Three steps to clarity
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            From messy spreadsheet to actionable dashboard in under a minute.
-          </p>
-        </div>
+    <section id="how-it-works" className="relative px-4 py-24 sm:px-6" ref={sectionRef}>
+      <div className="container">
+        <div className="section-shell px-6 py-10 sm:px-10 sm:py-14">
+          <div className="mb-16 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <div className="eyebrow mb-5">How It Works</div>
+              <h2 className="text-4xl text-foreground sm:text-5xl">Three steps to clarity</h2>
+              <p className="mt-5 text-lg leading-8 text-muted-foreground">
+                From messy spreadsheet to actionable dashboard in under a minute.
+              </p>
+            </div>
+            <div className="max-w-sm rounded-[1.5rem] border border-primary/15 bg-primary/[0.07] px-5 py-4 text-sm leading-7 text-foreground shadow-card">
+              The experience stays simple on purpose: one upload, one generated dashboard, one conversational loop.
+            </div>
+          </div>
 
-        <div className="max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            {/* Connection line */}
-            <div className="hidden md:block absolute top-12 left-1/6 right-1/6 h-0.5 bg-border" />
-            
+          <div className="relative grid gap-8 md:grid-cols-3">
+            <div className="absolute left-[16%] right-[16%] top-16 hidden h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent md:block" />
             {steps.map((step, index) => (
-              <div 
-                key={step.step} 
+              <div
+                key={step.step}
                 className={`
-                  relative text-center transition-all duration-500 ease-out
+                  relative transition-all duration-500 ease-out
                   motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-y-0
-                  ${visibleItems.includes(index) 
-                    ? 'opacity-100 translate-y-0' 
-                    : 'opacity-0 translate-y-8'
-                  }
+                  ${visibleItems.includes(index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
                 `}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
-                <div 
-                  className="group inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-card border border-border shadow-card mb-6 relative z-10 transition-all duration-300 ease-out hover:shadow-soft hover:border-primary/30 hover:-translate-y-1 hover:scale-105 focus-within:shadow-soft focus-within:border-primary/30 motion-reduce:hover:translate-y-0 motion-reduce:hover:scale-100 motion-reduce:transition-none"
+                <div
+                  className="surface-panel group relative z-10 rounded-[1.9rem] border border-white/80 p-7 shadow-card transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-soft focus-within:-translate-y-1.5 focus-within:shadow-soft motion-reduce:hover:translate-y-0 motion-reduce:transition-none"
                   tabIndex={0}
                 >
-                  <step.icon className="h-10 w-10 text-primary transition-transform duration-300 group-hover:scale-110 motion-reduce:group-hover:scale-100" />
+                  <div className="mb-8 flex items-center justify-between">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-[1.45rem] border border-white/80 bg-white shadow-card">
+                      <step.icon className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110 motion-reduce:group-hover:scale-100" />
+                    </div>
+                    <div className="text-sm font-semibold uppercase tracking-[0.24em] text-primary/80">{step.step}</div>
+                  </div>
+                  <h3 className="font-display text-3xl font-semibold text-foreground">{step.title}</h3>
+                  <p className="mt-4 text-sm leading-7 text-muted-foreground">{step.description}</p>
                 </div>
-                <div className="text-xs font-semibold text-primary mb-2">{step.step}</div>
-                <h3 className="font-semibold text-foreground mb-2">{step.title}</h3>
-                <p className="text-sm text-muted-foreground">{step.description}</p>
               </div>
             ))}
           </div>

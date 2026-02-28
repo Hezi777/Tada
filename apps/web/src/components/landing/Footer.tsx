@@ -2,29 +2,43 @@ import tadaLogo from "@/assets/tada-logo.png";
 
 export function Footer() {
   return (
-    <footer className="py-12 border-t border-border">
-      <div className="container mx-auto px-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <img src={tadaLogo} alt="Tada" className="h-6 w-6" />
-            <span className="font-semibold text-foreground">Tada</span>
+    <footer className="px-4 pb-8 pt-4 sm:px-6">
+      <div className="container">
+        <div className="section-shell px-6 py-8 sm:px-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/80 bg-white shadow-card">
+                <img src={tadaLogo} alt="Tada" className="h-7 w-7" />
+              </div>
+              <div>
+                <span className="font-display text-xl font-semibold text-foreground">Tada</span>
+                <p className="text-sm text-muted-foreground">Calm analytics for fast-moving teams.</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="#"
+                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-secondary/70 hover:text-foreground"
+              >
+                Privacy
+              </a>
+              <a
+                href="#"
+                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-secondary/70 hover:text-foreground"
+              >
+                Terms
+              </a>
+              <a
+                href="#"
+                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-secondary/70 hover:text-foreground"
+              >
+                Contact
+              </a>
+            </div>
+
+            <p className="text-sm font-medium text-muted-foreground">© 2025 Tada. All rights reserved.</p>
           </div>
-          
-          <div className="flex items-center gap-8">
-            <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
-              Privacy
-            </a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
-              Terms
-            </a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
-              Contact
-            </a>
-          </div>
-          
-          <p className="text-sm text-muted-foreground">
-            © 2025 Tada. All rights reserved.
-          </p>
         </div>
       </div>
     </footer>

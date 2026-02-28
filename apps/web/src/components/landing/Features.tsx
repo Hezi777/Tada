@@ -25,32 +25,36 @@ const features = [
 
 export function Features() {
   return (
-    <section id="features" className="py-24 relative">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Zero friction. Pure insight.
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Tada removes everything that stands between you and understanding your data.
-          </p>
-        </div>
+    <section id="features" className="relative px-4 py-24 sm:px-6">
+      <div className="container">
+        <div className="section-shell px-6 py-10 sm:px-10 sm:py-14">
+          <div className="mb-14 max-w-2xl">
+            <div className="eyebrow mb-5">Core Features</div>
+            <h2 className="text-4xl text-foreground sm:text-5xl">
+              Zero friction. Pure insight.
+            </h2>
+            <p className="mt-5 text-lg leading-8 text-muted-foreground">
+              Tada removes everything that stands between you and understanding your data.
+            </p>
+          </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature, index) => (
-            <div 
-              key={feature.title}
-              className="group p-6 rounded-2xl bg-card border border-border transition-all duration-300 ease-out hover:shadow-soft hover:border-primary/30 hover:-translate-y-1 hover:scale-[1.02] focus-within:shadow-soft focus-within:border-primary/30 motion-reduce:hover:translate-y-0 motion-reduce:hover:scale-100 motion-reduce:transition-none"
-              style={{ animationDelay: `${index * 0.1}s` }}
-              tabIndex={0}
-            >
-              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4 transition-all duration-300 group-hover:bg-primary/10 group-hover:scale-110 group-hover:shadow-glow motion-reduce:group-hover:scale-100 motion-reduce:transition-none">
-                <feature.icon className="h-6 w-6 text-primary transition-transform duration-300 group-hover:scale-110 motion-reduce:group-hover:scale-100" />
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {features.map((feature, index) => (
+              <div
+                key={feature.title}
+                className="group surface-panel relative overflow-hidden rounded-[1.75rem] border border-white/80 p-6 shadow-card transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-soft focus-within:-translate-y-1.5 focus-within:shadow-soft motion-reduce:hover:translate-y-0 motion-reduce:transition-none"
+                style={{ animationDelay: `${index * 0.1}s` }}
+                tabIndex={0}
+              >
+                <div className="absolute right-0 top-0 h-24 w-24 rounded-bl-[2.2rem] bg-primary/[0.08]" />
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-[1.3rem] border border-white/80 bg-white shadow-card transition-all duration-300 group-hover:scale-105 group-hover:border-primary/25">
+                  <feature.icon className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-display text-2xl font-semibold text-foreground">{feature.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-muted-foreground">{feature.description}</p>
               </div>
-              <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
-              <p className="text-sm text-muted-foreground">{feature.description}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>

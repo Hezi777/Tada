@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Upload, FileSpreadsheet, ArrowLeft, Lightbulb } from "lucide-react";
+import { useRef, useState } from "react";
+import { ArrowLeft, FileSpreadsheet, Lightbulb, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import tadaLogo from "@/assets/tada-logo.png";
 
@@ -43,116 +43,134 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="w-full py-4 px-6 border-b border-border">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src={tadaLogo} alt="Tada" className="h-8 w-8" />
-            <span className="text-xl font-bold text-foreground">Tada</span>
+    <div className="relative min-h-screen bg-background">
+      <div className="pointer-events-none absolute inset-0 gradient-glow" />
+
+      <header className="px-4 pt-4 sm:px-6">
+        <div className="container">
+          <div className="glass flex items-center justify-between rounded-full border border-white/80 px-4 py-3 shadow-soft sm:px-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white shadow-card">
+                <img src={tadaLogo} alt="Tada" className="h-7 w-7" />
+              </div>
+              <div>
+                <span className="font-display text-xl font-semibold text-foreground">Tada</span>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary/80">
+                  Dataset Intake
+                </p>
+              </div>
+            </div>
+
+            <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to home
+            </Button>
           </div>
-          <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to home
-          </Button>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-        {/* Title Section */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border mb-6">
-            <Lightbulb className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs font-medium text-muted-foreground">Step 1 of 2</span>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-            Upload your <span className="text-gradient">data file</span>
-          </h1>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Drop your CSV or Excel file and we'll generate an AI-powered dashboard instantly.
-          </p>
-        </div>
+      <main className="relative flex min-h-[calc(100vh-5.5rem)] items-center px-4 py-10 sm:px-6">
+        <div className="container">
+          <div className="grid items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="max-w-xl">
+              <div className="eyebrow mb-6">
+                <Lightbulb className="h-3.5 w-3.5" />
+                Step 1 of 2
+              </div>
 
-        {/* Upload Card */}
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={`
-            w-full max-w-xl p-10 rounded-2xl border-2 border-dashed transition-all duration-300 bg-card
-            motion-reduce:transition-none
-            ${isDragging 
-              ? "border-primary bg-primary/5 scale-[1.02] shadow-glow" 
-              : "border-border hover:border-primary/50 hover:shadow-soft"
-            }
-          `}
-        >
-          {errorMessage ? (
-            <div className="mb-6 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {errorMessage}
-            </div>
-          ) : null}
-          <div className="flex flex-col items-center text-center">
-            {/* Upload Icon */}
-            <div className={`
-              w-16 h-16 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300
-              motion-reduce:transition-none
-              ${isDragging 
-                ? "bg-primary text-primary-foreground" 
-                : "bg-secondary text-primary"
-              }
-            `}>
-              <Upload className="w-7 h-7" />
+              <h1 className="text-4xl text-foreground sm:text-5xl">
+                Upload your <span className="text-gradient">data file</span>
+              </h1>
+
+              <p className="mt-6 text-lg leading-8 text-muted-foreground">
+                Drop your CSV or Excel file and Tada will compose a dashboard with structure,
+                charts, and a chat-ready summary in one pass.
+              </p>
+
+              <div className="mt-8 space-y-3">
+                {[
+                  "Automatic schema detection",
+                  "Clean KPI and chart generation",
+                  "Natural-language follow-up questions",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-3 rounded-full border border-white/80 bg-white/75 px-4 py-3 text-sm font-medium text-foreground shadow-card"
+                  >
+                    <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+                    {item}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Text */}
-            <h2 className="text-lg font-semibold text-foreground mb-2">
-              Drop your file here
-            </h2>
-            <p className="text-muted-foreground text-sm mb-1">
-              or click to browse from your computer
-            </p>
-            <p className="text-muted-foreground/60 text-xs mb-6">
-              Maximum file size: 100MB
-            </p>
-
-            {/* Choose File Button */}
-            <Button
-              onClick={handleFileSelect}
-              className="px-6"
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`section-shell p-4 sm:p-6 ${isDragging ? "shadow-glow" : ""}`}
             >
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-              Choose File
-            </Button>
+              <div
+                className={`
+                  flex min-h-[30rem] flex-col items-center justify-center rounded-[1.8rem] border-2 border-dashed px-6 py-10 text-center transition-all duration-300
+                  ${isDragging ? "border-primary bg-primary/[0.08] scale-[1.01]" : "border-primary/20 bg-white/70 hover:border-primary/35"}
+                `}
+              >
+                {errorMessage ? (
+                  <div className="mb-6 w-full max-w-md rounded-[1.2rem] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                    {errorMessage}
+                  </div>
+                ) : null}
 
-            {/* Hidden file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              onChange={handleFileChange}
-              className="hidden"
-            />
+                <div
+                  className={`
+                    mb-6 flex h-20 w-20 items-center justify-center rounded-[1.75rem] border border-white/80 shadow-card transition-all duration-300
+                    ${isDragging ? "gradient-primary text-primary-foreground" : "bg-white text-primary"}
+                  `}
+                >
+                  <Upload className="h-8 w-8" />
+                </div>
 
-            {/* File Type Indicators */}
-            <div className="flex items-center gap-6 mt-6 pt-6 border-t border-border w-full justify-center">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-primary"></span>
-                <span className="text-muted-foreground text-sm">CSV</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span className="text-muted-foreground text-sm">Excel (.xlsx)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                <span className="text-muted-foreground text-sm">Excel (.xls)</span>
+                <h2 className="font-display text-3xl font-semibold text-foreground">Drop your file here</h2>
+                <p className="mt-3 text-sm text-muted-foreground">or click to browse from your computer</p>
+                <p className="mb-8 mt-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground/80">
+                  Maximum file size: 100MB
+                </p>
+
+                <Button onClick={handleFileSelect} size="lg" className="px-8">
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Choose File
+                </Button>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+
+                <div className="mt-10 grid w-full max-w-xl gap-3 border-t border-border/80 pt-8 sm:grid-cols-3">
+                  <div className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card">
+                    <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-primary" />
+                    <p className="text-sm font-semibold text-foreground">CSV</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Fast ingestion for flat files</p>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card">
+                    <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-sky-500" />
+                    <p className="text-sm font-semibold text-foreground">Excel (.xlsx)</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Modern workbook support</p>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card">
+                    <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-indigo-500" />
+                    <p className="text-sm font-semibold text-foreground">Excel (.xls)</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Legacy spreadsheet imports</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-
       </main>
     </div>
   );

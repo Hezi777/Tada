@@ -104,34 +104,32 @@ export function ChatPanel({
 
   return (
     <div className={`
-      flex flex-col bg-card border-l border-border transition-all duration-300
+      flex flex-col border-l border-white/80 bg-white/90 backdrop-blur-xl transition-all duration-300
       ${isExpanded ? 'w-[420px]' : 'w-[340px]'}
     `}>
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between border-b border-border/80 px-4 py-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-[1rem] gradient-primary shadow-card">
             <Sparkles className="h-4 w-4 text-primary-foreground" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm text-foreground">TADA Copilot</h3>
-            <p className="text-xs text-muted-foreground">Ask anything about your data</p>
+            <h3 className="font-display text-2xl font-semibold text-foreground">Tada Copilot</h3>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Ask anything about your data</p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={onToggleExpand} className="h-8 w-8">
+        <Button variant="ghost" size="icon" onClick={onToggleExpand} className="h-10 w-10">
           {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         </Button>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 space-y-4 overflow-y-auto bg-[linear-gradient(180deg,hsl(var(--background)),hsl(var(--surface)))] p-4">
         {!canChat && (
-          <div className="text-sm text-muted-foreground text-center py-6">
+          <div className="rounded-[1.5rem] border border-white/80 bg-white/85 py-6 text-center text-sm text-muted-foreground shadow-card">
             Upload a file to chat about it.
           </div>
         )}
         {canChat && messages.length === 0 && (
-          <div className="text-sm text-muted-foreground text-center py-6">
+          <div className="rounded-[1.5rem] border border-primary/15 bg-primary/[0.06] py-6 text-center text-sm text-muted-foreground shadow-card">
             Ask a question about your dataset to update the dashboard.
           </div>
         )}
@@ -144,8 +142,8 @@ export function ChatPanel({
               className={`
                 max-w-[85%] px-4 py-3 rounded-2xl text-sm
                 ${message.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-br-md"
-                  : "bg-secondary text-foreground rounded-bl-md"
+                  ? "gradient-primary text-primary-foreground rounded-br-md shadow-card"
+                  : "border border-white/80 bg-white/90 text-foreground rounded-bl-md shadow-card"
                 }
               `}
             >
@@ -155,23 +153,22 @@ export function ChatPanel({
         ))}
       </div>
 
-      {/* Input */}
-      <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-2">
+      <div className="border-t border-border/80 bg-white/80 p-4">
+        <div className="flex items-center gap-2 rounded-[1.35rem] border border-white/80 bg-white/95 p-2 shadow-card">
           <input
             type="text"
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && handleSend()}
             placeholder={canChat ? "Ask about your data..." : "Upload a file to chat"}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="flex-1 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             disabled={!canChat || isSending}
           />
           <Button
             size="icon"
             onClick={handleSend}
             disabled={!canChat || isSending || !input.trim()}
-            className="rounded-xl h-10 w-10"
+            className="h-11 w-11 rounded-[1rem]"
           >
             {isSending ? <Sparkles className="h-4 w-4" /> : <Send className="h-4 w-4" />}
           </Button>
