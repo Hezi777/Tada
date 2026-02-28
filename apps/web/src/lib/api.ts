@@ -2,6 +2,7 @@ import {
   ChatDashboardResponseSchema,
   DeleteChainedFileRequestSchema,
   UploadDashboardResponseSchema,
+  type ChatKpiValue,
   type ChatDashboardResponse,
   type ChartConfig,
   type DeleteChainedFileRequest,
@@ -87,6 +88,7 @@ export async function sendChat(input: {
   datasetId: string;
   message: string;
   chartConfigs: ChartConfig[];
+  kpis: ChatKpiValue[];
 }): Promise<ChatDashboardResponse> {
   const response = await fetch(`${apiBase}/api/chat`, {
     method: "POST",
