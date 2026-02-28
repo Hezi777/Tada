@@ -1,7 +1,28 @@
 import { Button } from "@/components/ui/button";
 import tadaLogo from "@/assets/tada-logo.png";
 
-export function Header() {
+interface HeaderProps {
+  isAuthenticated: boolean;
+  userEmail: string | null;
+  onLogin: () => void;
+  onGetStarted: () => void;
+  onOpenWorkspace: () => void;
+}
+
+function getDisplayInitial(email: string | null): string {
+  if (!email) {
+    return "T";
+  }
+  return email.trim().charAt(0).toUpperCase() || "T";
+}
+
+export function Header({
+  isAuthenticated,
+  userEmail,
+  onLogin,
+  onGetStarted,
+  onOpenWorkspace,
+}: HeaderProps) {
   return (
     <header className="fixed left-0 right-0 top-0 z-50 px-4 pt-4 sm:px-6">
       <div className="container">
@@ -34,12 +55,33 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm">
-              Log in
-            </Button>
-            <Button variant="default" size="sm">
-              Get started
-            </Button>
+            {isAuthenticated ? (
+              <>
+                <div className="hidden items-center gap-3 rounded-full border border-white/80 bg-white/80 px-2 py-1.5 sm:flex">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                    {getDisplayInitial(userEmail)}
+                  </div>
+                  <div className="max-w-[160px] pr-2">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {userEmail ?? "Signed in"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Workspace ready</p>
+                  </div>
+                </div>
+                <Button variant="default" size="sm" onClick={onOpenWorkspace}>
+                  Open workspace
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" onClick={onLogin}>
+                  Log in
+                </Button>
+                <Button variant="default" size="sm" onClick={onGetStarted}>
+                  Get started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

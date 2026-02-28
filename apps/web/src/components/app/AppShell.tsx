@@ -1,30 +1,58 @@
-import { useEffect, useState } from "react";
-import { LogOut, Settings, FileSpreadsheet } from "lucide-react";
+import { type ReactNode, useEffect, useState } from "react";
+import { Files, LayoutDashboard, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import { Dashboard } from "./Dashboard";
+import { FileManager } from "./FileManager";
 import { FloatingChat } from "./FloatingChat";
 import tadaLogo from "@/assets/tada-logo.png";
 import { useDashboardStore } from "@/lib/dashboard-store";
+import { logout } from "@/app/actions";
 
 interface AppShellProps {
-  onLogout: () => void;
+  dashboardContent?: ReactNode;
+  showFloatingChat?: boolean;
 }
 
 type ThemeMode = "system" | "light" | "dark";
+type NavTab = "dashboard" | "files";
 
 const THEME_STORAGE_KEY = "tada-theme";
 
-export function AppShell({ onLogout }: AppShellProps) {
-  const fileName = useDashboardStore((snapshot) => snapshot.fileName);
+function SidebarItem({
+  icon: Icon,
+  label,
+  active,
+  onClick,
+  disabled = false,
+}: {
+  icon: typeof LayoutDashboard;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      onClick={onClick}
+      disabled={disabled}
+      className={`relative h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold transition-all duration-150 ${
+        active
+          ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
+          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+      }`}
+    >
+      {active ? <span className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-[var(--color-accent)]" /> : null}
+      <Icon className="h-[18px] w-[18px]" />
+      <span>{label}</span>
+    </Button>
+  );
+}
+
+export function AppShell({ dashboardContent, showFloatingChat = true }: AppShellProps) {
+  const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     if (typeof window === "undefined") {
       return "system";
@@ -32,6 +60,7 @@ export function AppShell({ onLogout }: AppShellProps) {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
     return stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
   });
+  const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -54,56 +83,66 @@ export function AppShell({ onLogout }: AppShellProps) {
   }, [themeMode]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="shrink-0 px-4 pt-4 sm:px-6">
-        <div className="container">
-          <div className="glass flex min-h-16 items-center justify-between rounded-[1.75rem] border border-white/80 px-4 py-3 shadow-soft">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white shadow-card">
-                <img src={tadaLogo} alt="Tada" className="h-7 w-7" />
-              </div>
-              <div className="min-w-0">
-                <span className="font-display text-xl font-semibold text-foreground">Tada</span>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">Workspace</p>
-              </div>
-              <div className="ml-2 hidden min-w-0 items-center gap-2 rounded-full border border-white/80 bg-white/80 px-4 py-2 shadow-card sm:flex">
-                <FileSpreadsheet className="h-4 w-4 shrink-0 text-primary" />
-                <span className="truncate text-sm font-medium text-foreground">
-                  {fileName ?? "No file loaded"}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="glass" size="icon" className="h-10 w-10" aria-label="Theme settings">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuLabel>Theme</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup value={themeMode} onValueChange={(value) => setThemeMode(value as ThemeMode)}>
-                    <DropdownMenuRadioItem value="system">System</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button variant="ghost" size="icon" onClick={onLogout} className="h-10 w-10">
-                <LogOut className="h-4 w-4" />
-              </Button>
+    <div className="h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text-primary)]">
+      <aside className="fixed inset-y-0 left-0 z-30 flex w-[240px] flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-6">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-accent-light)]">
+            <img src={tadaLogo} alt="TADA" className="h-6 w-6" />
+          </div>
+          <div>
+            <div className="text-xl font-extrabold tracking-tight text-[var(--color-accent)]">TADA</div>
+            <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
+              Workspace
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="flex-1 px-4 pb-4 pt-4 sm:px-6">
-        <Dashboard />
+        <nav className="mt-10 space-y-2">
+          <SidebarItem
+            icon={LayoutDashboard}
+            label="Dashboard"
+            active={activeTab === "dashboard"}
+            onClick={() => setActiveTab("dashboard")}
+          />
+          <SidebarItem
+            icon={Files}
+            label="Files"
+            active={activeTab === "files"}
+            disabled={!datasetId}
+            onClick={() => setActiveTab("files")}
+          />
+        </nav>
+
+        <div className="flex-1" />
+
+        <Separator className="mb-4 bg-[var(--color-border)]" />
+
+        <div className="space-y-2">
+          <Button
+            variant="ghost"
+            className="h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+          >
+            <Settings className="h-[18px] w-[18px]" />
+            Settings
+          </Button>
+          <form action={logout}>
+            <Button
+              type="submit"
+              variant="ghost"
+              className="h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+            >
+              <LogOut className="h-[18px] w-[18px]" />
+              Logout
+            </Button>
+          </form>
+        </div>
+      </aside>
+
+      <div className="ml-[240px] h-screen">
+        {activeTab === "files" ? <FileManager /> : dashboardContent ? dashboardContent : <Dashboard />}
       </div>
 
-      <FloatingChat />
+      {showFloatingChat ? <FloatingChat /> : null}
     </div>
   );
 }

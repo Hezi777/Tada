@@ -23,9 +23,14 @@ dist-ssr
 *.sln
 *.sw?
 .env
+.env.local
 .env.*
 **/.env
 **/.env.*
 !.env.example
 !**/.env.example
 agent_docs/
+.next
+**/.next
+*.tsbuildinfo
+**/*.tsbuildinfo
