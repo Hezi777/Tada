@@ -29,7 +29,6 @@ dist-ssr
 **/.env.*
 !.env.example
 !**/.env.example
-agent_docs/
 .next
 **/.next
 apps/web/.next
