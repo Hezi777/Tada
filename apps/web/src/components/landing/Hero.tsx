@@ -2,6 +2,7 @@ import { Sparkles, ArrowRight, BarChart3, MessageSquare, Zap } from "lucide-reac
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { AnimatedDashboardMockup } from "./AnimatedDashboardMockup";
 
 interface HeroProps {
   onGetStarted: () => void;
@@ -19,104 +20,72 @@ export function Hero({ onGetStarted }: HeroProps) {
       />
 
       <div className="container relative z-10">
-        <div className="section-shell px-6 py-10 sm:px-10 sm:py-14 lg:px-16 lg:py-16">
-          <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.72fr]">
-            <div className="max-w-3xl">
-              <div className="eyebrow mb-7 animate-fade-in">
-                <Sparkles className="h-4 w-4" />
-                AI-powered analytics in seconds
-              </div>
-
-              <h1 className="text-5xl leading-[0.92] text-foreground animate-fade-in-delay-1 sm:text-6xl lg:text-7xl">
-                Turn raw spreadsheets into a clear, living story for your team.
-              </h1>
-
-              <p className="mt-7 max-w-2xl text-lg leading-8 text-muted-foreground animate-fade-in-delay-2 sm:text-xl">
-                Upload any CSV or Excel file, generate a polished dashboard in seconds, and keep exploring
-                through plain-English questions that reshape the view as you think.
-              </p>
-
-              <div className="mt-10 flex flex-col items-start gap-4 animate-fade-in-delay-3 sm:flex-row sm:items-center">
-                <Button variant="hero" size="xl" onClick={onGetStarted}>
-                  Get started free
-                  <ArrowRight className="ml-1 h-5 w-5" />
-                </Button>
-                <Button variant="outline" size="lg" onClick={onGetStarted}>
-                  Try with sample data
-                </Button>
-              </div>
-
-              <div className="mt-10 flex flex-wrap gap-3 animate-fade-in-delay-3">
-                <Badge variant="outline" className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85">
-                  <Zap className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Instant dashboards</span>
-                </Badge>
-                <Badge variant="outline" className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85">
-                  <MessageSquare className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Chat with your data</span>
-                </Badge>
-                <Badge variant="outline" className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85">
-                  <BarChart3 className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Smart visualizations</span>
-                </Badge>
-              </div>
-
-              <p className="mt-12 text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground animate-fade-in-delay-3">
-                Trusted by data teams at fast-growing companies
-              </p>
+        <div className="grid items-center gap-12 py-10 lg:grid-cols-[1.1fr_0.72fr] lg:gap-16 lg:py-16">
+          <div className="max-w-3xl">
+            <div className="eyebrow mb-7 animate-fade-in">
+              <Sparkles className="h-4 w-4" />
+              AI-powered analytics in seconds
             </div>
 
-            <div className="relative animate-fade-in-delay-2">
-              <div className="absolute -left-4 top-8 h-28 w-28 rounded-[1.75rem] border border-primary/15 bg-primary/10 blur-2xl" />
-              <Card className="surface-panel relative overflow-hidden rounded-[2rem] border border-white/80 p-5 shadow-soft">
-                <Card className="mb-5 flex items-center justify-between rounded-[1.4rem] border border-white/80 bg-white/85 px-4 py-3 shadow-card">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary/80">Live Snapshot</p>
-                    <p className="mt-1 text-sm font-medium text-foreground">Revenue performance this quarter</p>
-                  </div>
-                  <Badge variant="outline" className="rounded-full border-0 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/10">+18.4%</Badge>
-                </Card>
+            <h1 className="text-5xl leading-[0.92] text-foreground animate-fade-in-delay-1 sm:text-6xl lg:text-7xl">
+              Turn raw spreadsheets into a clear, living story for your team.
+            </h1>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Card className="rounded-[1.6rem] border border-white/80 bg-white/90 p-5 shadow-card">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Forecast</p>
-                    <p className="mt-4 text-4xl font-extrabold text-foreground">$148K</p>
-                    <Card className="mt-5 h-24 overflow-hidden rounded-[1.25rem] bg-secondary/75 p-4">
-                      <div className="flex h-full items-end gap-2">
-                        {[44, 60, 58, 70, 75, 86, 94].map((height) => (
-                          <div
-                            key={height}
-                            className="flex-1 rounded-t-full gradient-primary"
-                            style={{ height: `${height}%` }}
-                          />
-                        ))}
-                      </div>
-                    </Card>
-                  </Card>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-muted-foreground animate-fade-in-delay-2 sm:text-xl">
+              Upload any CSV or Excel file, generate a polished dashboard in seconds, and keep exploring
+              through plain-English questions that reshape the view as you think.
+            </p>
 
-                  <div className="space-y-4">
-                    <Card className="rounded-[1.6rem] border border-white/80 bg-white/90 p-5 shadow-card">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Questions asked</p>
-                      <p className="mt-3 text-3xl font-bold text-foreground">214</p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        Teams iterate faster when every chart can be reshaped in conversation.
-                      </p>
-                    </Card>
-
-                    <Card className="rounded-[1.6rem] border border-primary/15 bg-primary/[0.07] p-5 shadow-card">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary/80">Copilot prompt</p>
-                      <p className="mt-3 text-sm leading-7 text-foreground">
-                        Show me regional sales, highlight the outlier month, and add a category breakdown.
-                      </p>
-                    </Card>
-                  </div>
-                </div>
-
-                <Card className="mt-4 rounded-[1.5rem] border border-dashed border-primary/20 bg-white/70 px-4 py-3 text-sm text-muted-foreground">
-                  Designed for calm, high-trust exploration instead of dashboard clutter.
-                </Card>
-              </Card>
+            <div className="mt-10 flex flex-col items-start gap-4 animate-fade-in-delay-3 sm:flex-row sm:items-center">
+              <Button variant="hero" size="xl" onClick={onGetStarted}>
+                Get started free
+                <ArrowRight className="ml-1 h-5 w-5" />
+              </Button>
+              <Button variant="outline" size="lg" onClick={onGetStarted}>
+                Try with sample data
+              </Button>
             </div>
+
+            <div className="mt-10 flex flex-wrap gap-3 animate-fade-in-delay-3">
+              <Badge variant="outline" className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85">
+                <Zap className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">Instant dashboards</span>
+              </Badge>
+              <Badge variant="outline" className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">Chat with your data</span>
+              </Badge>
+              <Badge variant="outline" className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">Smart visualizations</span>
+              </Badge>
+            </div>
+
+            <div className="mt-14 max-w-lg border-t border-primary/10 pt-8 animate-fade-in-delay-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/80 mb-5 text-center sm:text-left">
+                Trusted by fast-growing teams
+              </p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-8 gap-y-4 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                {/* Placeholder logos using SVG paths */}
+                <svg className="h-6 text-slate-400" viewBox="0 0 100 30" fill="currentColor">
+                  <path d="M10,15 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 M25,5 v20 h5 v-20 h-5 M35,15 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 M50,5 v20 h5 v-20 h-5 M60,15 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+                </svg>
+                <svg className="h-5 text-slate-400" viewBox="0 0 100 30" fill="currentColor">
+                  <path d="M10,5 h20 v5 h-15 v5 h10 v5 h-10 v5 h15 v5 h-20 z M40,5 h5 l10,25 h-6 l-2,-6 h-9 l-2,6 h-5 z M45,18 h6 l-3,-9 z" />
+                </svg>
+                <svg className="h-6 text-slate-400" viewBox="0 0 120 30" fill="currentColor">
+                  <path d="M10,5 v20 h5 v-10 l10,10 h7 l-11,-11 l10,-9 h-7 l-9,9 v-9 z M40,5 v20 h15 v-5 h-10 v-2 h8 v-5 h-8 v-3 h10 v-5 z M65,5 v20 h5 v-20 z" />
+                </svg>
+                <svg className="h-5 text-slate-400" viewBox="0 0 100 30" fill="currentColor">
+                  <path d="M10,25 h20 v5 h-25 v-25 h5 z M35,15 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 M50,15 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 M65,5 v25 h5 v-25 z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative animate-fade-in-delay-2 flex justify-center lg:justify-end">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-primary/20 blur-[100px] pointer-events-none" />
+            <AnimatedDashboardMockup />
           </div>
         </div>
       </div>

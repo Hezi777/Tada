@@ -1,5 +1,6 @@
 import { FileSpreadsheet, BarChart3, MessageSquare, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { motion } from "framer-motion";
 
 const features = [
   {
@@ -41,19 +42,34 @@ export function Features() {
 
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {features.map((feature, index) => (
-              <Card
+              <motion.div
                 key={feature.title}
-                className="group surface-panel relative overflow-hidden rounded-[1.75rem] border border-white/80 p-6 shadow-card transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-soft focus-within:-translate-y-1.5 focus-within:shadow-soft motion-reduce:hover:translate-y-0 motion-reduce:transition-none"
-                style={{ animationDelay: `${index * 0.1}s` }}
-                tabIndex={0}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <div className="absolute right-0 top-0 h-24 w-24 rounded-bl-[2.2rem] bg-primary/[0.08]" />
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-[1.3rem] border border-white/80 bg-white shadow-card transition-all duration-300 group-hover:scale-105 group-hover:border-primary/25">
-                  <feature.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-display text-2xl font-semibold text-foreground">{feature.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-muted-foreground">{feature.description}</p>
-              </Card>
+                <Card
+                  className="group relative h-full overflow-hidden rounded-[1.75rem] border border-white/80 bg-[#F4F7FF] p-6 shadow-card transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-soft focus-within:-translate-y-1.5 focus-within:shadow-soft motion-reduce:hover:translate-y-0 motion-reduce:transition-none"
+                  tabIndex={0}
+                >
+                  {/* Large Corner Number */}
+                  <div className="absolute right-6 top-6 text-4xl font-extrabold text-primary/10 transition-colors duration-300 group-hover:text-primary/20">
+                    0{index + 1}
+                  </div>
+
+                  {/* Ghost Icon Bottom Right */}
+                  <feature.icon className="absolute -bottom-4 -right-4 h-32 w-32 text-primary/[0.03] transition-transform duration-500 group-hover:scale-110 group-hover:text-primary/[0.06]" />
+
+                  <div className="relative z-10">
+                    <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-[1.3rem] border border-white/80 bg-white shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:border-primary/25 group-hover:shadow-md">
+                      <feature.icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="font-display text-2xl font-semibold text-foreground">{feature.title}</h3>
+                    <p className="mt-3 text-sm leading-7 text-muted-foreground">{feature.description}</p>
+                  </div>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
