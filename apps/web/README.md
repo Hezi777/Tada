@@ -1,47 +1,40 @@
-# Tada Instant Insights
+# Tada Web
 
-MVP for turning uploaded CSV/Excel data into an AI-styled dashboard with charts, metrics, and a copilot chat UI.
+Next.js app for Tada Instant Insights.
 
-## Frontend
+## Stack
 
-- Stack: Vite, React, TypeScript, Tailwind CSS, shadcn/ui, Recharts, React Router, TanStack Query.
-- UX flow: landing -> upload -> processing -> dashboard (state machine in `src/pages/Index.tsx`).
-- Landing sections: hero, features, how-it-works, CTA, footer.
-- Dashboard: cards + charts with sample data and an "AI Insight" callout.
-- Copilot UI: floating chat with quick actions and simulated responses.
+- Next.js App Router
+- React and TypeScript
+- Tailwind CSS and shadcn/ui
+- Zustand for dashboard state
+- Supabase for auth and persisted data
+- Vitest for tests
 
-## Backend
+## Key Directories
 
-- Not implemented in this MVP.
-- File upload, data parsing, and AI insights are simulated on the client.
-- Hook points: add API calls in the upload flow and replace hardcoded chart data in the dashboard.
-
-## Project Structure
-
-- `src/pages`: top-level routes and app state switcher.
-- `src/components/landing`: marketing sections.
-- `src/components/app`: upload, processing, dashboard, and chat UI.
-- `src/components/ui`: shadcn/ui primitives.
-- `src/lib`: shared utilities.
-- `src/test`: Vitest setup and examples.
+- `src/app` - pages, layouts, route handlers, and server actions
+- `src/components` - app, landing, and UI components
+- `src/lib` - client utilities, dashboard runtime helpers, and Supabase clients
+- `src/server` - server-side dashboard generation, chat, upload parsing, and in-memory state
+- `src/test` - test setup
 
 ## Local Development
 
 ```sh
-npm i
+npm install
 npm run dev
 ```
 
 ## Scripts
 
-- `npm run dev` - start Vite dev server
-- `npm run build` - production build
-- `npm run preview` - preview production build
+- `npm run dev` - start Next.js dev server
+- `npm run build` - build the app
 - `npm run lint` - run ESLint
+- `npm run typecheck` - run TypeScript without emitting
 - `npm run test` - run Vitest
-- `npm run test:watch` - watch mode for Vitest
+- `npm run test:watch` - run Vitest in watch mode
 
-## Notes
+## Environment
 
-- Charts and insights are static sample data.
-- Processing and chat responses are timed client-side simulations.
+Use `apps/web/.env.example` as the reference for required environment variables.

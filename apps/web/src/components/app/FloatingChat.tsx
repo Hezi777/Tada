@@ -97,7 +97,7 @@ export function FloatingChat() {
         } else if (error.message === "chat_failed") {
           content = "Chat failed on the server. Check the API logs for details.";
         } else if (error.message.includes("fetch")) {
-          content = "Cannot reach the API server. Check VITE_API_BASE_URL and that the API is running.";
+          content = "Cannot reach the server route. Check that the Next.js app is running and the request is reaching /api/chat.";
         } else {
           content = error.message;
         }
