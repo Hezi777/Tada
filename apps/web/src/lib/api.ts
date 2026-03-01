@@ -30,6 +30,14 @@ export type LoadDashboardResponse =
   | (UploadDashboardResponse & { dashboard: DashboardMeta })
   | { empty: true; dashboard: DashboardMeta };
 
+export type LoadDashboardMetaResponse =
+  | {
+    dashboard: DashboardMeta;
+    datasetId: string;
+    files: { id: string; fileName: string; rowCount: number; isPrimary: boolean }[];
+  }
+  | { empty: true; dashboard: DashboardMeta };
+
 async function readApiError(response: Response, fallback: string): Promise<string> {
   try {
     const payload = (await response.json()) as { error?: string };
@@ -212,6 +220,20 @@ export async function loadDashboard(id: string): Promise<LoadDashboardResponse> 
     ...UploadDashboardResponseSchema.parse(payload),
     dashboard: payload.dashboard,
   };
+}
+
+export async function loadDashboardMeta(id: string): Promise<LoadDashboardMetaResponse> {
+  const response = await fetch(`${apiBase}/api/dashboards/${id}/meta`, {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(await readApiError(response, "dashboard_meta_load_failed"));
+  }
+
+  const payload = await response.json();
+  return payload as LoadDashboardMetaResponse;
 }
 
 export async function updateDashboard(
