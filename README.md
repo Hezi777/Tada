@@ -13,11 +13,13 @@ Tada Instant Insights is a monorepo MVP that turns uploaded CSV or Excel files i
 
 ## Features
 
-- CSV/XLSX upload with automatic parsing and column inference.
-- KPI and chart generation based on detected numeric, categorical, and date fields.
-- Copilot chat that can hide/show charts and reconfigure metrics/categories.
-- React dashboard with cards, charts, and a floating chat panel.
-- Shared types across web + API via a local workspace package.
+- **Instant Drill-downs**: Next-gen Zustand caching and optimized `/meta` endpoints load existing dashboards in <100ms.
+- **Animated Interactive Landing Page**: An actively rendered, code-built dashboard mockup (`<AnimatedDashboardMockup />`) demonstrating real chart draws and typing insights on the marketing surface.
+- **Zero-config Intake**: CSV/XLSX upload with automatic backend parsing, schema detection, and column inference.
+- **Smart Generation**: Heuristic and AI-driven KPI + chart generation mapping automatically derived from categorical, numeric, and date fields.
+- **Natural Language Chatbot**: Copilot chat that actively patches the dashboard (hiding charts, reconfiguring metric aggregation, applying groupings) instantly.
+- **Premium UI**: Modern frontend built with Framer Motion, deep gradients, glassmorphism, and responsive React dashboards.
+- **Shared Types**: Strongly typed contracts across web + API via a local workspace package.
 
 ## Tech Stack
 
