@@ -96,7 +96,8 @@ function classifyColumn(name: string, values: unknown[]): ColumnKind {
 
   const uniqueCount = uniqueValues.size;
   const uniqueRatio = uniqueCount / nonEmptyCount;
-  const avgStringLength = stringCount === 0 ? 0 : stringLengthTotal / stringCount;
+  const avgStringLength =
+    stringCount === 0 ? 0 : stringLengthTotal / stringCount;
 
   if (uniqueRatio > 0.9 || avgStringLength > 30) {
     return "ignored";
@@ -136,8 +137,10 @@ export function pickPrimaryColumns(columns: Column[]): {
   primaryCategory: Column | null;
   primaryDate: Column | null;
 } {
-  const primaryNumeric = columns.find((column) => column.kind === "numeric") ?? null;
-  const primaryCategory = columns.find((column) => column.kind === "categorical") ?? null;
+  const primaryNumeric =
+    columns.find((column) => column.kind === "numeric") ?? null;
+  const primaryCategory =
+    columns.find((column) => column.kind === "categorical") ?? null;
   const primaryDate = columns.find((column) => column.kind === "date") ?? null;
   return { primaryNumeric, primaryCategory, primaryDate };
 }

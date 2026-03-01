@@ -49,15 +49,20 @@ export default function LoginPage() {
 
         <div className="relative z-10">
           <h2 className="font-display text-4xl leading-tight text-white">
-            Instant dashboards<br />from your data.
+            Instant dashboards
+            <br />
+            from your data.
           </h2>
           <p className="mt-4 max-w-sm text-[15px] leading-7 text-white/60">
-            Upload any CSV or Excel file and get an AI-generated dashboard with charts, KPIs, and a conversational AI — in seconds.
+            Upload any CSV or Excel file and get an AI-generated dashboard with
+            charts, KPIs, and a conversational AI — in seconds.
           </p>
         </div>
 
         <div className="relative z-10">
-          <p className="text-xs text-white/30">© 2026 TADA. All rights reserved.</p>
+          <p className="text-xs text-white/30">
+            © 2026 TADA. All rights reserved.
+          </p>
         </div>
       </div>
 
@@ -76,12 +81,16 @@ export default function LoginPage() {
             {isSignUp ? "Create your account" : "Welcome back"}
           </h1>
           <p className="mt-2 text-[15px] text-[#64748B]">
-            {isSignUp ? "Start building dashboards in seconds" : "Sign in to your workspace"}
+            {isSignUp
+              ? "Start building dashboards in seconds"
+              : "Sign in to your workspace"}
           </p>
 
           <div className="mt-8 space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[#64748B]">Email</label>
+              <label className="mb-1.5 block text-xs font-medium text-[#64748B]">
+                Email
+              </label>
               <input
                 type="email"
                 placeholder="you@company.com"
@@ -91,7 +100,9 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-[#64748B]">Password</label>
+              <label className="mb-1.5 block text-xs font-medium text-[#64748B]">
+                Password
+              </label>
               <input
                 type="password"
                 placeholder="••••••••"
@@ -100,7 +111,9 @@ export default function LoginPage() {
                 className="h-12 w-full rounded-xl border border-[#E2E8F0] bg-white px-4 text-sm text-[#0F172A] shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 placeholder:text-[#94A3B8] focus:border-[#3B82F6] focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/20"
               />
             </div>
-            {error ? <p className="text-sm font-medium text-red-500">{error}</p> : null}
+            {error ? (
+              <p className="text-sm font-medium text-red-500">{error}</p>
+            ) : null}
             <button
               onClick={handleSubmit}
               disabled={loading}
@@ -112,7 +125,9 @@ export default function LoginPage() {
               onClick={() => setIsSignUp(!isSignUp)}
               className="w-full py-2 text-sm text-[#64748B] transition-colors duration-150 hover:text-[#0F172A]"
             >
-              {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
+              {isSignUp
+                ? "Already have an account? Sign in"
+                : "Don't have an account? Sign up"}
             </button>
           </div>
         </div>

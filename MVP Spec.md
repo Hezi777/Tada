@@ -11,6 +11,7 @@ User uploads a data file → Gets an intelligent dashboard within seconds → Ca
 ## Target User
 
 Non-technical people with data files who want quick insights:
+
 - Freelancers
 - Managers
 - Small business owners
@@ -30,15 +31,18 @@ Upload File → Dashboard Generated → Chat to Ask/Modify → Get Insights
 ### ✅ What’s Included
 
 **File Input**
+
 - CSV and Excel only
 - One file at a time
 
 **Dashboard**
+
 - 3-5 basic charts (Line, Bar, Pie, Table)
 - Single-page view
 - Show/hide charts
 
 **Chat Features**
+
 - Answer questions about the data
 - Explain trends
 - Add/remove charts
@@ -113,10 +117,10 @@ Upload File → Dashboard Generated → Chat to Ask/Modify → Get Insights
 
 ## Development Checklist
 
-- [x]  File upload and parsing
-- [x]  Basic data profiling
-- [x]  LLM integration for chart suggestions
-- [x]  Dashboard state management
-- [ ]  Chat endpoint
-- [x]  Frontend dashboard display
-- [x]  Chart show/hide functionality
+- [x] File upload and parsing
+- [x] Basic data profiling
+- [x] LLM integration for chart suggestions
+- [x] Dashboard state management
+- [ ] Chat endpoint
+- [x] Frontend dashboard display
+- [x] Chart show/hide functionality

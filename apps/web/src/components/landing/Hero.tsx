@@ -1,4 +1,10 @@
-import { Sparkles, ArrowRight, BarChart3, MessageSquare, Zap } from "lucide-react";
+import {
+  Sparkles,
+  ArrowRight,
+  BarChart3,
+  MessageSquare,
+  Zap,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,8 +38,9 @@ export function Hero({ onGetStarted }: HeroProps) {
             </h1>
 
             <p className="mt-7 max-w-2xl text-lg leading-8 text-muted-foreground animate-fade-in-delay-2 sm:text-xl">
-              Upload any CSV or Excel file, generate a polished dashboard in seconds, and keep exploring
-              through plain-English questions that reshape the view as you think.
+              Upload any CSV or Excel file, generate a polished dashboard in
+              seconds, and keep exploring through plain-English questions that
+              reshape the view as you think.
             </p>
 
             <div className="mt-10 flex flex-col items-start gap-4 animate-fade-in-delay-3 sm:flex-row sm:items-center">
@@ -47,17 +54,32 @@ export function Hero({ onGetStarted }: HeroProps) {
             </div>
 
             <div className="mt-10 flex flex-wrap gap-3 animate-fade-in-delay-3">
-              <Badge variant="outline" className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85">
+              <Badge
+                variant="outline"
+                className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85"
+              >
                 <Zap className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Instant dashboards</span>
+                <span className="text-sm font-medium text-foreground">
+                  Instant dashboards
+                </span>
               </Badge>
-              <Badge variant="outline" className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85">
+              <Badge
+                variant="outline"
+                className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85"
+              >
                 <MessageSquare className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Chat with your data</span>
+                <span className="text-sm font-medium text-foreground">
+                  Chat with your data
+                </span>
               </Badge>
-              <Badge variant="outline" className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85">
+              <Badge
+                variant="outline"
+                className="decor-ring flex items-center gap-2 rounded-full bg-white/85 px-4 py-2.5 shadow-card hover:bg-white/85"
+              >
                 <BarChart3 className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Smart visualizations</span>
+                <span className="text-sm font-medium text-foreground">
+                  Smart visualizations
+                </span>
               </Badge>
             </div>
 
@@ -67,16 +89,32 @@ export function Hero({ onGetStarted }: HeroProps) {
               </p>
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-8 gap-y-4 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
                 {/* Placeholder logos using SVG paths */}
-                <svg className="h-6 text-slate-400" viewBox="0 0 100 30" fill="currentColor">
+                <svg
+                  className="h-6 text-slate-400"
+                  viewBox="0 0 100 30"
+                  fill="currentColor"
+                >
                   <path d="M10,15 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 M25,5 v20 h5 v-20 h-5 M35,15 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 M50,5 v20 h5 v-20 h-5 M60,15 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
                 </svg>
-                <svg className="h-5 text-slate-400" viewBox="0 0 100 30" fill="currentColor">
+                <svg
+                  className="h-5 text-slate-400"
+                  viewBox="0 0 100 30"
+                  fill="currentColor"
+                >
                   <path d="M10,5 h20 v5 h-15 v5 h10 v5 h-10 v5 h15 v5 h-20 z M40,5 h5 l10,25 h-6 l-2,-6 h-9 l-2,6 h-5 z M45,18 h6 l-3,-9 z" />
                 </svg>
-                <svg className="h-6 text-slate-400" viewBox="0 0 120 30" fill="currentColor">
+                <svg
+                  className="h-6 text-slate-400"
+                  viewBox="0 0 120 30"
+                  fill="currentColor"
+                >
                   <path d="M10,5 v20 h5 v-10 l10,10 h7 l-11,-11 l10,-9 h-7 l-9,9 v-9 z M40,5 v20 h15 v-5 h-10 v-2 h8 v-5 h-8 v-3 h10 v-5 z M65,5 v20 h5 v-20 z" />
                 </svg>
-                <svg className="h-5 text-slate-400" viewBox="0 0 100 30" fill="currentColor">
+                <svg
+                  className="h-5 text-slate-400"
+                  viewBox="0 0 100 30"
+                  fill="currentColor"
+                >
                   <path d="M10,25 h20 v5 h-25 v-25 h5 z M35,15 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 M50,15 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 M65,5 v25 h5 v-25 z" />
                 </svg>
               </div>

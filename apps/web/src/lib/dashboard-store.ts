@@ -31,8 +31,16 @@ type DashboardStoreState = {
   activeDashboardIcon: string | null;
   activeDashboardColor: string | null;
   dashboardList: DashboardListItem[];
-  dashboardCache: Record<string, Omit<DashboardStoreState, "dashboardList" | "dashboardCache">>;
+  dashboardCache: Record<
+    string,
+    Omit<DashboardStoreState, "dashboardList" | "dashboardCache">
+  >;
 };
+
+type CachedDashboardState = Omit<
+  DashboardStoreState,
+  "dashboardList" | "dashboardCache"
+>;
 
 type Listener = () => void;
 
@@ -91,7 +99,9 @@ function validateNextState(next: DashboardStoreState): void {
   }
 }
 
-function withValidatedState(updater: (current: DashboardStoreState) => DashboardStoreState): void {
+function withValidatedState(
+  updater: (current: DashboardStoreState) => DashboardStoreState,
+): void {
   const next = updater(state);
   const normalized: DashboardStoreState = {
     ...next,
@@ -141,9 +151,14 @@ export function initializeDashboardStore(
   // Cache this full dashboard if an ID is present
   const dashId = newState.activeDashboardId;
   if (dashId) {
+    const {
+      dashboardList: _dashboardList,
+      dashboardCache: _dashboardCache,
+      ...cachedState
+    } = newState;
     newState.dashboardCache = {
       ...state.dashboardCache,
-      [dashId]: { ...newState } as any, // omit list/cache itself from nested cache
+      [dashId]: cachedState,
     };
   }
 
@@ -175,7 +190,9 @@ export function getCachedDashboard(dashboardId: string) {
   return state.dashboardCache[dashboardId];
 }
 
-export function restoreCachedDashboard(cached: Omit<DashboardStoreState, "dashboardList" | "dashboardCache">): void {
+export function restoreCachedDashboard(
+  cached: Omit<DashboardStoreState, "dashboardList" | "dashboardCache">,
+): void {
   setState({
     ...cached,
     dashboardList: state.dashboardList,
@@ -232,7 +249,9 @@ export function getDashboardStoreState(): DashboardStoreState {
   return state;
 }
 
-export function applyDatasetChainSnapshot(snapshot: UploadDashboardResponse): void {
+export function applyDatasetChainSnapshot(
+  snapshot: UploadDashboardResponse,
+): void {
   const keepCurrentCharts =
     state.datasetId === snapshot.datasetId && state.charts.length > 0
       ? normalizeOrders(state.charts)
@@ -286,10 +305,10 @@ export function updateChart(id: string, patch: Partial<ChartConfig>): void {
     charts: current.charts.map((chart) =>
       chart.id === id
         ? {
-          ...chart,
-          ...patch,
-          id: chart.id,
-        }
+            ...chart,
+            ...patch,
+            id: chart.id,
+          }
         : chart,
     ),
   }));
@@ -301,11 +320,16 @@ export function reorderCharts(orderedIds: string[]): void {
     const reordered = orderedIds
       .map((id) => chartMap.get(id))
       .filter((chart): chart is ChartConfig => Boolean(chart));
-    const remaining = current.charts.filter((chart) => !orderedIds.includes(chart.id));
+    const remaining = current.charts.filter(
+      (chart) => !orderedIds.includes(chart.id),
+    );
     return {
       ...current,
       version: current.version + 1,
-      charts: [...reordered, ...remaining].map((chart, index) => ({ ...chart, order: index })),
+      charts: [...reordered, ...remaining].map((chart, index) => ({
+        ...chart,
+        order: index,
+      })),
     };
   });
 }
@@ -314,7 +338,9 @@ export function setKPI(id: string, patch: Partial<KPIConfig>): void {
   withValidatedState((current) => ({
     ...current,
     version: current.version + 1,
-    kpis: current.kpis.map((kpi) => (kpi.id === id ? { ...kpi, ...patch, id: kpi.id } : kpi)),
+    kpis: current.kpis.map((kpi) =>
+      kpi.id === id ? { ...kpi, ...patch, id: kpi.id } : kpi,
+    ),
   }));
 }
 
@@ -333,7 +359,9 @@ export function applyChatbotPatch(patch: ChatbotChartPatch | null): void {
   updateChart(patch.chartId, patch.config);
 }
 
-export function useDashboardStore<T>(selector: (snapshot: DashboardStoreState) => T): T {
+export function useDashboardStore<T>(
+  selector: (snapshot: DashboardStoreState) => T,
+): T {
   return useSyncExternalStore(
     (listener) => {
       listeners.add(listener);

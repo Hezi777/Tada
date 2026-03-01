@@ -32,13 +32,21 @@ export type LoadDashboardResponse =
 
 export type LoadDashboardMetaResponse =
   | {
-    dashboard: DashboardMeta;
-    datasetId: string;
-    files: { id: string; fileName: string; rowCount: number; isPrimary: boolean }[];
-  }
+      dashboard: DashboardMeta;
+      datasetId: string;
+      files: {
+        id: string;
+        fileName: string;
+        rowCount: number;
+        isPrimary: boolean;
+      }[];
+    }
   | { empty: true; dashboard: DashboardMeta };
 
-async function readApiError(response: Response, fallback: string): Promise<string> {
+async function readApiError(
+  response: Response,
+  fallback: string,
+): Promise<string> {
   try {
     const payload = (await response.json()) as { error?: string };
     if (payload?.error) {
@@ -51,7 +59,10 @@ async function readApiError(response: Response, fallback: string): Promise<strin
   return fallback;
 }
 
-export async function uploadDataset(file: File, dashboardId?: string): Promise<UploadDashboardResponse> {
+export async function uploadDataset(
+  file: File,
+  dashboardId?: string,
+): Promise<UploadDashboardResponse> {
   const formData = new FormData();
   formData.append("file", file);
   if (dashboardId) {
@@ -201,7 +212,9 @@ export async function createDashboard(
   return DashboardListItemSchema.parse(payload);
 }
 
-export async function loadDashboard(id: string): Promise<LoadDashboardResponse> {
+export async function loadDashboard(
+  id: string,
+): Promise<LoadDashboardResponse> {
   const response = await fetch(`${apiBase}/api/dashboards/${id}`, {
     method: "GET",
     cache: "no-store",
@@ -222,7 +235,9 @@ export async function loadDashboard(id: string): Promise<LoadDashboardResponse> 
   };
 }
 
-export async function loadDashboardMeta(id: string): Promise<LoadDashboardMetaResponse> {
+export async function loadDashboardMeta(
+  id: string,
+): Promise<LoadDashboardMetaResponse> {
   const response = await fetch(`${apiBase}/api/dashboards/${id}/meta`, {
     method: "GET",
     cache: "no-store",
@@ -272,14 +287,16 @@ export async function removeFileFromDashboard(
   dashboardId: string,
   datasetId: string,
 ): Promise<void> {
-  const response = await fetch(`${apiBase}/api/dashboards/${dashboardId}/datasets`, {
-    method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ datasetId }),
-  });
+  const response = await fetch(
+    `${apiBase}/api/dashboards/${dashboardId}/datasets`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ datasetId }),
+    },
+  );
 
   if (!response.ok) {
     throw new Error(await readApiError(response, "file_remove_failed"));
   }
 }
-

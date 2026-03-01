@@ -6,8 +6,12 @@ import {
   type ChartConfig,
 } from "@tada/shared";
 import Groq from "groq-sdk";
+import { env, getGroqApiKey } from "@/lib/env";
 import type { Column, DashboardState } from "./types";
-import { buildColumnPromptStats, validateChartCollection } from "./dashboard-config";
+import {
+  buildColumnPromptStats,
+  validateChartCollection,
+} from "./dashboard-config";
 import { getDatasetRows, getDatasetState } from "./state";
 
 type Row = Record<string, unknown>;
@@ -82,7 +86,10 @@ function pearsonCorrelation(left: number[], right: number[]): number | null {
   return numerator / Math.sqrt(leftDenominator * rightDenominator);
 }
 
-function reduceAggregation(values: number[], aggregation: ChartConfig["aggregation"]): number {
+function reduceAggregation(
+  values: number[],
+  aggregation: ChartConfig["aggregation"],
+): number {
   if (aggregation === "avg") {
     return values.length ? mean(values) : 0;
   }
@@ -103,7 +110,9 @@ function formatValue(value: string | number | boolean | null): string {
     return "none";
   }
   if (typeof value === "number") {
-    return Number.isInteger(value) ? `${value}` : value.toFixed(2).replace(/\.00$/, "");
+    return Number.isInteger(value)
+      ? `${value}`
+      : value.toFixed(2).replace(/\.00$/, "");
   }
   return String(value);
 }
@@ -234,8 +243,14 @@ function buildChartSummary(chart: ChartConfig, rows: Row[]): string | null {
     if (!timeColumn) {
       return null;
     }
-    const valueColumn = chart.columns.find((column) => column !== timeColumn) ?? null;
-    const series = aggregateByTime(rows, timeColumn, valueColumn, chart.aggregation);
+    const valueColumn =
+      chart.columns.find((column) => column !== timeColumn) ?? null;
+    const series = aggregateByTime(
+      rows,
+      timeColumn,
+      valueColumn,
+      chart.aggregation,
+    );
     if (series.length === 0) {
       return null;
     }
@@ -267,8 +282,14 @@ function buildChartSummary(chart: ChartConfig, rows: Row[]): string | null {
   if (!groupColumn) {
     return null;
   }
-  const valueColumn = chart.columns.find((column) => column !== groupColumn) ?? null;
-  const series = aggregateByCategory(rows, groupColumn, valueColumn, chart.aggregation);
+  const valueColumn =
+    chart.columns.find((column) => column !== groupColumn) ?? null;
+  const series = aggregateByCategory(
+    rows,
+    groupColumn,
+    valueColumn,
+    chart.aggregation,
+  );
   if (series.length === 0) {
     return null;
   }
@@ -281,7 +302,10 @@ function buildChartSummary(chart: ChartConfig, rows: Row[]): string | null {
   return `${chart.title} shows ${groupColumn} against ${valueLabel}. ${top.label} is at ${formatValue(top.value)}.`;
 }
 
-function parseExplicitRemoveCommand(message: string, charts: ChartConfig[]): ChatbotChartPatch | null {
+function parseExplicitRemoveCommand(
+  message: string,
+  charts: ChartConfig[],
+): ChatbotChartPatch | null {
   const match = /^\s*(?:remove|delete)\s+chart\s+(\d+)\s*$/i.exec(message);
   if (!match) {
     return null;
@@ -297,17 +321,13 @@ async function requestChatResponseFromLlm(input: {
   rows: Row[];
   kpis: ChatKpiValue[];
 }): Promise<ChatResponse | null> {
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = getGroqApiKey();
   if (!apiKey) {
     return null;
   }
 
-  const model = process.env.GROQ_CHAT_MODEL;
-  if (!model) {
-    return null;
-  }
-
   const client = new Groq({ apiKey });
+  const model = env.GROQ_CHAT_MODEL;
   const columnStats = buildColumnPromptStats(input.rows, input.state.columns);
   const prompt = [
     "Return strict JSON only. No prose outside JSON.",
@@ -324,7 +344,10 @@ async function requestChatResponseFromLlm(input: {
     JSON.stringify({
       userMessage: input.message,
       rowCount: input.rows.length,
-      columns: input.state.columns.map((column) => ({ name: column.name, kind: column.kind })),
+      columns: input.state.columns.map((column) => ({
+        name: column.name,
+        kind: column.kind,
+      })),
       columnStats,
       sampleRows: input.rows.slice(0, 20),
       currentKpis: input.kpis,
@@ -384,9 +407,15 @@ function validatePatchColumns(
   return null;
 }
 
-function applyPatchToCharts(charts: ChartConfig[], patch: ChatbotChartPatch): ChartConfig[] {
+function applyPatchToCharts(
+  charts: ChartConfig[],
+  patch: ChatbotChartPatch,
+): ChartConfig[] {
   if (patch.action === "add") {
-    return [...charts, patch.config].map((chart, index) => ({ ...chart, order: index }));
+    return [...charts, patch.config].map((chart, index) => ({
+      ...chart,
+      order: index,
+    }));
   }
   if (patch.action === "remove") {
     return charts
@@ -425,20 +454,33 @@ function validateChatPatch(
     }
   } else {
     if (!chartIds.has(patch.chartId)) {
-      return { patch: null, error: "That chart no longer exists on the current dashboard." };
+      return {
+        patch: null,
+        error: "That chart no longer exists on the current dashboard.",
+      };
     }
     if (patch.action === "update") {
-      const currentChart = currentCharts.find((chart) => chart.id === patch.chartId);
+      const currentChart = currentCharts.find(
+        (chart) => chart.id === patch.chartId,
+      );
       if (!currentChart) {
-        return { patch: null, error: "That chart no longer exists on the current dashboard." };
+        return {
+          patch: null,
+          error: "That chart no longer exists on the current dashboard.",
+        };
       }
       const columnError = validatePatchColumns(
         {
           type: patch.config.type ?? currentChart.type,
           columns: patch.config.columns ?? currentChart.columns,
-          groupBy: patch.config.groupBy === undefined ? currentChart.groupBy : patch.config.groupBy,
+          groupBy:
+            patch.config.groupBy === undefined
+              ? currentChart.groupBy
+              : patch.config.groupBy,
           timeColumn:
-            patch.config.timeColumn === undefined ? currentChart.timeColumn : patch.config.timeColumn,
+            patch.config.timeColumn === undefined
+              ? currentChart.timeColumn
+              : patch.config.timeColumn,
         },
         columns,
       );
@@ -463,7 +505,12 @@ function finalizeChatResponse(
   columns: Column[],
   rows: Row[],
 ): ChatResponse {
-  const validated = validateChatPatch(response.patch, currentCharts, columns, rows);
+  const validated = validateChatPatch(
+    response.patch,
+    currentCharts,
+    columns,
+    rows,
+  );
   if (validated.error) {
     return {
       assistantMessage: `I could not apply that chart change: ${validated.error}`,
@@ -521,7 +568,8 @@ export async function handleChat({
   }
 
   return {
-    assistantMessage: "I could not produce a grounded answer or a valid chart change from that request.",
+    assistantMessage:
+      "I could not produce a grounded answer or a valid chart change from that request.",
     patch: null,
   };
 }

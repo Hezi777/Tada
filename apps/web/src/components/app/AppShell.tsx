@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Files, LayoutDashboard, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,26 +41,36 @@ function SidebarItem({
       variant="ghost"
       onClick={onClick}
       disabled={disabled}
-      className={`relative h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold transition-all duration-200 ${active
-        ? "bg-blue-50 text-[#3B82F6]"
-        : "text-[var(--color-text-secondary)] hover:bg-blue-50/60 hover:text-[#3B82F6]"
-        }`}
+      className={`relative h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold transition-all duration-200 ${
+        active
+          ? "bg-blue-50 text-[#3B82F6]"
+          : "text-[var(--color-text-secondary)] hover:bg-blue-50/60 hover:text-[#3B82F6]"
+      }`}
     >
-      {active ? <span className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-[#3B82F6]" /> : null}
+      {active ? (
+        <span className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-[#3B82F6]" />
+      ) : null}
       <Icon className="h-[18px] w-[18px]" />
       <span>{label}</span>
     </Button>
   );
 }
 
-export function AppShell({ dashboardContent, showFloatingChat = true }: AppShellProps) {
+export function AppShell({
+  dashboardContent,
+  showFloatingChat = true,
+}: AppShellProps) {
   const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     if (typeof window === "undefined") {
       return "system";
     }
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
-    return stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+    const stored = window.localStorage.getItem(
+      THEME_STORAGE_KEY,
+    ) as ThemeMode | null;
+    return stored === "light" || stored === "dark" || stored === "system"
+      ? stored
+      : "system";
   });
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
 
@@ -76,7 +87,8 @@ export function AppShell({ dashboardContent, showFloatingChat = true }: AppShell
     if (themeMode === "system") {
       const media = window.matchMedia("(prefers-color-scheme: dark)");
       applyMode("system", media.matches);
-      const listener = (event: MediaQueryListEvent) => applyMode("system", event.matches);
+      const listener = (event: MediaQueryListEvent) =>
+        applyMode("system", event.matches);
       media.addEventListener("change", listener);
       return () => media.removeEventListener("change", listener);
     }
@@ -86,12 +98,21 @@ export function AppShell({ dashboardContent, showFloatingChat = true }: AppShell
   return (
     <div className="h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text-primary)]">
       <aside className="fixed inset-y-0 left-0 z-30 flex w-[260px] flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-6">
-        <Link href="/" className="flex items-center gap-3 px-1 transition-opacity hover:opacity-80">
+        <Link
+          href="/"
+          className="flex items-center gap-3 px-1 transition-opacity hover:opacity-80"
+        >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#3B82F6] shadow-[0_2px_8px_rgba(59,130,246,0.25)]">
-            <img src={typeof tadaLogo === 'string' ? tadaLogo : tadaLogo.src} alt="TADA" className="h-5 w-5 brightness-0 invert" />
+            <Image
+              src={tadaLogo}
+              alt="TADA"
+              className="h-5 w-5 brightness-0 invert"
+            />
           </div>
           <div>
-            <div className="font-display text-[22px] font-normal tracking-tight text-[#0F172A]">TADA</div>
+            <div className="font-display text-[22px] font-normal tracking-tight text-[#0F172A]">
+              TADA
+            </div>
             <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
               Workspace
             </div>

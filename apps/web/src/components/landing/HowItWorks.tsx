@@ -14,7 +14,8 @@ const steps = [
     icon: Cpu,
     step: "02",
     title: "AI does the work",
-    description: "Our AI instantly understands your data structure and relationships.",
+    description:
+      "Our AI instantly understands your data structure and relationships.",
   },
   {
     icon: LayoutDashboard,
@@ -25,15 +26,24 @@ const steps = [
 ];
 
 export function HowItWorks() {
-  const [visibleItems, setVisibleItems] = useState<number[]>([]);
+  const [visibleItems, setVisibleItems] = useState<number[]>(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return [0, 1, 2];
+    }
+    return [];
+  });
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check if user prefers reduced motion
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
 
     if (prefersReducedMotion) {
-      setVisibleItems([0, 1, 2]);
       return;
     }
 
@@ -50,7 +60,7 @@ export function HowItWorks() {
           }
         });
       },
-      { threshold: 0.2 }
+      { threshold: 0.2 },
     );
 
     if (sectionRef.current) {
@@ -61,19 +71,27 @@ export function HowItWorks() {
   }, []);
 
   return (
-    <section id="how-it-works" className="relative px-4 py-24 sm:px-6" ref={sectionRef}>
+    <section
+      id="how-it-works"
+      className="relative px-4 py-24 sm:px-6"
+      ref={sectionRef}
+    >
       <div className="container">
         <div className="section-shell px-6 py-10 sm:px-10 sm:py-14">
           <div className="mb-16 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
               <div className="eyebrow mb-5">How It Works</div>
-              <h2 className="text-4xl text-foreground sm:text-5xl">Three steps to clarity</h2>
+              <h2 className="text-4xl text-foreground sm:text-5xl">
+                Three steps to clarity
+              </h2>
               <p className="mt-5 text-lg leading-8 text-muted-foreground">
-                From messy spreadsheet to actionable dashboard in under a minute.
+                From messy spreadsheet to actionable dashboard in under a
+                minute.
               </p>
             </div>
             <Card className="max-w-sm rounded-[1.5rem] border border-primary/15 bg-primary/[0.07] px-5 py-4 text-sm leading-7 text-foreground shadow-card">
-              The experience stays simple on purpose: one upload, one generated dashboard, one conversational loop.
+              The experience stays simple on purpose: one upload, one generated
+              dashboard, one conversational loop.
             </Card>
           </div>
 
@@ -88,7 +106,7 @@ export function HowItWorks() {
                   className={`
                     relative flex flex-col items-center text-center transition-all duration-500 ease-out
                     motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-y-0
-                    ${visibleItems.includes(index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+                    ${visibleItems.includes(index) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
                   `}
                   style={{ transitionDelay: `${index * 150}ms` }}
                 >
@@ -102,8 +120,12 @@ export function HowItWorks() {
                         <step.icon className="h-6 w-6 text-primary" />
                       </div>
                     </div>
-                    <h3 className="font-display text-2xl font-bold text-foreground">{step.title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-muted-foreground">{step.description}</p>
+                    <h3 className="font-display text-2xl font-bold text-foreground">
+                      {step.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                      {step.description}
+                    </p>
                   </Card>
                 </div>
               ))}

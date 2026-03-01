@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { ChartConfigSchema } from "@tada/shared";
 
 export const runtime = "nodejs";
-
-const supabaseAdmin = createAdminClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
 
 const PersistChartsRequestSchema = z.object({
   datasetId: z.string().min(1),
@@ -17,6 +12,7 @@ const PersistChartsRequestSchema = z.object({
 });
 
 export async function PATCH(request: Request) {
+  const supabaseAdmin = createAdminClient();
   const supabase = await createClient();
   const {
     data: { user },
@@ -40,7 +36,10 @@ export async function PATCH(request: Request) {
     .eq("user_id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message || "charts_persist_failed" }, { status: 400 });
+    return NextResponse.json(
+      { error: error.message || "charts_persist_failed" },
+      { status: 400 },
+    );
   }
 
   return NextResponse.json({ ok: true });

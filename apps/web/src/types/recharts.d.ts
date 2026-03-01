@@ -1,18 +1,22 @@
 declare module "recharts" {
-  export const Area: any;
-  export const AreaChart: any;
-  export const Bar: any;
-  export const BarChart: any;
-  export const CartesianGrid: any;
-  export const Cell: any;
-  export const Label: any;
-  export const Pie: any;
-  export const PieChart: any;
-  export const ResponsiveContainer: any;
-  export const Scatter: any;
-  export const ScatterChart: any;
-  export const Sector: any;
-  export const Tooltip: any;
-  export const XAxis: any;
-  export const YAxis: any;
+  import type { ComponentType } from "react";
+
+  type RechartsComponent = ComponentType<Record<string, unknown>>;
+
+  export const Area: RechartsComponent;
+  export const AreaChart: RechartsComponent;
+  export const Bar: RechartsComponent;
+  export const BarChart: RechartsComponent;
+  export const CartesianGrid: RechartsComponent;
+  export const Cell: RechartsComponent;
+  export const Label: RechartsComponent;
+  export const Pie: RechartsComponent;
+  export const PieChart: RechartsComponent;
+  export const ResponsiveContainer: RechartsComponent;
+  export const Scatter: RechartsComponent;
+  export const ScatterChart: RechartsComponent;
+  export const Sector: RechartsComponent;
+  export const Tooltip: RechartsComponent;
+  export const XAxis: RechartsComponent;
+  export const YAxis: RechartsComponent;
 }

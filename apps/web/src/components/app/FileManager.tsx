@@ -170,7 +170,9 @@ export default function FileManager() {
   const [renameValue, setRenameValue] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
-  const [deleteFileConfirm, setDeleteFileConfirm] = useState<ScopedFile | null>(null);
+  const [deleteFileConfirm, setDeleteFileConfirm] = useState<ScopedFile | null>(
+    null,
+  );
 
   // ── Icon / color pickers ──
   const [iconPickerId, setIconPickerId] = useState<string | null>(null);
@@ -216,9 +218,7 @@ export default function FileManager() {
     try {
       await updateDashboard(id, { name: renameValue.trim() });
       setDashboards((prev) =>
-        prev.map((d) =>
-          d.id === id ? { ...d, name: renameValue.trim() } : d,
-        ),
+        prev.map((d) => (d.id === id ? { ...d, name: renameValue.trim() } : d)),
       );
       setRenamingId(null);
     } catch {
@@ -278,7 +278,7 @@ export default function FileManager() {
           fileName: f.fileName,
           rowCount: f.rowCount,
           isPrimary: true,
-        }))
+        })),
       );
       return;
     }
@@ -356,9 +356,7 @@ export default function FileManager() {
   const filteredFiles = useMemo(() => {
     if (!searchQuery.trim()) return scopedFiles;
     const q = searchQuery.toLowerCase();
-    return scopedFiles.filter((f) =>
-      f.fileName.toLowerCase().includes(q),
-    );
+    return scopedFiles.filter((f) => f.fileName.toLowerCase().includes(q));
   }, [scopedFiles, searchQuery]);
 
   // ── RENDER: Dashboard card grid ──
@@ -434,7 +432,8 @@ export default function FileManager() {
 
                       <div className="mt-1.5 flex items-center gap-3 text-[11px] text-[var(--color-text-muted)]">
                         <span>
-                          {dash.fileCount} {dash.fileCount === 1 ? "file" : "files"}
+                          {dash.fileCount}{" "}
+                          {dash.fileCount === 1 ? "file" : "files"}
                         </span>
                         <span>·</span>
                         <span>{formatDate(dash.updatedAt)}</span>
@@ -513,11 +512,14 @@ export default function FileManager() {
                               <button
                                 key={iconName}
                                 type="button"
-                                onClick={() => handleChangeIcon(dash.id, iconName)}
-                                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${iconName === dash.icon
-                                  ? "bg-blue-50 text-[#3B82F6]"
-                                  : "text-[var(--color-text-muted)] hover:bg-slate-50"
-                                  }`}
+                                onClick={() =>
+                                  handleChangeIcon(dash.id, iconName)
+                                }
+                                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${
+                                  iconName === dash.icon
+                                    ? "bg-blue-50 text-[#3B82F6]"
+                                    : "text-[var(--color-text-muted)] hover:bg-slate-50"
+                                }`}
                               >
                                 <IC className="h-4 w-4" />
                               </button>
@@ -539,10 +541,11 @@ export default function FileManager() {
                               key={color}
                               type="button"
                               onClick={() => handleChangeColor(dash.id, color)}
-                              className={`h-7 w-7 rounded-full transition-all ${color === dash.color
-                                ? "ring-2 ring-offset-1"
-                                : "hover:scale-110"
-                                }`}
+                              className={`h-7 w-7 rounded-full transition-all ${
+                                color === dash.color
+                                  ? "ring-2 ring-offset-1"
+                                  : "hover:scale-110"
+                              }`}
                               style={{
                                 backgroundColor: color,
                               }}
@@ -586,8 +589,8 @@ export default function FileManager() {
               <AlertDialogTitle>Delete dashboard</AlertDialogTitle>
               <AlertDialogDescription>
                 Are you sure you want to delete &quot;{deleteConfirmName}&quot;?
-                This will remove the dashboard and unlink all attached files. The
-                files themselves will not be deleted.
+                This will remove the dashboard and unlink all attached files.
+                The files themselves will not be deleted.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -665,10 +668,11 @@ export default function FileManager() {
               variant="ghost"
               size="icon"
               onClick={() => setFileView("card")}
-              className={`h-7 w-7 rounded-md ${fileView === "card"
-                ? "bg-[#3B82F6] text-white"
-                : "text-[var(--color-text-muted)]"
-                }`}
+              className={`h-7 w-7 rounded-md ${
+                fileView === "card"
+                  ? "bg-[#3B82F6] text-white"
+                  : "text-[var(--color-text-muted)]"
+              }`}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
             </Button>
@@ -676,10 +680,11 @@ export default function FileManager() {
               variant="ghost"
               size="icon"
               onClick={() => setFileView("list")}
-              className={`h-7 w-7 rounded-md ${fileView === "list"
-                ? "bg-[#3B82F6] text-white"
-                : "text-[var(--color-text-muted)]"
-                }`}
+              className={`h-7 w-7 rounded-md ${
+                fileView === "list"
+                  ? "bg-[#3B82F6] text-white"
+                  : "text-[var(--color-text-muted)]"
+              }`}
             >
               <List className="h-3.5 w-3.5" />
             </Button>
@@ -689,8 +694,9 @@ export default function FileManager() {
           <Button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className={`relative h-8 overflow-hidden rounded-lg bg-[#3B82F6] px-0 text-xs font-medium text-white hover:bg-[#2563EB] transition-[width] duration-300 ${isUploading ? "w-[170px]" : "w-24"
-              }`}
+            className={`relative h-8 overflow-hidden rounded-lg bg-[#3B82F6] px-0 text-xs font-medium text-white hover:bg-[#2563EB] transition-[width] duration-300 ${
+              isUploading ? "w-[170px]" : "w-24"
+            }`}
           >
             <AnimatePresence mode="popLayout" initial={false}>
               {isUploading ? (
@@ -758,8 +764,9 @@ export default function FileManager() {
             <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className={`relative mt-2 h-9 overflow-hidden rounded-lg bg-[#3B82F6] px-0 text-sm text-white hover:bg-[#2563EB] transition-[width] duration-300 ${isUploading ? "w-[180px]" : "w-32"
-                }`}
+              className={`relative mt-2 h-9 overflow-hidden rounded-lg bg-[#3B82F6] px-0 text-sm text-white hover:bg-[#2563EB] transition-[width] duration-300 ${
+                isUploading ? "w-[180px]" : "w-32"
+              }`}
             >
               <AnimatePresence mode="popLayout" initial={false}>
                 {isUploading ? (
