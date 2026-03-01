@@ -466,10 +466,10 @@ function buildScatterChart(rows: Row[], columns: Column[]): IncomingChartConfig 
   const numericColumns = columns.filter((column) => column.kind === "numeric");
   let best:
     | {
-        left: Column;
-        right: Column;
-        correlation: number;
-      }
+      left: Column;
+      right: Column;
+      correlation: number;
+    }
     | null = null;
 
   for (let leftIndex = 0; leftIndex < numericColumns.length; leftIndex += 1) {
@@ -761,10 +761,10 @@ function parseSuggestionPayload(text: string): IncomingChartConfig[] | null {
 function normalizeSuggestedChart(chart: Record<string, unknown>): IncomingChartConfig | null {
   const type =
     chart.type === "area" ||
-    chart.type === "bar" ||
-    chart.type === "donut" ||
-    chart.type === "scatter" ||
-    chart.type === "kpi"
+      chart.type === "bar" ||
+      chart.type === "donut" ||
+      chart.type === "scatter" ||
+      chart.type === "kpi"
       ? chart.type
       : null;
   if (!type || type === "kpi") {
@@ -854,6 +854,8 @@ export async function buildInitialChartConfigs(rows: Row[], columns: Column[]): 
   return buildFallbackCharts(rows, columns);
 }
 
+// ── KPI generation: LLM-first, heuristic fallback ──
+
 function buildPrimaryKpi(rows: Row[], column: Column): KPIConfig | null {
   const values = rows
     .map((row) => toNumber(row[column.name]))
@@ -865,9 +867,9 @@ function buildPrimaryKpi(rows: Row[], column: Column): KPIConfig | null {
   const lowerName = column.name.toLowerCase();
   const aggregation =
     lowerName.includes("avg") ||
-    lowerName.includes("rate") ||
-    lowerName.includes("ratio") ||
-    lowerName.includes("percent")
+      lowerName.includes("rate") ||
+      lowerName.includes("ratio") ||
+      lowerName.includes("percent")
       ? "avg"
       : "sum";
 
@@ -972,7 +974,7 @@ function buildPrimaryRowCountKpi(fallbackColumnName: string): KPIConfig {
   };
 }
 
-export function buildKpiConfigs(rows: Row[], columns: Column[]): KPIConfig[] {
+function buildFallbackKpis(rows: Row[], columns: Column[]): KPIConfig[] {
   const primaryNumeric = pickPrimaryNumeric(rows, columns);
   const primaryCategory = pickPrimaryCategory(rows, columns);
   const primaryDate = pickPrimaryDate(columns);
@@ -1010,3 +1012,140 @@ export function buildKpiConfigs(rows: Row[], columns: Column[]): KPIConfig[] {
 
   return kpis.slice(0, BI_RULE_LIMITS.maxKpis);
 }
+
+function parseKpiSuggestionPayload(text: string): KPIConfig[] | null {
+  const trimmed = text.trim();
+  const start = trimmed.indexOf("{");
+  const end = trimmed.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed.slice(start, end + 1)) as {
+      kpis?: Array<Record<string, unknown>>;
+    };
+    if (!Array.isArray(parsed.kpis)) {
+      return null;
+    }
+
+    const validAggregations = new Set(["sum", "avg", "count", "min", "max", "mode", "range"]);
+
+    return parsed.kpis
+      .map((kpi, index): KPIConfig | null => {
+        const column = typeof kpi.column === "string" ? kpi.column : "";
+        const aggregation = typeof kpi.aggregation === "string" && validAggregations.has(kpi.aggregation)
+          ? kpi.aggregation
+          : "sum";
+        const label = typeof kpi.label === "string" && kpi.label.trim() ? kpi.label.trim() : "";
+        const description = typeof kpi.description === "string" && kpi.description.trim()
+          ? kpi.description.trim()
+          : "";
+
+        if (!column || !label) {
+          return null;
+        }
+
+        return {
+          id: `kpi_ai_${index}`,
+          column,
+          aggregation,
+          label,
+          description: description || `${label} computed from ${column}.`,
+          isPrimary: index === 0,
+        };
+      })
+      .filter((kpi): kpi is KPIConfig => Boolean(kpi));
+  } catch {
+    return null;
+  }
+}
+
+async function suggestKpisWithLLM(rows: Row[], columns: Column[]): Promise<KPIConfig[] | null> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  const client = new Groq({ apiKey });
+  const model = process.env.GROQ_DASHBOARD_MODEL;
+  if (!model) {
+    return null;
+  }
+
+  const numericCols = columns.filter((c) => c.kind === "numeric").map((c) => c.name);
+  const categoricalCols = columns.filter((c) => c.kind === "categorical").map((c) => c.name);
+  const dateCols = columns.filter((c) => c.kind === "date").map((c) => c.name);
+
+  const prompt = [
+    "Return strict JSON only. No prose.",
+    `Generate exactly ${BI_RULE_LIMITS.maxKpis} KPIs for a business dashboard.`,
+    "Rules:",
+    "- Pick the most business-relevant metrics. Think like a BI analyst.",
+    "- Use DIFFERENT columns across KPIs for diversity. Do NOT repeat the same column.",
+    "- The first KPI must be the single most important business metric (isPrimary: true).",
+    "- Labels should be concise, human-readable, and specific to the data (e.g. 'Revenue' not 'Total column_name').",
+    "- Descriptions must contain a specific value or finding from the data, not generic text.",
+    `- For numeric columns use aggregations: sum, avg, min, max. For categorical columns use: mode. For date columns use: range. count is for row counting.`,
+    `- Available numeric columns: ${JSON.stringify(numericCols)}`,
+    `- Available categorical columns: ${JSON.stringify(categoricalCols)}`,
+    `- Available date columns: ${JSON.stringify(dateCols)}`,
+    'Schema: {"kpis":[{"column":"string","aggregation":"sum|avg|count|min|max|mode|range","label":"string","description":"string"}]}',
+    `Return ${BI_RULE_LIMITS.minKpis} to ${BI_RULE_LIMITS.maxKpis} KPIs. The first one is the primary KPI.`,
+    JSON.stringify({
+      rowCount: rows.length,
+      columns: columns.map((column) => ({ name: column.name, kind: column.kind })),
+      sampleRows: rows.slice(0, 10),
+      columnStats: buildColumnPromptStats(rows, columns),
+    }),
+  ].join("\n");
+
+  try {
+    const completion = await client.chat.completions.create({
+      model,
+      temperature: 0.3,
+      max_completion_tokens: 350,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
+
+    const payload = completion.choices[0]?.message?.content ?? null;
+    if (!payload) {
+      return null;
+    }
+
+    const parsed = parseKpiSuggestionPayload(payload);
+    if (!parsed || parsed.length < BI_RULE_LIMITS.minKpis) {
+      return null;
+    }
+
+    // Validate all referenced columns exist
+    const columnNames = new Set(columns.map((c) => c.name));
+    const valid = parsed.filter((kpi) => columnNames.has(kpi.column));
+    if (valid.length < BI_RULE_LIMITS.minKpis) {
+      return null;
+    }
+
+    // Ensure exactly one isPrimary
+    if (!valid.some((kpi) => kpi.isPrimary)) {
+      valid[0].isPrimary = true;
+    }
+
+    return valid.slice(0, BI_RULE_LIMITS.maxKpis);
+  } catch {
+    return null;
+  }
+}
+
+export async function buildKpiConfigs(rows: Row[], columns: Column[]): Promise<KPIConfig[]> {
+  const suggested = await suggestKpisWithLLM(rows, columns);
+  if (suggested) {
+    return suggested;
+  }
+  return buildFallbackKpis(rows, columns);
+}
+

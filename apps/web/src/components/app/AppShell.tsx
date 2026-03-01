@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useState } from "react";
+import Link from "next/link";
 import { Files, LayoutDashboard, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -85,8 +86,8 @@ export function AppShell({ dashboardContent, showFloatingChat = true }: AppShell
   return (
     <div className="h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text-primary)]">
       <aside className="fixed inset-y-0 left-0 z-30 flex w-[260px] flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-6">
-        <div className="flex items-center gap-3 px-1">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3B82F6] shadow-[0_2px_8px_rgba(59,130,246,0.25)]">
+        <Link href="/" className="flex items-center gap-3 px-1 transition-opacity hover:opacity-80">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#3B82F6] shadow-[0_2px_8px_rgba(59,130,246,0.25)]">
             <img src={tadaLogo} alt="TADA" className="h-5 w-5 brightness-0 invert" />
           </div>
           <div>
@@ -95,7 +96,7 @@ export function AppShell({ dashboardContent, showFloatingChat = true }: AppShell
               Workspace
             </div>
           </div>
-        </div>
+        </Link>
 
         <nav className="mt-10 space-y-1">
           <SidebarItem

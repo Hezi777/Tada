@@ -8,6 +8,7 @@ import type {
   LoadedDatasetFile,
   SerializedRow,
   UploadDashboardResponse,
+  DashboardListItem,
 } from "@tada/shared";
 import {
   toStoreContext,
@@ -29,6 +30,8 @@ type DashboardStoreState = {
   activeDashboardName: string | null;
   activeDashboardIcon: string | null;
   activeDashboardColor: string | null;
+  dashboardList: DashboardListItem[];
+  dashboardCache: Record<string, Omit<DashboardStoreState, "dashboardList" | "dashboardCache">>;
 };
 
 type Listener = () => void;
@@ -49,6 +52,8 @@ let state: DashboardStoreState = {
   activeDashboardName: null,
   activeDashboardIcon: null,
   activeDashboardColor: null,
+  dashboardList: [],
+  dashboardCache: {},
 };
 
 function emit(): void {
@@ -113,6 +118,8 @@ function prepareInitialState(
     activeDashboardName: null,
     activeDashboardIcon: null,
     activeDashboardColor: null,
+    dashboardList: state.dashboardList,
+    dashboardCache: state.dashboardCache,
   };
   validateNextState(next);
   return next;
@@ -123,12 +130,56 @@ export function initializeDashboardStore(
   dashboard?: { id: string; name: string; icon: string; color: string },
 ): void {
   const prepared = prepareInitialState(snapshot);
-  setState({
+  const newState = {
     ...prepared,
     activeDashboardId: dashboard?.id ?? state.activeDashboardId,
     activeDashboardName: dashboard?.name ?? state.activeDashboardName,
     activeDashboardIcon: dashboard?.icon ?? state.activeDashboardIcon,
     activeDashboardColor: dashboard?.color ?? state.activeDashboardColor,
+  };
+
+  // Cache this full dashboard if an ID is present
+  const dashId = newState.activeDashboardId;
+  if (dashId) {
+    newState.dashboardCache = {
+      ...state.dashboardCache,
+      [dashId]: { ...newState } as any, // omit list/cache itself from nested cache
+    };
+  }
+
+  setState(newState);
+}
+
+export function getDashboardList(): DashboardListItem[] {
+  return state.dashboardList;
+}
+
+export function setDashboardList(list: DashboardListItem[]): void {
+  setState({ ...state, dashboardList: list });
+}
+
+export function setDashboardCache(
+  dashboardId: string,
+  dashboardState: Omit<DashboardStoreState, "dashboardList" | "dashboardCache">,
+): void {
+  setState({
+    ...state,
+    dashboardCache: {
+      ...state.dashboardCache,
+      [dashboardId]: dashboardState,
+    },
+  });
+}
+
+export function getCachedDashboard(dashboardId: string) {
+  return state.dashboardCache[dashboardId];
+}
+
+export function restoreCachedDashboard(cached: Omit<DashboardStoreState, "dashboardList" | "dashboardCache">): void {
+  setState({
+    ...cached,
+    dashboardList: state.dashboardList,
+    dashboardCache: state.dashboardCache,
   });
 }
 
@@ -172,6 +223,8 @@ export function resetDashboardStore(): void {
     activeDashboardName: null,
     activeDashboardIcon: null,
     activeDashboardColor: null,
+    dashboardList: state.dashboardList,
+    dashboardCache: state.dashboardCache,
   });
 }
 
@@ -202,6 +255,8 @@ export function applyDatasetChainSnapshot(snapshot: UploadDashboardResponse): vo
     activeDashboardName: state.activeDashboardName,
     activeDashboardIcon: state.activeDashboardIcon,
     activeDashboardColor: state.activeDashboardColor,
+    dashboardList: state.dashboardList,
+    dashboardCache: state.dashboardCache,
   };
 
   validateNextState(next);

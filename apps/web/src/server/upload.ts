@@ -156,7 +156,7 @@ export async function handleUpload(file: UploadedFile): Promise<UploadDashboardR
     throw new Error("empty_dataset");
   }
   const columns = inferColumns(rows);
-  const kpis = buildKpiConfigs(rows, columns);
+  const kpis = await buildKpiConfigs(rows, columns);
   const charts = await buildInitialChartConfigs(rows, columns);
   const datasetId = randomUUID();
   const datasetMeta = buildDatasetMeta(rows, columns);
@@ -207,7 +207,7 @@ export async function handleChainUpload(
   ];
   const mergedRows = mergeDatasetRows(nextFiles);
   const datasetMeta = buildDatasetMeta(mergedRows, state.columns);
-  const kpis = buildKpiConfigs(mergedRows, state.columns);
+  const kpis = await buildKpiConfigs(mergedRows, state.columns);
 
   setDatasetFiles(datasetId, nextFiles);
   setDatasetRows(datasetId, mergedRows);
@@ -220,7 +220,7 @@ export async function handleChainUpload(
   return buildUploadResponse(snapshot, mergedRows, nextFiles);
 }
 
-export function handleChainRemove(datasetId: string, fileId: string): UploadDashboardResponse {
+export async function handleChainRemove(datasetId: string, fileId: string): Promise<UploadDashboardResponse> {
   const state = getDatasetState(datasetId);
   const existingFiles = getDatasetFiles(datasetId);
   if (!state || !existingFiles) {
@@ -238,7 +238,7 @@ export function handleChainRemove(datasetId: string, fileId: string): UploadDash
   const nextFiles = existingFiles.filter((file) => file.id !== fileId);
   const mergedRows = mergeDatasetRows(nextFiles);
   const datasetMeta = buildDatasetMeta(mergedRows, state.columns);
-  const kpis = buildKpiConfigs(mergedRows, state.columns);
+  const kpis = await buildKpiConfigs(mergedRows, state.columns);
 
   setDatasetFiles(datasetId, nextFiles);
   setDatasetRows(datasetId, mergedRows);

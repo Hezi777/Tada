@@ -53,15 +53,69 @@ import {
   uploadToDashboard,
   removeFileFromDashboard,
   loadDashboard,
+  loadDashboardMeta,
 } from "@/lib/api";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   initializeDashboardStore,
   setActiveDashboard,
   useDashboardStore,
+  getCachedDashboard,
 } from "@/lib/dashboard-store";
 import CreateDashboardModal, {
   getIconComponent,
 } from "@/components/app/CreateDashboardModal";
+
+const LOADING_PHRASES = [
+  "Reading your data...",
+  "Finding patterns...",
+  "Crunching numbers...",
+  "Connecting the dots...",
+  "Sifting through rows...",
+  "Detecting anomalies...",
+  "Building charts...",
+  "Analyzing metrics...",
+  "Generating insights...",
+  "Polishing pixels...",
+  "Extracting value...",
+  "Doing the math...",
+  "Looking for trends...",
+  "Structuring datasets...",
+  "Processing files...",
+  "Preparing your dashboard...",
+  "Applying intelligence...",
+  "Assembling views...",
+  "Almost there...",
+  "Finalizing setup...",
+];
+
+function AnimatedLoadingText() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((current) => (current + 1) % LOADING_PHRASES.length);
+    }, 1800);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="relative h-5 w-[130px] overflow-hidden text-left font-medium">
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={index}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -15 }}
+          transition={{ duration: 0.3 }}
+          className="absolute inset-0 flex items-center"
+        >
+          {LOADING_PHRASES[index]}
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
+}
 import {
   DASHBOARD_ICON_OPTIONS,
   DASHBOARD_COLOR_OPTIONS,
@@ -214,19 +268,27 @@ export default function FileManager() {
     setView("files");
     setSearchQuery("");
     setUploadError(null);
+
+    // If we already have the full dashboard in memory, use it instantly
+    const cached = getCachedDashboard(dash.id);
+    if (cached) {
+      setScopedFiles(
+        cached.files.map((f) => ({
+          id: f.id,
+          fileName: f.fileName,
+          rowCount: f.rowCount,
+          isPrimary: true,
+        }))
+      );
+      return;
+    }
+
     try {
-      const result = await loadDashboard(dash.id);
+      const result = await loadDashboardMeta(dash.id);
       if ("empty" in result) {
         setScopedFiles([]);
       } else {
-        setScopedFiles(
-          result.files.map((f) => ({
-            id: f.id,
-            fileName: f.fileName,
-            rowCount: f.rowCount,
-            isPrimary: f.isPrimary,
-          })),
-        );
+        setScopedFiles(result.files);
       }
     } catch {
       setScopedFiles([]);
@@ -627,14 +689,36 @@ export default function FileManager() {
           <Button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="h-8 gap-1.5 rounded-lg bg-[#3B82F6] px-3 text-xs font-medium text-white hover:bg-[#2563EB]"
+            className={`relative h-8 overflow-hidden rounded-lg bg-[#3B82F6] px-0 text-xs font-medium text-white hover:bg-[#2563EB] transition-[width] duration-300 ${isUploading ? "w-[170px]" : "w-24"
+              }`}
           >
-            {isUploading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Upload className="h-3.5 w-3.5" />
-            )}
-            Upload
+            <AnimatePresence mode="popLayout" initial={false}>
+              {isUploading ? (
+                <motion.div
+                  key="uploading"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                  className="absolute inset-0 flex items-center justify-center gap-1.5"
+                >
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <AnimatedLoadingText />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="idle"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                  className="absolute inset-0 flex items-center justify-center gap-1.5"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  <span>Upload</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </Button>
           <input
             ref={fileInputRef}
@@ -673,10 +757,37 @@ export default function FileManager() {
             </p>
             <Button
               onClick={() => fileInputRef.current?.click()}
-              className="mt-2 h-9 gap-2 rounded-lg bg-[#3B82F6] px-4 text-sm text-white hover:bg-[#2563EB]"
+              disabled={isUploading}
+              className={`relative mt-2 h-9 overflow-hidden rounded-lg bg-[#3B82F6] px-0 text-sm text-white hover:bg-[#2563EB] transition-[width] duration-300 ${isUploading ? "w-[180px]" : "w-32"
+                }`}
             >
-              <Upload className="h-4 w-4" />
-              Upload File
+              <AnimatePresence mode="popLayout" initial={false}>
+                {isUploading ? (
+                  <motion.div
+                    key="uploading"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -20, opacity: 0 }}
+                    transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                    className="absolute inset-0 flex items-center justify-center gap-2"
+                  >
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <AnimatedLoadingText />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="idle"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -20, opacity: 0 }}
+                    transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                    className="absolute inset-0 flex items-center justify-center gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    <span>Upload File</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </Button>
           </div>
         ) : fileView === "card" ? (

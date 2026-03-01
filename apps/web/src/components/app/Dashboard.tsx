@@ -60,7 +60,16 @@ import {
   hasRenderableChartData,
 } from "@/lib/dashboard-runtime";
 import { calculateLayout, type LayoutItem } from "@/lib/chart-layout";
-import { reorderCharts, updateChart, useDashboardStore, initializeDashboardStore, setActiveDashboard } from "@/lib/dashboard-store";
+import {
+  reorderCharts,
+  updateChart,
+  useDashboardStore,
+  initializeDashboardStore,
+  setActiveDashboard,
+  getCachedDashboard,
+  setDashboardList,
+  restoreCachedDashboard
+} from "@/lib/dashboard-store";
 import { listDashboards, loadDashboard, createDashboard } from "@/lib/api";
 import { getIconComponent } from "@/components/app/CreateDashboardModal";
 import CreateDashboardModal from "@/components/app/CreateDashboardModal";
@@ -601,7 +610,8 @@ export function Dashboard() {
   const isLoading = Boolean(datasetId) && (kpiConfigs.length === 0 || charts.length === 0);
 
   const kpiCards = useMemo(() => {
-    const realKpis = kpiConfigs.slice(1, 4).map((kpi) => ({
+    // Use all backend-generated KPIs (including AI primary) directly
+    const backendCards = kpiConfigs.slice(0, 4).map((kpi) => ({
       id: kpi.id,
       icon: getKpiIcon(kpi),
       value: computeKpiValue(kpi, rows),
@@ -609,21 +619,15 @@ export function Dashboard() {
       description: kpi.description,
     }));
 
-    const fallbackCards = deriveFallbackCards(rows).filter(
-      (fallback) => !realKpis.some((kpi) => kpi.id === fallback.id),
-    );
+    // Only fill with fallback cards if backend returned fewer than 4
+    if (backendCards.length < 4) {
+      const fallbackCards = deriveFallbackCards(rows).filter(
+        (fallback) => !backendCards.some((card) => card.id === fallback.id),
+      );
+      return [...backendCards, ...fallbackCards].slice(0, 4);
+    }
 
-    return [
-      {
-        id: "total-records",
-        icon: Hash,
-        value: rows.length,
-        label: "Total Records",
-        description: "Rows in your dataset",
-      },
-      ...realKpis,
-      ...fallbackCards,
-    ].slice(0, 4);
+    return backendCards;
   }, [kpiConfigs, rows]);
 
   // ── Dashboard Header with switcher ──
@@ -641,15 +645,15 @@ export function Dashboard() {
     const activeDashboardName = useDashboardStore((s) => s.activeDashboardName);
     const activeDashboardIcon = useDashboardStore((s) => s.activeDashboardIcon);
     const activeDashboardColor = useDashboardStore((s) => s.activeDashboardColor);
+    const allDashboards = useDashboardStore((s) => s.dashboardList);
 
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [allDashboards, setAllDashboards] = useState<DashboardListItem[]>([]);
     const [createOpen, setCreateOpen] = useState(false);
 
     const fetchDashboards = useCallback(async () => {
       try {
         const items = await listDashboards();
-        setAllDashboards(items);
+        setDashboardList(items);
       } catch {
         // silent
       }
@@ -663,6 +667,15 @@ export function Dashboard() {
 
     async function handleSwitch(dash: DashboardListItem) {
       setDropdownOpen(false);
+
+      // Try local cache first for instant switch
+      const cached = getCachedDashboard(dash.id);
+      if (cached) {
+        restoreCachedDashboard(cached);
+        return;
+      }
+
+      // Fallback to fetch
       try {
         const result = await loadDashboard(dash.id);
         if (!("empty" in result)) {
@@ -733,8 +746,8 @@ export function Dashboard() {
                         type="button"
                         onClick={() => handleSwitch(dash)}
                         className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors ${isActive
-                            ? "bg-blue-50 font-medium text-[#3B82F6]"
-                            : "text-[var(--color-text-primary)] hover:bg-slate-50"
+                          ? "bg-blue-50 font-medium text-[#3B82F6]"
+                          : "text-[var(--color-text-primary)] hover:bg-slate-50"
                           }`}
                       >
                         <span
