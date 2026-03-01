@@ -1,17 +1,18 @@
 import { DeleteChainedFileRequestSchema } from "@tada/shared";
 import { NextResponse } from "next/server";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { handleChainRemove, handleChainUpload, type UploadedFile } from "@/server/upload";
+import {
+  handleChainRemove,
+  handleChainUpload,
+  type UploadedFile,
+} from "@/server/upload";
 
 export const runtime = "nodejs";
 
-const supabaseAdmin = createAdminClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
-
-async function readUploadedFile(value: FormDataEntryValue | null): Promise<UploadedFile | null> {
+async function readUploadedFile(
+  value: FormDataEntryValue | null,
+): Promise<UploadedFile | null> {
   if (!(value instanceof File)) {
     return null;
   }
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    const supabaseAdmin = createAdminClient();
     const supabase = await createClient();
     const {
       data: { user },
@@ -49,14 +51,18 @@ export async function POST(request: Request) {
     const state = await handleChainUpload(datasetId, file);
     const addedFile = [...state.files]
       .reverse()
-      .find((entry) => entry.fileName === file.originalname && !entry.isPrimary);
+      .find(
+        (entry) => entry.fileName === file.originalname && !entry.isPrimary,
+      );
 
-    const { error: insertError } = await supabaseAdmin.from("dataset_files").insert({
-      dataset_id: datasetId,
-      file_name: file.originalname,
-      is_primary: false,
-      row_count: addedFile?.rowCount ?? 0,
-    });
+    const { error: insertError } = await supabaseAdmin
+      .from("dataset_files")
+      .insert({
+        dataset_id: datasetId,
+        file_name: file.originalname,
+        is_primary: false,
+        row_count: addedFile?.rowCount ?? 0,
+      });
 
     if (insertError) {
       throw new Error(insertError.message || "upload_chain_persist_failed");
@@ -66,7 +72,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof Error) {
       console.error("[upload-chain] failed:", error.message);
-      return NextResponse.json({ error: error.message || "upload_chain_failed" }, { status: 400 });
+      return NextResponse.json(
+        { error: error.message || "upload_chain_failed" },
+        { status: 400 },
+      );
     }
     return NextResponse.json({ error: "upload_chain_failed" }, { status: 400 });
   }
@@ -89,6 +98,9 @@ export async function DELETE(request: Request) {
         { status: 400 },
       );
     }
-    return NextResponse.json({ error: "upload_chain_remove_failed" }, { status: 400 });
+    return NextResponse.json(
+      { error: "upload_chain_remove_failed" },
+      { status: 400 },
+    );
   }
 }

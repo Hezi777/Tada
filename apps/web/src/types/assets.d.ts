@@ -1,4 +1,4 @@
 declare module "*.png" {
-  const src: any;
+  const src: import("next/image").StaticImageData;
   export default src;
 }

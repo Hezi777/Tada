@@ -3,7 +3,11 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import XLSX from "xlsx";
 import type { DashboardState, DatasetMeta } from "./types";
-import type { LoadedDatasetFile, SerializedRow, UploadDashboardResponse } from "@tada/shared";
+import type {
+  LoadedDatasetFile,
+  SerializedRow,
+  UploadDashboardResponse,
+} from "@tada/shared";
 import { buildInitialChartConfigs, buildKpiConfigs } from "./dashboard-config";
 import { inferColumns } from "./infer";
 import {
@@ -78,7 +82,10 @@ function parseFile(file: UploadedFile): Row[] {
 
 const SAMPLE_ROW_LIMIT = 5;
 
-function buildDatasetMeta(rows: Row[], columns: DashboardState["columns"]): DatasetMeta {
+function buildDatasetMeta(
+  rows: Row[],
+  columns: DashboardState["columns"],
+): DatasetMeta {
   return {
     columns,
     rowCount: rows.length,
@@ -127,7 +134,9 @@ function compareSchemaColumns(
     return `Schema mismatch: expected ${existingColumns.length} columns but received ${nextColumns.length}.`;
   }
 
-  const nextByName = new Map(nextColumns.map((column) => [column.name, column.kind]));
+  const nextByName = new Map(
+    nextColumns.map((column) => [column.name, column.kind]),
+  );
   for (const column of existingColumns) {
     const nextKind = nextByName.get(column.name);
     if (!nextKind) {
@@ -139,7 +148,9 @@ function compareSchemaColumns(
   }
 
   const existingNames = new Set(existingColumns.map((column) => column.name));
-  const unexpectedColumn = nextColumns.find((column) => !existingNames.has(column.name));
+  const unexpectedColumn = nextColumns.find(
+    (column) => !existingNames.has(column.name),
+  );
   if (unexpectedColumn) {
     return `Schema mismatch: unexpected column "${unexpectedColumn.name}".`;
   }
@@ -147,7 +158,9 @@ function compareSchemaColumns(
   return null;
 }
 
-export async function handleUpload(file: UploadedFile): Promise<UploadDashboardResponse> {
+export async function handleUpload(
+  file: UploadedFile,
+): Promise<UploadDashboardResponse> {
   if (!file.buffer?.length) {
     throw new Error("empty_file");
   }
@@ -168,7 +181,13 @@ export async function handleUpload(file: UploadedFile): Promise<UploadDashboardR
   const mergedRows = mergeDatasetRows([initialFile]);
   setDatasetRows(datasetId, mergedRows);
   setDatasetFiles(datasetId, [initialFile]);
-  const snapshot: DashboardState = createDatasetState(datasetId, columns, kpis, charts, datasetMeta);
+  const snapshot: DashboardState = createDatasetState(
+    datasetId,
+    columns,
+    kpis,
+    charts,
+    datasetMeta,
+  );
   return buildUploadResponse(snapshot, mergedRows, [initialFile]);
 }
 
@@ -220,7 +239,10 @@ export async function handleChainUpload(
   return buildUploadResponse(snapshot, mergedRows, nextFiles);
 }
 
-export async function handleChainRemove(datasetId: string, fileId: string): Promise<UploadDashboardResponse> {
+export async function handleChainRemove(
+  datasetId: string,
+  fileId: string,
+): Promise<UploadDashboardResponse> {
   const state = getDatasetState(datasetId);
   const existingFiles = getDatasetFiles(datasetId);
   if (!state || !existingFiles) {

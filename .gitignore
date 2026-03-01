@@ -32,5 +32,10 @@ dist-ssr
 agent_docs/
 .next
 **/.next
+apps/web/.next
+apps/web/dist
+apps/web/node_modules
 *.tsbuildinfo
 **/*.tsbuildinfo
+npm-config.txt
+dev.log

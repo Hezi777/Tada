@@ -45,7 +45,12 @@ export function getDatasetState(datasetId: string): DashboardState | null {
 
 export function updateDatasetState(
   datasetId: string,
-  patch: Partial<Pick<DashboardState, "version" | "columns" | "kpis" | "charts" | "datasetMeta">>,
+  patch: Partial<
+    Pick<
+      DashboardState,
+      "version" | "columns" | "kpis" | "charts" | "datasetMeta"
+    >
+  >,
 ): DashboardState {
   const current = datasetStateStore.get(datasetId);
   if (!current) {

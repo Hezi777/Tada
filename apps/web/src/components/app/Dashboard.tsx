@@ -1,4 +1,11 @@
-import { memo, useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from "react";
 import {
   CalendarRange,
   ChevronDown,
@@ -11,6 +18,7 @@ import {
   Plus,
   Sigma,
   Tag,
+  type LucideIcon,
 } from "lucide-react";
 import {
   DndContext,
@@ -50,7 +58,12 @@ import type { ChartConfig, KPIConfig, SerializedRow } from "@tada/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Tooltip as ShadTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip as ShadTooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   buildAreaSeries,
   buildGroupedSeries,
@@ -68,14 +81,20 @@ import {
   setActiveDashboard,
   getCachedDashboard,
   setDashboardList,
-  restoreCachedDashboard
+  restoreCachedDashboard,
 } from "@/lib/dashboard-store";
 import { listDashboards, loadDashboard, createDashboard } from "@/lib/api";
 import { getIconComponent } from "@/components/app/CreateDashboardModal";
 import CreateDashboardModal from "@/components/app/CreateDashboardModal";
 import type { DashboardListItem } from "@tada/shared";
 
-const donutPalette = ["#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899"] as const;
+const donutPalette = [
+  "#3B82F6",
+  "#10B981",
+  "#F59E0B",
+  "#8B5CF6",
+  "#EC4899",
+] as const;
 
 function formatMetric(value: string | number): string | number {
   if (typeof value === "string") {
@@ -108,7 +127,11 @@ function DashboardTooltip({
   label,
 }: {
   active?: boolean;
-  payload?: Array<{ value?: number; color?: string; payload?: { label?: string } }>;
+  payload?: Array<{
+    value?: number;
+    color?: string;
+    payload?: { label?: string };
+  }>;
   label?: string;
 }) {
   if (!active || !payload?.length) {
@@ -163,14 +186,27 @@ const ChartContent = memo(function ChartContent({
     return (
       <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={series} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
+          <AreaChart
+            data={series}
+            margin={{ top: 8, right: 4, left: -18, bottom: 0 }}
+          >
             <defs>
-              <linearGradient id={`area-${chart.id}`} x1="0" y1="0" x2="0" y2="1">
+              <linearGradient
+                id={`area-${chart.id}`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
                 <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.08} />
                 <stop offset="100%" stopColor="#3B82F6" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid vertical={false} stroke="#F1F5F9" strokeDasharray="3 3" />
+            <CartesianGrid
+              vertical={false}
+              stroke="#F1F5F9"
+              strokeDasharray="3 3"
+            />
             <XAxis
               dataKey="label"
               axisLine={false}
@@ -192,7 +228,12 @@ const ChartContent = memo(function ChartContent({
               strokeWidth={2}
               fill={`url(#area-${chart.id})`}
               dot={false}
-              activeDot={{ r: 4, fill: "#3B82F6", stroke: "#ffffff", strokeWidth: 2 }}
+              activeDot={{
+                r: 4,
+                fill: "#3B82F6",
+                stroke: "#ffffff",
+                strokeWidth: 2,
+              }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -210,7 +251,11 @@ const ChartContent = memo(function ChartContent({
       <div className="h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
-            <CartesianGrid vertical={false} stroke="#F1F5F9" strokeDasharray="3 3" />
+            <CartesianGrid
+              vertical={false}
+              stroke="#F1F5F9"
+              strokeDasharray="3 3"
+            />
             <XAxis
               type="number"
               dataKey="x"
@@ -229,7 +274,10 @@ const ChartContent = memo(function ChartContent({
               fontSize={11}
               stroke="#94A3B8"
             />
-            <Tooltip content={<DashboardTooltip />} cursor={{ stroke: "#DBEAFE", strokeDasharray: "3 3" }} />
+            <Tooltip
+              content={<DashboardTooltip />}
+              cursor={{ stroke: "#DBEAFE", strokeDasharray: "3 3" }}
+            />
             <Scatter data={series} fill="#3B82F6" />
           </ScatterChart>
         </ResponsiveContainer>
@@ -259,7 +307,10 @@ const ChartContent = memo(function ChartContent({
               onMouseEnter={(_, index) => setActiveSlice(index)}
               onMouseLeave={() => setActiveSlice(undefined)}
               activeShape={(props) => (
-                <Sector {...props} outerRadius={Number(props.outerRadius) + 4} />
+                <Sector
+                  {...props}
+                  outerRadius={Number(props.outerRadius) + 4}
+                />
               )}
             >
               {series.map((_entry, index) => (
@@ -273,7 +324,12 @@ const ChartContent = memo(function ChartContent({
               <Label
                 position="center"
                 content={() => (
-                  <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
+                  <text
+                    x="50%"
+                    y="50%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                  >
                     <tspan
                       x="50%"
                       className="fill-[var(--color-text-primary)] text-[18px] font-bold"
@@ -294,8 +350,15 @@ const ChartContent = memo(function ChartContent({
   return (
     <div className="h-[220px]">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={series} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
-          <CartesianGrid vertical={false} stroke="#F1F5F9" strokeDasharray="3 3" />
+        <BarChart
+          data={series}
+          margin={{ top: 8, right: 4, left: -18, bottom: 0 }}
+        >
+          <CartesianGrid
+            vertical={false}
+            stroke="#F1F5F9"
+            strokeDasharray="3 3"
+          />
           <XAxis
             dataKey="label"
             axisLine={false}
@@ -309,8 +372,16 @@ const ChartContent = memo(function ChartContent({
             fontSize={11}
             stroke="#94A3B8"
           />
-          <Tooltip content={<DashboardTooltip />} cursor={{ fill: "#EFF6FF" }} />
-          <Bar dataKey="value" fill="#3B82F6" fillOpacity={0.85} radius={[4, 4, 0, 0]} />
+          <Tooltip
+            content={<DashboardTooltip />}
+            cursor={{ fill: "#EFF6FF" }}
+          />
+          <Bar
+            dataKey="value"
+            fill="#3B82F6"
+            fillOpacity={0.85}
+            radius={[4, 4, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -331,7 +402,11 @@ function deriveFallbackCards(rows: SerializedRow[]): Array<{
     ) ?? null;
   const dateColumn =
     keys.find((key) =>
-      rows.some((row) => typeof row[key] === "string" && Number.isFinite(Date.parse(String(row[key])))),
+      rows.some(
+        (row) =>
+          typeof row[key] === "string" &&
+          Number.isFinite(Date.parse(String(row[key]))),
+      ),
     ) ?? null;
 
   const cards: Array<{
@@ -345,13 +420,18 @@ function deriveFallbackCards(rows: SerializedRow[]): Array<{
   if (categoricalColumn) {
     const values = rows
       .map((row) => row[categoricalColumn])
-      .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+      .filter(
+        (value): value is string =>
+          typeof value === "string" && value.trim().length > 0,
+      );
     const uniqueCount = new Set(values).size;
     const counts = new Map<string, number>();
     for (const value of values) {
       counts.set(value, (counts.get(value) ?? 0) + 1);
     }
-    const topValue = Array.from(counts.entries()).sort((left, right) => right[1] - left[1])[0];
+    const topValue = Array.from(counts.entries()).sort(
+      (left, right) => right[1] - left[1],
+    )[0];
 
     cards.push({
       id: "unique_category_count",
@@ -413,7 +493,7 @@ function KpiCard({
   label,
   description,
 }: {
-  icon: typeof Hash;
+  icon: LucideIcon;
   value: string | number;
   label: string;
   description: string;
@@ -422,11 +502,15 @@ function KpiCard({
     <Card className="dashboard-surface dashboard-hover shadow-none">
       <CardContent className="flex items-start justify-between gap-3 px-4 py-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-medium tracking-wide text-[var(--color-text-secondary)]">{label}</p>
+          <p className="text-[11px] font-medium tracking-wide text-[var(--color-text-secondary)]">
+            {label}
+          </p>
           <div className="mt-1.5 text-[22px] font-extrabold leading-none tracking-tight text-[var(--color-text-primary)]">
             {formatMetric(value)}
           </div>
-          <p className="mt-1.5 truncate text-[11px] text-[var(--color-text-muted)]">{description}</p>
+          <p className="mt-1.5 truncate text-[11px] text-[var(--color-text-muted)]">
+            {description}
+          </p>
         </div>
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#3B82F6]">
           <Icon className="h-4 w-4" />
@@ -464,7 +548,15 @@ type ChartCardProps = {
 };
 
 function ChartCard({ chart, rows }: ChartCardProps) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: chart.id,
   });
 
@@ -478,15 +570,18 @@ function ChartCard({ chart, rows }: ChartCardProps) {
       <Card
         ref={setNodeRef}
         style={style}
-        className={`dashboard-surface overflow-hidden p-0 shadow-none transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)] ${chart.size === "large" ? "xl:col-span-2" : "xl:col-span-1"
-          } ${isDragging ? "opacity-75" : ""}`}
+        className={`dashboard-surface overflow-hidden p-0 shadow-none transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)] ${
+          chart.size === "large" ? "xl:col-span-2" : "xl:col-span-1"
+        } ${isDragging ? "opacity-75" : ""}`}
       >
         <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-4 pb-0 pt-3">
           <div className="min-w-0">
             <h3 className="truncate text-[13px] font-semibold text-[var(--color-text-primary)]">
               {chart.title}
             </h3>
-            <p className="mt-1 line-clamp-1 text-[11px] text-[var(--color-text-muted)]">{chart.insight}</p>
+            <p className="mt-1 line-clamp-1 text-[11px] text-[var(--color-text-muted)]">
+              {chart.insight}
+            </p>
           </div>
           <div className="flex items-center gap-1.5">
             <Badge className="rounded-[4px] border-0 bg-[var(--color-accent-light)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
@@ -564,10 +659,18 @@ function ChartStructurePopover({
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
-                onClick={() => updateChart(chart.id, { visible: !chart.visible })}
-                aria-label={chart.visible ? `Hide ${chart.title}` : `Show ${chart.title}`}
+                onClick={() =>
+                  updateChart(chart.id, { visible: !chart.visible })
+                }
+                aria-label={
+                  chart.visible ? `Hide ${chart.title}` : `Show ${chart.title}`
+                }
               >
-                {chart.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                {chart.visible ? (
+                  <Eye className="h-4 w-4" />
+                ) : (
+                  <EyeOff className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
@@ -598,16 +701,28 @@ export function Dashboard() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
-  const orderedCharts = useMemo(() => [...charts].sort((left, right) => left.order - right.order), [charts]);
+  const orderedCharts = useMemo(
+    () => [...charts].sort((left, right) => left.order - right.order),
+    [charts],
+  );
   const visibleCharts = useMemo(
-    () => orderedCharts.filter((chart) => chart.visible && hasRenderableChartData(chart, rows)),
+    () =>
+      orderedCharts.filter(
+        (chart) => chart.visible && hasRenderableChartData(chart, rows),
+      ),
     [orderedCharts, rows],
   );
-  const layoutItems = useMemo(() => calculateLayout(visibleCharts), [visibleCharts]);
-  const isLoading = Boolean(datasetId) && (kpiConfigs.length === 0 || charts.length === 0);
+  const layoutItems = useMemo(
+    () => calculateLayout(visibleCharts),
+    [visibleCharts],
+  );
+  const isLoading =
+    Boolean(datasetId) && (kpiConfigs.length === 0 || charts.length === 0);
 
   const kpiCards = useMemo(() => {
     // Use all backend-generated KPIs (including AI primary) directly
@@ -644,7 +759,9 @@ export function Dashboard() {
     const activeDashboardId = useDashboardStore((s) => s.activeDashboardId);
     const activeDashboardName = useDashboardStore((s) => s.activeDashboardName);
     const activeDashboardIcon = useDashboardStore((s) => s.activeDashboardIcon);
-    const activeDashboardColor = useDashboardStore((s) => s.activeDashboardColor);
+    const activeDashboardColor = useDashboardStore(
+      (s) => s.activeDashboardColor,
+    );
     const allDashboards = useDashboardStore((s) => s.dashboardList);
 
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -687,7 +804,11 @@ export function Dashboard() {
       }
     }
 
-    async function handleCreateDashboard(input: { name: string; icon: string; color: string }) {
+    async function handleCreateDashboard(input: {
+      name: string;
+      icon: string;
+      color: string;
+    }) {
       setCreateOpen(false);
       setDropdownOpen(false);
       try {
@@ -745,10 +866,11 @@ export function Dashboard() {
                         key={dash.id}
                         type="button"
                         onClick={() => handleSwitch(dash)}
-                        className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors ${isActive
-                          ? "bg-blue-50 font-medium text-[#3B82F6]"
-                          : "text-[var(--color-text-primary)] hover:bg-slate-50"
-                          }`}
+                        className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors ${
+                          isActive
+                            ? "bg-blue-50 font-medium text-[#3B82F6]"
+                            : "text-[var(--color-text-primary)] hover:bg-slate-50"
+                        }`}
                       >
                         <span
                           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
@@ -822,7 +944,8 @@ export function Dashboard() {
             Upload a dataset to begin
           </h1>
           <p className="mt-3 text-base text-[var(--color-text-secondary)]">
-            Your dashboard will render directly from centralized chart and KPI state.
+            Your dashboard will render directly from centralized chart and KPI
+            state.
           </p>
           <Button
             className="mt-8 rounded-lg bg-[var(--color-accent)] px-5 hover:bg-[#1D4ED8]"
@@ -869,7 +992,8 @@ export function Dashboard() {
                     No visible charts
                   </h2>
                   <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                    Re-enable a hidden chart to bring the dashboard back into view.
+                    Re-enable a hidden chart to bring the dashboard back into
+                    view.
                   </p>
                 </div>
               </Card>
@@ -889,7 +1013,11 @@ export function Dashboard() {
                     return;
                   }
 
-                  const nextVisible = arrayMove(visibleIds, activeIndex, overIndex);
+                  const nextVisible = arrayMove(
+                    visibleIds,
+                    activeIndex,
+                    overIndex,
+                  );
                   const nextIds = orderedCharts.map((chart) => chart.id);
                   let visibleIndex = 0;
                   const reorderedIds = nextIds.map((id) =>
@@ -898,7 +1026,10 @@ export function Dashboard() {
                   reorderCharts(reorderedIds);
                 }}
               >
-                <SortableContext items={layoutItems.map((chart) => chart.id)} strategy={rectSortingStrategy}>
+                <SortableContext
+                  items={layoutItems.map((chart) => chart.id)}
+                  strategy={rectSortingStrategy}
+                >
                   <div className="grid h-full grid-cols-1 gap-3 xl:grid-cols-2">
                     {layoutItems.map((chart) => (
                       <ChartCard key={chart.id} chart={chart} rows={rows} />

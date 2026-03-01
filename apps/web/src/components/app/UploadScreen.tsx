@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import Image from "next/image";
 import { ArrowLeft, FileSpreadsheet, Lightbulb, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,24 +12,28 @@ interface UploadScreenProps {
   errorMessage?: string | null;
 }
 
-export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScreenProps) => {
+export const UploadScreen = ({
+  onFileUpload,
+  onBack,
+  errorMessage,
+}: UploadScreenProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-    const [file] = Array.from(e.dataTransfer.files);
+    const file = e.dataTransfer.files.item(0);
     if (file) {
       onFileUpload(file);
     }
@@ -38,7 +43,7 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       onFileUpload(e.target.files[0]);
     }
@@ -53,17 +58,24 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
           <div className="glass flex items-center justify-between rounded-full border border-white/80 px-4 py-3 shadow-soft sm:px-6">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white shadow-card">
-                <img src={typeof tadaLogo === 'string' ? tadaLogo : tadaLogo.src} alt="Tada" className="h-7 w-7" />
+                <Image src={tadaLogo} alt="Tada" className="h-7 w-7" />
               </div>
               <div>
-                <span className="font-display text-xl font-semibold text-foreground">Tada</span>
+                <span className="font-display text-xl font-semibold text-foreground">
+                  Tada
+                </span>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary/80">
                   Dataset Intake
                 </p>
               </div>
             </div>
 
-            <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="text-muted-foreground"
+            >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to home
             </Button>
@@ -85,8 +97,8 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
               </h1>
 
               <p className="mt-6 text-lg leading-8 text-muted-foreground">
-                Drop your CSV or Excel file and Tada will compose a dashboard with structure,
-                charts, and a chat-ready summary in one pass.
+                Drop your CSV or Excel file and Tada will compose a dashboard
+                with structure, charts, and a chat-ready summary in one pass.
               </p>
 
               <div className="mt-8 space-y-3">
@@ -133,8 +145,12 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
                   <Upload className="h-8 w-8" />
                 </div>
 
-                <h2 className="font-display text-3xl text-foreground">Drop your file here</h2>
-                <p className="mt-3 text-sm text-muted-foreground">or click to browse from your computer</p>
+                <h2 className="font-display text-3xl text-foreground">
+                  Drop your file here
+                </h2>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  or click to browse from your computer
+                </p>
                 <p className="mb-8 mt-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground/80">
                   Maximum file size: 100MB
                 </p>
@@ -156,17 +172,27 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
                   <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-primary" />
                     <p className="text-sm font-semibold text-foreground">CSV</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Fast ingestion for flat files</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Fast ingestion for flat files
+                    </p>
                   </Card>
                   <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-sky-500" />
-                    <p className="text-sm font-semibold text-foreground">Excel (.xlsx)</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Modern workbook support</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      Excel (.xlsx)
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Modern workbook support
+                    </p>
                   </Card>
                   <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-indigo-500" />
-                    <p className="text-sm font-semibold text-foreground">Excel (.xls)</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Legacy spreadsheet imports</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      Excel (.xls)
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Legacy spreadsheet imports
+                    </p>
                   </Card>
                 </div>
               </div>

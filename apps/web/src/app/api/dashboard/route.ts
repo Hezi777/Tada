@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { inferColumns } from "@/server/infer";
-import { createDatasetState, setDatasetFiles, setDatasetRows } from "@/server/state";
+import {
+  createDatasetState,
+  setDatasetFiles,
+  setDatasetRows,
+} from "@/server/state";
 import type { SerializedRow } from "@tada/shared";
 
 export const runtime = "nodejs";
-
-const supabaseAdmin = createAdminClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
 
 function buildDatasetMeta(
   rows: SerializedRow[],
@@ -24,6 +23,7 @@ function buildDatasetMeta(
 }
 
 export async function GET(request: Request) {
+  const supabaseAdmin = createAdminClient();
   const supabase = await createClient();
   const {
     data: { user },
@@ -43,7 +43,10 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (datasetError) {
-    return NextResponse.json({ error: datasetError.message || "dashboard_load_failed" }, { status: 400 });
+    return NextResponse.json(
+      { error: datasetError.message || "dashboard_load_failed" },
+      { status: 400 },
+    );
   }
 
   if (!dataset) {
@@ -51,38 +54,49 @@ export async function GET(request: Request) {
   }
 
   const datasetId = String(dataset.id);
-  const rows = Array.isArray(dataset.rows) ? (dataset.rows as SerializedRow[]) : [];
+  const rows = Array.isArray(dataset.rows)
+    ? (dataset.rows as SerializedRow[])
+    : [];
   const columns = inferColumns(rows);
   const datasetMeta = buildDatasetMeta(rows, columns);
 
-  const [{ data: chartRow, error: chartError }, { data: kpiRow, error: kpiError }, { data: fileRows, error: fileError }] =
-    await Promise.all([
-      supabaseAdmin
-        .from("charts")
-        .select("configs")
-        .eq("dataset_id", datasetId)
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("kpis")
-        .select("configs")
-        .eq("dataset_id", datasetId)
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabaseAdmin
-        .from("dataset_files")
-        .select("id,file_name,is_primary")
-        .eq("dataset_id", datasetId)
-        .order("is_primary", { ascending: false }),
-    ]);
+  const [
+    { data: chartRow, error: chartError },
+    { data: kpiRow, error: kpiError },
+    { data: fileRows, error: fileError },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("charts")
+      .select("configs")
+      .eq("dataset_id", datasetId)
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabaseAdmin
+      .from("kpis")
+      .select("configs")
+      .eq("dataset_id", datasetId)
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabaseAdmin
+      .from("dataset_files")
+      .select("id,file_name,is_primary")
+      .eq("dataset_id", datasetId)
+      .order("is_primary", { ascending: false }),
+  ]);
 
   if (chartError || kpiError || fileError) {
     return NextResponse.json(
-      { error: chartError?.message || kpiError?.message || fileError?.message || "dashboard_load_failed" },
+      {
+        error:
+          chartError?.message ||
+          kpiError?.message ||
+          fileError?.message ||
+          "dashboard_load_failed",
+      },
       { status: 400 },
     );
   }
@@ -98,16 +112,13 @@ export async function GET(request: Request) {
 
   createDatasetState(datasetId, columns, kpis, charts, datasetMeta);
   setDatasetRows(datasetId, rows);
-  setDatasetFiles(
-    datasetId,
-    [
-      {
-        id: files.find((file) => file.isPrimary)?.id ?? crypto.randomUUID(),
-        fileName: String(dataset.name ?? "dataset"),
-        rows,
-      },
-    ],
-  );
+  setDatasetFiles(datasetId, [
+    {
+      id: files.find((file) => file.isPrimary)?.id ?? crypto.randomUUID(),
+      fileName: String(dataset.name ?? "dataset"),
+      rows,
+    },
+  ]);
 
   return NextResponse.json({
     datasetId,
@@ -118,15 +129,16 @@ export async function GET(request: Request) {
     charts,
     kpis,
     rows,
-    files: files.length > 0
-      ? files
-      : [
-          {
-            id: crypto.randomUUID(),
-            fileName: String(dataset.name ?? "dataset"),
-            rowCount: rows.length,
-            isPrimary: true,
-          },
-        ],
+    files:
+      files.length > 0
+        ? files
+        : [
+            {
+              id: crypto.randomUUID(),
+              fileName: String(dataset.name ?? "dataset"),
+              rowCount: rows.length,
+              isPrimary: true,
+            },
+          ],
   });
 }

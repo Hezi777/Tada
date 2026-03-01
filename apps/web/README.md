@@ -26,6 +26,8 @@ npm install
 npm run dev
 ```
 
+When working in the monorepo, prefer running `npm run dev` from the workspace root. The root script applies the workspace-safe environment workaround before starting this app.
+
 ## Scripts
 
 - `npm run dev` - start Next.js dev server
@@ -37,4 +39,4 @@ npm run dev
 
 ## Environment
 
-Use `apps/web/.env.example` as the reference for required environment variables.
+Use `apps/web/.env.example` as the reference for environment variables. `GROQ_DASHBOARD_MODEL` and `GROQ_CHAT_MODEL` are optional and fall back to built-in defaults for local development.

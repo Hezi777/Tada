@@ -51,7 +51,10 @@ function mean(values: number[]): number {
 }
 
 function pearsonCorrelation(left: number[], right: number[]): number | null {
-  if (left.length !== right.length || left.length < BI_RULE_LIMITS.minScatterPoints) {
+  if (
+    left.length !== right.length ||
+    left.length < BI_RULE_LIMITS.minScatterPoints
+  ) {
     return null;
   }
   const leftMean = mean(left);
@@ -75,11 +78,17 @@ function pearsonCorrelation(left: number[], right: number[]): number | null {
   return numerator / Math.sqrt(leftDenominator * rightDenominator);
 }
 
-function columnExists(columns: DashboardColumn[], name: string | null | undefined, kind?: DashboardColumn["kind"]): boolean {
+function columnExists(
+  columns: DashboardColumn[],
+  name: string | null | undefined,
+  kind?: DashboardColumn["kind"],
+): boolean {
   if (!name) {
     return false;
   }
-  return columns.some((column) => column.name === name && (kind ? column.kind === kind : true));
+  return columns.some(
+    (column) => column.name === name && (kind ? column.kind === kind : true),
+  );
 }
 
 function hasHumanTitle(title: string): boolean {
@@ -90,7 +99,9 @@ function hasHumanTitle(title: string): boolean {
   return !/^chart(\s+\d+)?$/i.test(trimmed);
 }
 
-function chartIdentityKey(chart: Pick<ChartConfig, "type" | "columns">): string {
+function chartIdentityKey(
+  chart: Pick<ChartConfig, "type" | "columns">,
+): string {
   return `${chart.type}:${[...chart.columns].sort().join("|")}`;
 }
 
@@ -104,7 +115,10 @@ export function validateChartCollection(
   charts: ChartConfig[],
   context: DashboardRuntimeContext,
 ): string | null {
-  if (charts.length < BI_RULE_LIMITS.minCharts || charts.length > BI_RULE_LIMITS.maxCharts) {
+  if (
+    charts.length < BI_RULE_LIMITS.minCharts ||
+    charts.length > BI_RULE_LIMITS.maxCharts
+  ) {
     return `Dashboard must contain between ${BI_RULE_LIMITS.minCharts} and ${BI_RULE_LIMITS.maxCharts} charts.`;
   }
 
@@ -132,7 +146,10 @@ export function validateChartCollection(
     if (chart.timeColumn && !columnExists(context.columns, chart.timeColumn)) {
       return `Unknown time column: ${chart.timeColumn}.`;
     }
-    if (chart.type === "area" && !columnExists(context.columns, chart.timeColumn, "date")) {
+    if (
+      chart.type === "area" &&
+      !columnExists(context.columns, chart.timeColumn, "date")
+    ) {
       return "Area charts require a valid date or time column.";
     }
     if (chart.type === "scatter") {
@@ -140,13 +157,17 @@ export function validateChartCollection(
         return "Scatter charts require exactly two numeric columns.";
       }
       const [leftColumn, rightColumn] = chart.columns;
-      if (!columnExists(context.columns, leftColumn, "numeric") || !columnExists(context.columns, rightColumn, "numeric")) {
+      if (
+        !columnExists(context.columns, leftColumn, "numeric") ||
+        !columnExists(context.columns, rightColumn, "numeric")
+      ) {
         return "Scatter charts require two numeric columns.";
       }
       const series = buildScatterSeries(chart, context.rows);
       if (
         series.length < BI_RULE_LIMITS.minScatterPoints ||
-        Math.abs(computeScatterCorrelation(chart, context.rows) ?? 0) < BI_RULE_LIMITS.minScatterCorrelation
+        Math.abs(computeScatterCorrelation(chart, context.rows) ?? 0) <
+          BI_RULE_LIMITS.minScatterCorrelation
       ) {
         return "Scatter charts require meaningful correlation between two numeric columns.";
       }
@@ -162,20 +183,30 @@ export function validateChartCollection(
 }
 
 export function validateKpiCollection(kpis: KPIConfig[]): string | null {
-  if (kpis.length < BI_RULE_LIMITS.minKpis || kpis.length > BI_RULE_LIMITS.maxKpis) {
+  if (
+    kpis.length < BI_RULE_LIMITS.minKpis ||
+    kpis.length > BI_RULE_LIMITS.maxKpis
+  ) {
     return `Dashboard must contain between ${BI_RULE_LIMITS.minKpis} and ${BI_RULE_LIMITS.maxKpis} KPIs.`;
   }
   const primaryCount = kpis.filter((kpi) => kpi.isPrimary).length;
   if (primaryCount !== 1) {
     return "Dashboard must contain exactly one primary KPI.";
   }
-  if (!kpis.every((kpi) => kpi.label.trim() && kpi.description.trim() && kpi.column.trim())) {
+  if (
+    !kpis.every(
+      (kpi) => kpi.label.trim() && kpi.description.trim() && kpi.column.trim(),
+    )
+  ) {
     return "KPI configs must include column, label, and description.";
   }
   return null;
 }
 
-function reduceAggregation(values: number[], aggregation: ChartConfig["aggregation"]): number {
+function reduceAggregation(
+  values: number[],
+  aggregation: ChartConfig["aggregation"],
+): number {
   if (aggregation === "avg") {
     return values.length ? mean(values) : 0;
   }
@@ -191,7 +222,10 @@ function reduceAggregation(values: number[], aggregation: ChartConfig["aggregati
   return values.reduce((sum, value) => sum + value, 0);
 }
 
-function detectTimeGranularity(rows: SerializedRow[], timeColumn: string): "day" | "month" | "year" {
+function detectTimeGranularity(
+  rows: SerializedRow[],
+  timeColumn: string,
+): "day" | "month" | "year" {
   const timestamps = rows
     .map((row) => {
       const d = toDate(row[timeColumn]);
@@ -199,24 +233,32 @@ function detectTimeGranularity(rows: SerializedRow[], timeColumn: string): "day"
     })
     .filter((t): t is number => t !== null);
   if (timestamps.length < 2) return "month";
-  const spanDays = (Math.max(...timestamps) - Math.min(...timestamps)) / (1000 * 60 * 60 * 24);
+  const spanDays =
+    (Math.max(...timestamps) - Math.min(...timestamps)) / (1000 * 60 * 60 * 24);
   if (spanDays < 90) return "day";
   if (spanDays < 730) return "month";
   return "year";
 }
 
-function toBucketKey(date: Date, granularity: "day" | "month" | "year"): string {
+function toBucketKey(
+  date: Date,
+  granularity: "day" | "month" | "year",
+): string {
   if (granularity === "day") return date.toISOString().slice(0, 10);
   if (granularity === "month") return date.toISOString().slice(0, 7);
   return String(date.getUTCFullYear());
 }
 
-export function buildAreaSeries(chart: ChartConfig, rows: SerializedRow[]): CategoricalChartSeries {
+export function buildAreaSeries(
+  chart: ChartConfig,
+  rows: SerializedRow[],
+): CategoricalChartSeries {
   if (!chart.timeColumn) {
     return [];
   }
   const granularity = detectTimeGranularity(rows, chart.timeColumn);
-  const valueColumn = chart.columns.find((column) => column !== chart.timeColumn) ?? null;
+  const valueColumn =
+    chart.columns.find((column) => column !== chart.timeColumn) ?? null;
   const buckets = new Map<string, number[]>();
 
   for (const row of rows) {
@@ -242,13 +284,20 @@ export function buildAreaSeries(chart: ChartConfig, rows: SerializedRow[]): Cate
     .slice(0, CHART_LIMITS.area)
     .map(([label, values]) => ({
       label,
-      value: reduceAggregation(values, valueColumn ? chart.aggregation : "count"),
+      value: reduceAggregation(
+        values,
+        valueColumn ? chart.aggregation : "count",
+      ),
     }));
 }
 
-export function buildGroupedSeries(chart: ChartConfig, rows: SerializedRow[]): CategoricalChartSeries {
+export function buildGroupedSeries(
+  chart: ChartConfig,
+  rows: SerializedRow[],
+): CategoricalChartSeries {
   if (chart.groupBy) {
-    const valueColumn = chart.columns.find((column) => column !== chart.groupBy) ?? null;
+    const valueColumn =
+      chart.columns.find((column) => column !== chart.groupBy) ?? null;
     const buckets = new Map<string, number[]>();
 
     for (const row of rows) {
@@ -271,7 +320,10 @@ export function buildGroupedSeries(chart: ChartConfig, rows: SerializedRow[]): C
     const series = Array.from(buckets.entries())
       .map(([label, values]) => ({
         label,
-        value: reduceAggregation(values, valueColumn ? chart.aggregation : "count"),
+        value: reduceAggregation(
+          values,
+          valueColumn ? chart.aggregation : "count",
+        ),
       }))
       .sort((left, right) => right.value - left.value);
 
@@ -280,7 +332,9 @@ export function buildGroupedSeries(chart: ChartConfig, rows: SerializedRow[]): C
       const otherValue = series
         .slice(CHART_LIMITS.donut)
         .reduce((sum, entry) => sum + entry.value, 0);
-      return otherValue > 0 ? [...kept, { label: "Other", value: otherValue }] : kept;
+      return otherValue > 0
+        ? [...kept, { label: "Other", value: otherValue }]
+        : kept;
     }
 
     return chart.type === "bar" ? series.slice(0, CHART_LIMITS.bar) : series;
@@ -296,10 +350,15 @@ export function buildGroupedSeries(chart: ChartConfig, rows: SerializedRow[]): C
   if (values.length === 0) {
     return [];
   }
-  return [{ label: chart.title, value: reduceAggregation(values, chart.aggregation) }];
+  return [
+    { label: chart.title, value: reduceAggregation(values, chart.aggregation) },
+  ];
 }
 
-export function buildScatterSeries(chart: ChartConfig, rows: SerializedRow[]): ScatterChartSeries {
+export function buildScatterSeries(
+  chart: ChartConfig,
+  rows: SerializedRow[],
+): ScatterChartSeries {
   const [leftColumn, rightColumn] = chart.columns;
   if (!leftColumn || !rightColumn) {
     return [];
@@ -324,7 +383,10 @@ export function buildScatterSeries(chart: ChartConfig, rows: SerializedRow[]): S
   return sampled;
 }
 
-export function computeScatterCorrelation(chart: ChartConfig, rows: SerializedRow[]): number | null {
+export function computeScatterCorrelation(
+  chart: ChartConfig,
+  rows: SerializedRow[],
+): number | null {
   const series = buildScatterSeries(chart, rows);
   if (series.length === 0) {
     return null;
@@ -335,7 +397,10 @@ export function computeScatterCorrelation(chart: ChartConfig, rows: SerializedRo
   );
 }
 
-export function hasRenderableChartData(chart: ChartConfig, rows: SerializedRow[]): boolean {
+export function hasRenderableChartData(
+  chart: ChartConfig,
+  rows: SerializedRow[],
+): boolean {
   if (chart.type === "area") {
     return buildAreaSeries(chart, rows).length > 0;
   }
@@ -348,7 +413,10 @@ export function hasRenderableChartData(chart: ChartConfig, rows: SerializedRow[]
   return buildGroupedSeries(chart, rows).length > 0;
 }
 
-export function computeKpiValue(kpi: KPIConfig, rows: SerializedRow[]): string | number {
+export function computeKpiValue(
+  kpi: KPIConfig,
+  rows: SerializedRow[],
+): string | number {
   if (kpi.aggregation === "count") {
     return rows.length;
   }
@@ -391,7 +459,12 @@ export function computeKpiValue(kpi: KPIConfig, rows: SerializedRow[]): string |
   if (values.length === 0) {
     return "-";
   }
-  return Math.round(reduceAggregation(values, kpi.aggregation as ChartConfig["aggregation"]) * 100) / 100;
+  return (
+    Math.round(
+      reduceAggregation(values, kpi.aggregation as ChartConfig["aggregation"]) *
+        100,
+    ) / 100
+  );
 }
 
 export function formatNumber(value: number | null): string | null {

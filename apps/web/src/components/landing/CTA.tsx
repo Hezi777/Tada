@@ -15,7 +15,11 @@ export function CTA({ onGetStarted }: CTAProps) {
           {/* Subtle dot pattern texture overlay */}
           <div
             className="absolute inset-0 opacity-20 mix-blend-overlay"
-            style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
+              backgroundSize: "32px 32px",
+            }}
           />
           {/* Large soft glow accents */}
           <div className="absolute -left-32 -top-32 h-64 w-64 rounded-full bg-white/20 blur-[80px]" />
@@ -27,8 +31,8 @@ export function CTA({ onGetStarted }: CTAProps) {
             </h2>
 
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-blue-100">
-              Upload your first file and see Tada in action. It takes 30 seconds to go from
-              spreadsheet to insight.
+              Upload your first file and see Tada in action. It takes 30 seconds
+              to go from spreadsheet to insight.
             </p>
 
             <div className="mt-10 flex flex-col items-center justify-center">

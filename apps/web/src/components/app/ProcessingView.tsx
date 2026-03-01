@@ -59,10 +59,13 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
           <div className="grid items-center gap-8 lg:grid-cols-[0.8fr_1fr]">
             <Card className="rounded-[2rem] border border-white/80 bg-white/80 p-8 shadow-card">
               <div className="eyebrow mb-6">Generating Dashboard</div>
-              <h2 className="text-4xl text-foreground sm:text-5xl">Analyzing your data</h2>
+              <h2 className="text-4xl text-foreground sm:text-5xl">
+                Analyzing your data
+              </h2>
               <p className="mt-5 text-lg leading-8 text-muted-foreground">
-                Tada is learning your dataset&apos;s structure, surfacing useful metrics, and assembling
-                a dashboard that&apos;s ready to explore.
+                Tada is learning your dataset&apos;s structure, surfacing useful
+                metrics, and assembling a dashboard that&apos;s ready to
+                explore.
               </p>
 
               <Card className="mt-8 rounded-[1.6rem] border border-primary/15 bg-primary/[0.07] p-5 shadow-card">
@@ -71,9 +74,12 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
                     <Lightbulb className="h-6 w-6 text-primary-foreground animate-pulse-soft motion-reduce:animate-none" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">AI insight pass in progress</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      AI insight pass in progress
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      This keeps visual setup fast without manual dashboard configuration.
+                      This keeps visual setup fast without manual dashboard
+                      configuration.
                     </p>
                   </div>
                 </div>
@@ -111,7 +117,9 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
                         <div className="h-2.5 w-2.5 rounded-full bg-muted-foreground/40" />
                       )}
                     </div>
-                    <span className={`text-sm ${index === currentStep ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                    <span
+                      className={`text-sm ${index === currentStep ? "font-semibold text-foreground" : "text-muted-foreground"}`}
+                    >
                       {step}
                     </span>
                   </Card>

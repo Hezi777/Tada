@@ -1,5 +1,18 @@
 import type { Metadata } from "next";
+import { DM_Serif_Text, Instrument_Sans } from "next/font/google";
+import type { ReactNode } from "react";
 import "../index.css";
+
+const instrumentSans = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const dmSerifText = DM_Serif_Text({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-display",
+});
 
 export const metadata: Metadata = {
   title: "TADA - Instant AI Dashboards from Your Data",
@@ -10,19 +23,14 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=DM+Serif+Text&family=Instrument+Sans:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body>{children}</body>
+    <html
+      lang="en"
+      className={`${instrumentSans.variable} ${dmSerifText.variable}`}
+    >
+      <body className={instrumentSans.className}>{children}</body>
     </html>
   );
 }

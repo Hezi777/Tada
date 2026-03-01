@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileSpreadsheet, Upload } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { ProcessingView } from "@/components/app/ProcessingView";
@@ -39,7 +39,9 @@ function DashboardUploadEmptyState({
       <div className="dashboard-surface flex h-full flex-col overflow-hidden">
         <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-5">
           <div>
-            <h1 className="font-display text-2xl text-[var(--color-text-primary)]">Dashboard</h1>
+            <h1 className="font-display text-2xl text-[var(--color-text-primary)]">
+              Dashboard
+            </h1>
             <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
               Upload a dataset to start building your workspace.
             </p>
@@ -56,7 +58,8 @@ function DashboardUploadEmptyState({
                 Upload your first dataset
               </h2>
               <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]">
-                Add a CSV or Excel file and TADA will generate your dashboard, KPIs, and charts.
+                Add a CSV or Excel file and TADA will generate your dashboard,
+                KPIs, and charts.
               </p>
 
               {errorMessage ? (
@@ -100,7 +103,9 @@ function DashboardLoadingState() {
   return (
     <div className="flex h-full flex-col p-6">
       <div className="dashboard-surface flex h-full items-center justify-center">
-        <p className="text-sm font-medium text-[var(--color-text-secondary)]">Loading dashboard...</p>
+        <p className="text-sm font-medium text-[var(--color-text-secondary)]">
+          Loading dashboard...
+        </p>
       </div>
     </div>
   );
@@ -206,50 +211,58 @@ export default function DashboardPage() {
     });
   }, [charts, datasetId]);
 
-  async function handleFileUpload(file: File) {
-    setIsUploadReady(false);
-    setUploadError(null);
-    setPageState("processing");
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      setIsUploadReady(false);
+      setUploadError(null);
+      setPageState("processing");
 
-    try {
-      // If no active dashboard, auto-create one
-      let dashboardId = activeDashboardId;
-      if (!dashboardId) {
-        const created = await createDashboard({
-          name: file.name.replace(/\.[^.]+$/, ""),
-          icon: "bar-chart",
-          color: "#3B82F6",
-        });
-        dashboardId = created.id;
-        setActiveDashboard({
-          id: created.id,
-          name: created.name,
-          icon: created.icon,
-          color: created.color,
-        });
+      try {
+        // If no active dashboard, auto-create one
+        let dashboardId = activeDashboardId;
+        if (!dashboardId) {
+          const created = await createDashboard({
+            name: file.name.replace(/\.[^.]+$/, ""),
+            icon: "bar-chart",
+            color: "#3B82F6",
+          });
+          dashboardId = created.id;
+          setActiveDashboard({
+            id: created.id,
+            name: created.name,
+            icon: created.icon,
+            color: created.color,
+          });
+        }
+
+        const snapshot = await uploadDataset(file, dashboardId);
+        isHydratingRef.current = true;
+        lastPersistedChartsRef.current = JSON.stringify(snapshot.charts);
+        initializeDashboardStore(snapshot);
+        setIsUploadReady(true);
+      } catch (error) {
+        resetDashboardStore();
+        setUploadError(
+          error instanceof Error && error.message
+            ? error.message.replace(/_/g, " ")
+            : "Upload failed. Check the API server and try again.",
+        );
+        setPageState("empty");
+      } finally {
+        isHydratingRef.current = false;
       }
-
-      const snapshot = await uploadDataset(file, dashboardId);
-      isHydratingRef.current = true;
-      lastPersistedChartsRef.current = JSON.stringify(snapshot.charts);
-      initializeDashboardStore(snapshot);
-      setIsUploadReady(true);
-    } catch (error) {
-      resetDashboardStore();
-      setUploadError(
-        error instanceof Error && error.message
-          ? error.message.replace(/_/g, " ")
-          : "Upload failed. Check the API server and try again.",
-      );
-      setPageState("empty");
-    } finally {
-      isHydratingRef.current = false;
-    }
-  }
+    },
+    [activeDashboardId],
+  );
 
   const dashboardContent = useMemo(() => {
     if (pageState === "processing") {
-      return <ProcessingView onComplete={() => setPageState("loaded")} isReady={isUploadReady} />;
+      return (
+        <ProcessingView
+          onComplete={() => setPageState("loaded")}
+          isReady={isUploadReady}
+        />
+      );
     }
     if (pageState === "empty") {
       return (
@@ -262,13 +275,14 @@ export default function DashboardPage() {
       );
     }
     return <DashboardLoadingState />;
-  }, [isUploadReady, loadError, pageState, uploadError]);
+  }, [handleFileUpload, isUploadReady, loadError, pageState, uploadError]);
 
   return (
     <AppShell
       dashboardContent={pageState === "loaded" ? undefined : dashboardContent}
-      showFloatingChat={pageState === "loaded" && Boolean(getDashboardStoreState().datasetId)}
+      showFloatingChat={
+        pageState === "loaded" && Boolean(getDashboardStoreState().datasetId)
+      }
     />
   );
 }
-

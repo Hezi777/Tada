@@ -6,8 +6,19 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "cd apps/web && next dev",
-    "build": "npm -w packages/shared run build && cd apps/web && next build",
-    "lint": "npm -w apps/web run lint"
+    "dev": "cd apps/web && cross-env npm_config_workspaces= npm_config_workspace= NEXT_IGNORE_INCORRECT_LOCKFILE=1 next dev",
+    "build": "npm -w packages/shared run build && npm -w apps/web run build",
+    "lint": "npm -w apps/web run lint",
+    "typecheck": "npm -w packages/shared run typecheck && npm -w apps/web run typecheck",
+    "test": "npm -w apps/web run test",
+    "format": "prettier --write \"**/*.{css,js,json,md,mjs,ts,tsx}\"",
+    "format:check": "prettier --check \"**/*.{css,js,json,md,mjs,ts,tsx}\""
+  },
+  "optionalDependencies": {
+    "@next/swc-win32-x64-msvc": "^16.1.6"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "prettier": "^3.6.2"
   }
 }

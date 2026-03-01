@@ -6,7 +6,12 @@ export const HealthSchema = z.object({
 
 export type HealthResponse = z.infer<typeof HealthSchema>;
 
-export const ColumnKindSchema = z.enum(["numeric", "categorical", "date", "ignored"]);
+export const ColumnKindSchema = z.enum([
+  "numeric",
+  "categorical",
+  "date",
+  "ignored",
+]);
 export type ColumnKind = z.infer<typeof ColumnKindSchema>;
 
 export const DashboardColumnSchema = z.object({
@@ -22,7 +27,12 @@ export const DatasetMetaSchema = z.object({
 });
 export type DatasetMeta = z.infer<typeof DatasetMetaSchema>;
 
-export const SerializedValueSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+export const SerializedValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.null(),
+]);
 export type SerializedValue = z.infer<typeof SerializedValueSchema>;
 
 export const SerializedRowSchema = z.record(SerializedValueSchema);
@@ -36,16 +46,33 @@ export const LoadedDatasetFileSchema = z.object({
 });
 export type LoadedDatasetFile = z.infer<typeof LoadedDatasetFileSchema>;
 
-export const ChartTypeSchema = z.enum(["area", "bar", "donut", "scatter", "kpi"]);
+export const ChartTypeSchema = z.enum([
+  "area",
+  "bar",
+  "donut",
+  "scatter",
+  "kpi",
+]);
 export type ChartType = z.infer<typeof ChartTypeSchema>;
 
-export const ChartAggregationSchema = z.enum(["sum", "avg", "count", "min", "max"]);
+export const ChartAggregationSchema = z.enum([
+  "sum",
+  "avg",
+  "count",
+  "min",
+  "max",
+]);
 export type ChartAggregation = z.infer<typeof ChartAggregationSchema>;
 
 export const ChartSizeSchema = z.enum(["small", "medium", "large"]);
 export type ChartSize = z.infer<typeof ChartSizeSchema>;
 
-export const ChartSourceSchema = z.enum(["ai_initial", "chatbot", "user", "fallback"]);
+export const ChartSourceSchema = z.enum([
+  "ai_initial",
+  "chatbot",
+  "user",
+  "fallback",
+]);
 export type ChartSource = z.infer<typeof ChartSourceSchema>;
 
 export const ChartConfigSchema = z.object({
@@ -94,7 +121,9 @@ export const DashboardConfigSnapshotSchema = z.object({
   charts: z.array(ChartConfigSchema),
   kpis: z.array(KPIConfigSchema),
 });
-export type DashboardConfigSnapshot = z.infer<typeof DashboardConfigSnapshotSchema>;
+export type DashboardConfigSnapshot = z.infer<
+  typeof DashboardConfigSnapshotSchema
+>;
 
 export const ChatbotChartPatchSchema = z.discriminatedUnion("action", [
   z.object({
@@ -115,18 +144,23 @@ export const ChatbotChartPatchSchema = z.discriminatedUnion("action", [
 ]);
 export type ChatbotChartPatch = z.infer<typeof ChatbotChartPatchSchema>;
 
-export const UploadDashboardResponseSchema = DashboardConfigSnapshotSchema.extend({
-  fileName: z.string().min(1),
-  rows: z.array(SerializedRowSchema),
-  files: z.array(LoadedDatasetFileSchema),
-});
-export type UploadDashboardResponse = z.infer<typeof UploadDashboardResponseSchema>;
+export const UploadDashboardResponseSchema =
+  DashboardConfigSnapshotSchema.extend({
+    fileName: z.string().min(1),
+    rows: z.array(SerializedRowSchema),
+    files: z.array(LoadedDatasetFileSchema),
+  });
+export type UploadDashboardResponse = z.infer<
+  typeof UploadDashboardResponseSchema
+>;
 
 export const DeleteChainedFileRequestSchema = z.object({
   datasetId: z.string().min(1),
   fileId: z.string().min(1),
 });
-export type DeleteChainedFileRequest = z.infer<typeof DeleteChainedFileRequestSchema>;
+export type DeleteChainedFileRequest = z.infer<
+  typeof DeleteChainedFileRequestSchema
+>;
 
 export const ChatDashboardRequestSchema = z.object({
   datasetId: z.string().min(1),
@@ -174,13 +208,27 @@ export const BI_GENERATION_RULES = [
 // ── Multi-Dashboard ──
 
 export const DASHBOARD_ICON_OPTIONS = [
-  "bar-chart", "pie-chart", "trending-up", "store", "shopping-cart",
-  "users", "activity", "target", "zap", "layers",
+  "bar-chart",
+  "pie-chart",
+  "trending-up",
+  "store",
+  "shopping-cart",
+  "users",
+  "activity",
+  "target",
+  "zap",
+  "layers",
 ] as const;
 
 export const DASHBOARD_COLOR_OPTIONS = [
-  "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6",
-  "#EC4899", "#EF4444", "#06B6D4", "#84CC16",
+  "#3B82F6",
+  "#10B981",
+  "#F59E0B",
+  "#8B5CF6",
+  "#EC4899",
+  "#EF4444",
+  "#06B6D4",
+  "#84CC16",
 ] as const;
 
 export const DashboardListItemSchema = z.object({
@@ -200,11 +248,15 @@ export const CreateDashboardRequestSchema = z.object({
   color: z.string().min(1),
   datasetIds: z.array(z.string()).optional(),
 });
-export type CreateDashboardRequest = z.infer<typeof CreateDashboardRequestSchema>;
+export type CreateDashboardRequest = z.infer<
+  typeof CreateDashboardRequestSchema
+>;
 
 export const UpdateDashboardRequestSchema = z.object({
   name: z.string().min(1).optional(),
   icon: z.string().min(1).optional(),
   color: z.string().min(1).optional(),
 });
-export type UpdateDashboardRequest = z.infer<typeof UpdateDashboardRequestSchema>;
+export type UpdateDashboardRequest = z.infer<
+  typeof UpdateDashboardRequestSchema
+>;

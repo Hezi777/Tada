@@ -90,14 +90,18 @@ export function FloatingChat() {
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      let content = "TADA Wiz is unavailable right now. Make sure the API is running.";
+      let content =
+        "TADA Wiz is unavailable right now. Make sure the API is running.";
       if (error instanceof Error) {
         if (error.message === "not_found" || error.message === "missing_rows") {
-          content = "Your session expired on the server. Please re-upload the file.";
+          content =
+            "Your session expired on the server. Please re-upload the file.";
         } else if (error.message === "chat_failed") {
-          content = "Chat failed on the server. Check the API logs for details.";
+          content =
+            "Chat failed on the server. Check the API logs for details.";
         } else if (error.message.includes("fetch")) {
-          content = "Cannot reach the server route. Check that the Next.js app is running and the request is reaching /api/chat.";
+          content =
+            "Cannot reach the server route. Check that the Next.js app is running and the request is reaching /api/chat.";
         } else {
           content = error.message;
         }
@@ -156,7 +160,9 @@ export function FloatingChat() {
                   </div>
                   <div>
                     <div className="text-base font-bold">TADA Wiz</div>
-                    <p className="mt-0.5 text-[13px] text-white/75">Ask anything about your data</p>
+                    <p className="mt-0.5 text-[13px] text-white/75">
+                      Ask anything about your data
+                    </p>
                   </div>
                 </div>
                 <Button
@@ -183,17 +189,22 @@ export function FloatingChat() {
 
                 {canChat && messages.length === 0 ? (
                   <Card className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
-                    Ask about your data, request a chart change, or get help reading a view.
+                    Ask about your data, request a chart change, or get help
+                    reading a view.
                   </Card>
                 ) : null}
 
                 {messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    key={message.id}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
                     <div
-                      className={`max-w-[88%] px-4 py-3 text-sm leading-6 ${message.role === "user"
+                      className={`max-w-[88%] px-4 py-3 text-sm leading-6 ${
+                        message.role === "user"
                           ? "rounded-[12px_12px_2px_12px] bg-[#3B82F6] text-white"
                           : "rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-primary)]"
-                        }`}
+                      }`}
                     >
                       {message.content}
                     </div>
@@ -207,7 +218,9 @@ export function FloatingChat() {
                         <span
                           key={index}
                           className="h-2 w-2 rounded-full bg-[var(--color-text-muted)]"
-                          style={{ animation: `wizDot 1s ease-in-out ${index * 0.12}s infinite` }}
+                          style={{
+                            animation: `wizDot 1s ease-in-out ${index * 0.12}s infinite`,
+                          }}
                         />
                       ))}
                     </div>
@@ -238,7 +251,11 @@ export function FloatingChat() {
                   className="h-9 w-9 rounded-full bg-[#3B82F6] text-white hover:bg-[#2563EB]"
                   aria-label="Send message"
                 >
-                  {isSending ? <MessageCircle className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+                  {isSending ? (
+                    <MessageCircle className="h-4 w-4" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>

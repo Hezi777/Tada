@@ -4,14 +4,14 @@
 
 @layer base {
   :root {
-    --color-bg: #F8FAFC;
-    --color-surface: #FFFFFF;
-    --color-border: #E2E8F0;
-    --color-accent: #2563EB;
-    --color-accent-light: #EFF6FF;
-    --color-text-primary: #0F172A;
-    --color-text-secondary: #64748B;
-    --color-text-muted: #94A3B8;
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-border: #e2e8f0;
+    --color-accent: #2563eb;
+    --color-accent-light: #eff6ff;
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #64748b;
+    --color-text-muted: #94a3b8;
 
     --background: 210 100% 99%;
     --foreground: 217 35% 16%;
@@ -108,10 +108,18 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: "Instrument Sans", system-ui, sans-serif;
+    font-family: var(--font-sans), system-ui, sans-serif;
     background-image:
-      radial-gradient(circle at top left, hsl(var(--glow) / 0.18), transparent 34%),
-      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--hero-tint)) 100%);
+      radial-gradient(
+        circle at top left,
+        hsl(var(--glow) / 0.18),
+        transparent 34%
+      ),
+      linear-gradient(
+        180deg,
+        hsl(var(--background)) 0%,
+        hsl(var(--hero-tint)) 100%
+      );
     color: hsl(var(--foreground));
     min-height: 100vh;
     overflow-x: hidden;
@@ -130,7 +138,7 @@
   h4,
   h5,
   h6 {
-    font-family: "Instrument Sans", system-ui, sans-serif;
+    font-family: var(--font-sans), system-ui, sans-serif;
   }
 
   ::selection {
@@ -141,29 +149,51 @@
 
 @layer utilities {
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(201 89% 62%) 55%, hsl(220 84% 66%) 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      hsl(201 89% 62%) 55%,
+      hsl(220 84% 66%) 100%
+    );
   }
 
   .gradient-subtle {
     background:
-      linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--surface)) 100%),
+      linear-gradient(
+        180deg,
+        hsl(var(--background)) 0%,
+        hsl(var(--surface)) 100%
+      ),
       linear-gradient(135deg, hsl(var(--primary) / 0.04), transparent 45%);
   }
 
   .gradient-glow {
     background:
       radial-gradient(circle at top, hsl(var(--glow) / 0.22), transparent 36%),
-      radial-gradient(circle at bottom right, hsl(var(--primary) / 0.09), transparent 28%);
+      radial-gradient(
+        circle at bottom right,
+        hsl(var(--primary) / 0.09),
+        transparent 28%
+      );
   }
 
   .glass {
-    background: linear-gradient(180deg, hsl(var(--surface-elevated) / 0.88), hsl(var(--surface-elevated) / 0.72));
+    background: linear-gradient(
+      180deg,
+      hsl(var(--surface-elevated) / 0.88),
+      hsl(var(--surface-elevated) / 0.72)
+    );
     backdrop-filter: blur(22px);
   }
 
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--primary)) 52%, hsl(221 76% 61%) 100%);
+    background-image: linear-gradient(
+      135deg,
+      hsl(var(--foreground)) 0%,
+      hsl(var(--primary)) 52%,
+      hsl(221 76% 61%) 100%
+    );
   }
 
   .shadow-glow {
@@ -183,8 +213,11 @@
   }
 
   .surface-panel {
-    background:
-      linear-gradient(180deg, hsl(var(--surface-elevated)) 0%, hsl(var(--panel)) 100%);
+    background: linear-gradient(
+      180deg,
+      hsl(var(--surface-elevated)) 0%,
+      hsl(var(--panel)) 100%
+    );
   }
 
   .editorial-grid {
@@ -198,8 +231,11 @@
 
   .section-shell {
     @apply relative overflow-hidden rounded-[2rem] border border-white/70;
-    background:
-      linear-gradient(180deg, hsl(var(--surface-elevated) / 0.94), hsl(var(--surface) / 0.96));
+    background: linear-gradient(
+      180deg,
+      hsl(var(--surface-elevated) / 0.94),
+      hsl(var(--surface) / 0.96)
+    );
     box-shadow:
       0 30px 80px -44px hsl(var(--shadow-color) / 0.28),
       inset 0 1px 0 hsl(0 0% 100% / 0.85);
@@ -212,7 +248,11 @@
     pointer-events: none;
     background:
       linear-gradient(130deg, hsl(var(--primary) / 0.12), transparent 24%),
-      radial-gradient(circle at top right, hsl(var(--primary) / 0.12), transparent 26%);
+      radial-gradient(
+        circle at top right,
+        hsl(var(--primary) / 0.12),
+        transparent 26%
+      );
   }
 
   .eyebrow {
@@ -241,7 +281,6 @@
   }
 
   @keyframes float {
-
     0%,
     100% {
       transform: translateY(0px);
@@ -253,7 +292,6 @@
   }
 
   @keyframes pulse-soft {
-
     0%,
     100% {
       opacity: 1;
@@ -287,7 +325,6 @@
   }
 
   @keyframes bob {
-
     0%,
     100% {
       transform: translateY(0);
@@ -339,7 +376,7 @@
 
   .dashboard-scroll {
     scrollbar-width: thin;
-    scrollbar-color: #CBD5E1 transparent;
+    scrollbar-color: #cbd5e1 transparent;
   }
 
   .dashboard-scroll::-webkit-scrollbar {
@@ -352,7 +389,7 @@
   }
 
   .dashboard-scroll::-webkit-scrollbar-thumb {
-    background: #CBD5E1;
+    background: #cbd5e1;
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: content-box;
@@ -372,7 +409,7 @@
     border-color: var(--color-accent);
     transform: translateY(-2px);
     box-shadow:
-      0 8px 24px hsl(215 74% 31% / 0.10),
+      0 8px 24px hsl(215 74% 31% / 0.1),
       0 2px 6px hsl(215 74% 31% / 0.05);
   }
 
@@ -398,7 +435,7 @@
     position: absolute;
     inset: 0;
     border-radius: 9999px;
-    border: 2px solid #3B82F6;
+    border: 2px solid #3b82f6;
     animation: fab-ring-pulse 2.5s ease-in-out infinite;
     pointer-events: none;
   }

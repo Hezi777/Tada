@@ -3,7 +3,12 @@ import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -15,8 +20,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Instrument Sans', 'system-ui', 'sans-serif'],
-        display: ['DM Serif Text', 'Georgia', 'serif'],
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "Georgia", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -90,8 +95,14 @@ export default {
           to: { height: "0" },
         },
         "card-lift": {
-          from: { transform: "translateY(0)", boxShadow: "0 2px 6px hsl(215 74% 31% / 0.05)" },
-          to: { transform: "translateY(-2px)", boxShadow: "0 8px 24px hsl(215 74% 31% / 0.12)" },
+          from: {
+            transform: "translateY(0)",
+            boxShadow: "0 2px 6px hsl(215 74% 31% / 0.05)",
+          },
+          to: {
+            transform: "translateY(-2px)",
+            boxShadow: "0 8px 24px hsl(215 74% 31% / 0.12)",
+          },
         },
         "fab-pulse": {
           "0%": { transform: "scale(1)", opacity: "0.6" },

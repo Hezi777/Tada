@@ -21,12 +21,12 @@ Tada Instant Insights is a monorepo MVP that turns uploaded CSV or Excel files i
 
 ## Tech Stack
 
-| Layer | Technology |
-| --- | --- |
-| App | Next.js App Router, React, TypeScript, Tailwind CSS, shadcn/ui, Framer Motion |
-| Server | Next.js route handlers on Node runtime, Supabase, Papa Parse, XLSX |
-| AI | Groq-backed model calls from server-only code |
-| Shared | Local workspace package with shared types and Zod schemas |
+| Layer  | Technology                                                                    |
+| ------ | ----------------------------------------------------------------------------- |
+| App    | Next.js App Router, React, TypeScript, Tailwind CSS, shadcn/ui, Framer Motion |
+| Server | Next.js route handlers on Node runtime, Supabase, Papa Parse, XLSX            |
+| AI     | Groq-backed model calls from server-only code                                 |
+| Shared | Local workspace package with shared types and Zod schemas                     |
 
 ## Architecture
 
@@ -62,7 +62,9 @@ Create `apps/web/.env.local` with the values your environment needs:
 
 ```env
 GROQ_API_KEY=your_key_here
+# Optional: defaults to openai/gpt-oss-120b
 GROQ_DASHBOARD_MODEL=openai/gpt-oss-120b
+# Optional: defaults to moonshotai/kimi-k2-instruct-0905
 GROQ_CHAT_MODEL=moonshotai/kimi-k2-instruct-0905
 NEXT_PUBLIC_SUPABASE_URL=your_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
@@ -77,7 +79,7 @@ Reference example: `apps/web/.env.example`
 npm run dev
 ```
 
-This starts the Next.js app from `apps/web`.
+Run local development from the workspace root. The root `dev` script starts the Next.js app in `apps/web` with the workspace-safe env workaround required for this monorepo.
 
 ## Build
 
@@ -89,15 +91,15 @@ This builds `packages/shared` first, then the Next.js app.
 
 ## Main Endpoints
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| GET | `/health` | Health check route |
-| GET | `/api/health` | API health check route |
-| POST | `/api/upload` | Upload dataset |
-| POST | `/api/upload/chain` | Append a compatible file to an existing dataset |
-| POST | `/api/chat` | Copilot chat actions |
-| GET | `/api/dashboard` | Load the latest dashboard |
-| GET | `/api/dashboards` | List dashboards |
+| Method | Endpoint            | Description                                     |
+| ------ | ------------------- | ----------------------------------------------- |
+| GET    | `/health`           | Health check route                              |
+| GET    | `/api/health`       | API health check route                          |
+| POST   | `/api/upload`       | Upload dataset                                  |
+| POST   | `/api/upload/chain` | Append a compatible file to an existing dataset |
+| POST   | `/api/chat`         | Copilot chat actions                            |
+| GET    | `/api/dashboard`    | Load the latest dashboard                       |
+| GET    | `/api/dashboards`   | List dashboards                                 |
 
 ## Scripts
 
@@ -106,6 +108,10 @@ Root:
 - `npm run dev` - start the Next.js app
 - `npm run build` - build shared package and app
 - `npm run lint` - lint the web app
+- `npm run typecheck` - typecheck shared package and app
+- `npm run test` - run the web test suite
+- `npm run format` - format the repo with Prettier
+- `npm run format:check` - verify formatting with Prettier
 
 Web:
 
@@ -119,5 +125,6 @@ Web:
 ## Notes
 
 - Use npm as the package manager for this repo.
+- Start from the workspace root for normal development commands.
 - Some dataset state is cached in memory for fast local interactions.
 - AI outputs are validated through shared Zod schemas before state updates.

@@ -12,7 +12,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const data = ChatDashboardRequestSchema.parse(raw) as Parameters<typeof handleChat>[0];
+    const data = ChatDashboardRequestSchema.parse(raw) as Parameters<
+      typeof handleChat
+    >[0];
     const response = await handleChat(data);
     return NextResponse.json(response);
   } catch (error) {

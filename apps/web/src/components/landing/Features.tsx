@@ -6,22 +6,26 @@ const features = [
   {
     icon: FileSpreadsheet,
     title: "Any file format",
-    description: "CSV, Excel, Google Sheets. Just drag and drop — we handle the rest.",
+    description:
+      "CSV, Excel, Google Sheets. Just drag and drop — we handle the rest.",
   },
   {
     icon: Zap,
     title: "Instant dashboards",
-    description: "AI analyzes your data structure and generates the perfect visualization.",
+    description:
+      "AI analyzes your data structure and generates the perfect visualization.",
   },
   {
     icon: MessageSquare,
     title: "Chat with your data",
-    description: "Ask questions in plain English. \"Show me sales by region\" just works.",
+    description:
+      'Ask questions in plain English. "Show me sales by region" just works.',
   },
   {
     icon: BarChart3,
     title: "Smart insights",
-    description: "Automatic trend detection, anomaly alerts, and actionable recommendations.",
+    description:
+      "Automatic trend detection, anomaly alerts, and actionable recommendations.",
   },
 ];
 
@@ -36,7 +40,8 @@ export function Features() {
               Zero friction. Pure insight.
             </h2>
             <p className="mt-5 text-lg leading-8 text-muted-foreground">
-              Tada removes everything that stands between you and understanding your data.
+              Tada removes everything that stands between you and understanding
+              your data.
             </p>
           </div>
 
@@ -65,8 +70,12 @@ export function Features() {
                     <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-[1.3rem] border border-white/80 bg-white shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:border-primary/25 group-hover:shadow-md">
                       <feature.icon className="h-6 w-6 text-primary" />
                     </div>
-                    <h3 className="font-display text-2xl font-semibold text-foreground">{feature.title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-muted-foreground">{feature.description}</p>
+                    <h3 className="font-display text-2xl font-semibold text-foreground">
+                      {feature.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                      {feature.description}
+                    </p>
                   </div>
                 </Card>
               </motion.div>

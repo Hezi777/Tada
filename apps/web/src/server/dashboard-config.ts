@@ -9,6 +9,7 @@ import {
   type KPIConfig,
 } from "@tada/shared";
 import Groq from "groq-sdk";
+import { env, getGroqApiKey } from "@/lib/env";
 import type { Column } from "./types";
 
 type Row = Record<string, unknown>;
@@ -75,11 +76,16 @@ function variance(values: number[]): number {
     return 0;
   }
   const avg = mean(values);
-  return values.reduce((sum, value) => sum + (value - avg) ** 2, 0) / values.length;
+  return (
+    values.reduce((sum, value) => sum + (value - avg) ** 2, 0) / values.length
+  );
 }
 
 function pearsonCorrelation(left: number[], right: number[]): number | null {
-  if (left.length !== right.length || left.length < BI_RULE_LIMITS.minScatterPoints) {
+  if (
+    left.length !== right.length ||
+    left.length < BI_RULE_LIMITS.minScatterPoints
+  ) {
     return null;
   }
   const leftMean = mean(left);
@@ -115,7 +121,10 @@ function hasHumanTitle(title: string): boolean {
   return !/^chart(\s+\d+)?$/i.test(trimmed);
 }
 
-function findColumn(columns: Column[], name: string | null | undefined): Column | null {
+function findColumn(
+  columns: Column[],
+  name: string | null | undefined,
+): Column | null {
   if (!name) {
     return null;
   }
@@ -137,14 +146,20 @@ function toPromptValue(value: unknown): string | number | boolean | null {
   return value === undefined ? null : String(value);
 }
 
-function comparePromptValues(left: string | number | boolean, right: string | number | boolean): number {
+function comparePromptValues(
+  left: string | number | boolean,
+  right: string | number | boolean,
+): number {
   if (typeof left === "number" && typeof right === "number") {
     return left - right;
   }
   return String(left).localeCompare(String(right));
 }
 
-export function buildColumnPromptStats(rows: Row[], columns: Column[]): Record<string, ColumnPromptStats> {
+export function buildColumnPromptStats(
+  rows: Row[],
+  columns: Column[],
+): Record<string, ColumnPromptStats> {
   const stats: Record<string, ColumnPromptStats> = {};
 
   for (const column of columns) {
@@ -153,8 +168,13 @@ export function buildColumnPromptStats(rows: Row[], columns: Column[]): Record<s
     const nonNullValues = normalizedValues.filter(
       (value): value is string | number | boolean => value !== null,
     );
-    const uniqueValues = new Set(nonNullValues.map((value) => `${typeof value}:${String(value)}`));
-    const counts = new Map<string, { value: string | number | boolean | null; count: number }>();
+    const uniqueValues = new Set(
+      nonNullValues.map((value) => `${typeof value}:${String(value)}`),
+    );
+    const counts = new Map<
+      string,
+      { value: string | number | boolean | null; count: number }
+    >();
 
     for (const value of normalizedValues) {
       const key = value === null ? "null" : `${typeof value}:${String(value)}`;
@@ -170,7 +190,9 @@ export function buildColumnPromptStats(rows: Row[], columns: Column[]): Record<s
     let max: number | string | null = null;
 
     if (column.kind === "numeric") {
-      const numericValues = nonNullValues.filter((value): value is number => typeof value === "number");
+      const numericValues = nonNullValues.filter(
+        (value): value is number => typeof value === "number",
+      );
       if (numericValues.length > 0) {
         min = Math.min(...numericValues);
         max = Math.max(...numericValues);
@@ -205,12 +227,17 @@ export function buildColumnPromptStats(rows: Row[], columns: Column[]): Record<s
   return stats;
 }
 
-function listNumericColumns(rows: Row[], columns: Column[]): Array<{ column: Column; values: number[] }> {
+function listNumericColumns(
+  rows: Row[],
+  columns: Column[],
+): Array<{ column: Column; values: number[] }> {
   return columns
     .filter((column) => column.kind === "numeric")
     .map((column) => ({
       column,
-      values: rows.map((row) => toNumber(row[column.name])).filter((value): value is number => value !== null),
+      values: rows
+        .map((row) => toNumber(row[column.name]))
+        .filter((value): value is number => value !== null),
     }))
     .filter((entry) => entry.values.length > 0);
 }
@@ -237,7 +264,10 @@ function listCategoricalColumns(rows: Row[], columns: Column[]): Column[] {
 
 function pickPrimaryNumeric(rows: Row[], columns: Column[]): Column | null {
   const candidates = listNumericColumns(rows, columns)
-    .map((entry) => ({ column: entry.column, variance: variance(entry.values) }))
+    .map((entry) => ({
+      column: entry.column,
+      variance: variance(entry.values),
+    }))
     .sort((left, right) => right.variance - left.variance);
   return candidates[0]?.column ?? null;
 }
@@ -250,7 +280,10 @@ function pickPrimaryDate(columns: Column[]): Column | null {
   return columns.find((column) => column.kind === "date") ?? null;
 }
 
-function detectTimeGranularity(rows: Row[], timeColumn: string): "day" | "month" | "year" {
+function detectTimeGranularity(
+  rows: Row[],
+  timeColumn: string,
+): "day" | "month" | "year" {
   const dates = rows
     .map((row) => toDate(row[timeColumn]))
     .filter((d): d is Date => d !== null);
@@ -263,7 +296,10 @@ function detectTimeGranularity(rows: Row[], timeColumn: string): "day" | "month"
   return "year";
 }
 
-function toBucketKey(date: Date, granularity: "day" | "month" | "year"): string {
+function toBucketKey(
+  date: Date,
+  granularity: "day" | "month" | "year",
+): string {
   if (granularity === "day") return date.toISOString().slice(0, 10);
   if (granularity === "month") return date.toISOString().slice(0, 7);
   return String(date.getUTCFullYear());
@@ -276,7 +312,10 @@ function aggregateByTime(
   aggregation: ChartConfig["aggregation"],
 ): Array<{ key: string; value: number }> {
   const granularity = detectTimeGranularity(rows, timeColumn);
-  const buckets = new Map<string, { sum: number; count: number; min: number | null; max: number | null }>();
+  const buckets = new Map<
+    string,
+    { sum: number; count: number; min: number | null; max: number | null }
+  >();
 
   for (const row of rows) {
     const dateValue = toDate(row[timeColumn]);
@@ -284,7 +323,12 @@ function aggregateByTime(
       continue;
     }
     const bucket = toBucketKey(dateValue, granularity);
-    const current = buckets.get(bucket) ?? { sum: 0, count: 0, min: null, max: null };
+    const current = buckets.get(bucket) ?? {
+      sum: 0,
+      count: 0,
+      min: null,
+      max: null,
+    };
     const numericValue = valueColumn ? toNumber(row[valueColumn]) : null;
 
     if (aggregation === "count" || !valueColumn) {
@@ -292,8 +336,14 @@ function aggregateByTime(
     } else if (numericValue !== null) {
       current.sum += numericValue;
       current.count += 1;
-      current.min = current.min === null ? numericValue : Math.min(current.min, numericValue);
-      current.max = current.max === null ? numericValue : Math.max(current.max, numericValue);
+      current.min =
+        current.min === null
+          ? numericValue
+          : Math.min(current.min, numericValue);
+      current.max =
+        current.max === null
+          ? numericValue
+          : Math.max(current.max, numericValue);
     }
 
     buckets.set(bucket, current);
@@ -314,15 +364,27 @@ function aggregateByCategory(
   valueColumn: string | null,
   aggregation: ChartConfig["aggregation"],
 ): Array<{ key: string; value: number }> {
-  const buckets = new Map<string, { sum: number; count: number; min: number | null; max: number | null }>();
+  const buckets = new Map<
+    string,
+    { sum: number; count: number; min: number | null; max: number | null }
+  >();
 
   for (const row of rows) {
     const rawCategory = row[categoryColumn];
-    if (rawCategory === null || rawCategory === undefined || rawCategory === "") {
+    if (
+      rawCategory === null ||
+      rawCategory === undefined ||
+      rawCategory === ""
+    ) {
       continue;
     }
     const key = String(rawCategory);
-    const current = buckets.get(key) ?? { sum: 0, count: 0, min: null, max: null };
+    const current = buckets.get(key) ?? {
+      sum: 0,
+      count: 0,
+      min: null,
+      max: null,
+    };
     const numericValue = valueColumn ? toNumber(row[valueColumn]) : null;
 
     if (aggregation === "count" || !valueColumn) {
@@ -330,21 +392,35 @@ function aggregateByCategory(
     } else if (numericValue !== null) {
       current.sum += numericValue;
       current.count += 1;
-      current.min = current.min === null ? numericValue : Math.min(current.min, numericValue);
-      current.max = current.max === null ? numericValue : Math.max(current.max, numericValue);
+      current.min =
+        current.min === null
+          ? numericValue
+          : Math.min(current.min, numericValue);
+      current.max =
+        current.max === null
+          ? numericValue
+          : Math.max(current.max, numericValue);
     }
 
     buckets.set(key, current);
   }
 
   return Array.from(buckets.entries())
-    .map(([key, bucket]) => ({ key, value: reduceAggregate(bucket, aggregation) }))
+    .map(([key, bucket]) => ({
+      key,
+      value: reduceAggregate(bucket, aggregation),
+    }))
     .filter((entry) => Number.isFinite(entry.value))
     .sort((left, right) => right.value - left.value);
 }
 
 function reduceAggregate(
-  bucket: { sum: number; count: number; min: number | null; max: number | null },
+  bucket: {
+    sum: number;
+    count: number;
+    min: number | null;
+    max: number | null;
+  },
   aggregation: ChartConfig["aggregation"],
 ): number {
   if (aggregation === "avg") {
@@ -362,7 +438,10 @@ function reduceAggregate(
   return bucket.sum;
 }
 
-function buildAreaInsight(series: Array<{ key: string; value: number }>, metricLabel: string): string {
+function buildAreaInsight(
+  series: Array<{ key: string; value: number }>,
+  metricLabel: string,
+): string {
   if (series.length < 2) {
     return `${metricLabel} has limited time coverage in the uploaded dataset.`;
   }
@@ -377,7 +456,11 @@ function buildAreaInsight(series: Array<{ key: string; value: number }>, metricL
   return `${metricLabel} stays relatively stable over time.`;
 }
 
-function buildBarInsight(series: Array<{ key: string; value: number }>, groupBy: string, metricLabel: string): string {
+function buildBarInsight(
+  series: Array<{ key: string; value: number }>,
+  groupBy: string,
+  metricLabel: string,
+): string {
   const top = series[0];
   if (!top) {
     return `No strong ${groupBy} breakout was detected for ${metricLabel}.`;
@@ -385,7 +468,10 @@ function buildBarInsight(series: Array<{ key: string; value: number }>, groupBy:
   return `${top.key} leads ${groupBy} on ${metricLabel}.`;
 }
 
-function buildDonutInsight(series: Array<{ key: string; value: number }>, groupBy: string): string {
+function buildDonutInsight(
+  series: Array<{ key: string; value: number }>,
+  groupBy: string,
+): string {
   const top = series[0];
   if (!top) {
     return `No clear category share was found for ${groupBy}.`;
@@ -395,25 +481,42 @@ function buildDonutInsight(series: Array<{ key: string; value: number }>, groupB
   return `${top.key} represents about ${share}% of ${groupBy}.`;
 }
 
-function buildScatterInsight(correlation: number, left: string, right: string): string {
+function buildScatterInsight(
+  correlation: number,
+  left: string,
+  right: string,
+): string {
   if (correlation >= BI_RULE_LIMITS.minScatterCorrelation) {
     return `${left} and ${right} move together with a positive correlation.`;
   }
   return `${left} and ${right} move in opposite directions with a negative correlation.`;
 }
 
-function buildAreaChart(rows: Row[], dateColumn: Column, numericColumn: Column | null): IncomingChartConfig | null {
+function buildAreaChart(
+  rows: Row[],
+  dateColumn: Column,
+  numericColumn: Column | null,
+): IncomingChartConfig | null {
   const aggregation = numericColumn ? "sum" : "count";
-  const series = aggregateByTime(rows, dateColumn.name, numericColumn?.name ?? null, aggregation);
+  const series = aggregateByTime(
+    rows,
+    dateColumn.name,
+    numericColumn?.name ?? null,
+    aggregation,
+  );
   if (series.length < 2) {
     return null;
   }
   const metricLabel = numericColumn ? numericColumn.name : "record count";
   return {
     type: "area",
-    title: numericColumn ? `${numericColumn.name} over time` : `Records over time by ${dateColumn.name}`,
+    title: numericColumn
+      ? `${numericColumn.name} over time`
+      : `Records over time by ${dateColumn.name}`,
     insight: buildAreaInsight(series, metricLabel),
-    columns: numericColumn ? [numericColumn.name, dateColumn.name] : [dateColumn.name],
+    columns: numericColumn
+      ? [numericColumn.name, dateColumn.name]
+      : [dateColumn.name],
     aggregation,
     groupBy: null,
     timeColumn: dateColumn.name,
@@ -421,9 +524,18 @@ function buildAreaChart(rows: Row[], dateColumn: Column, numericColumn: Column |
   };
 }
 
-function buildBarChart(rows: Row[], categoryColumn: Column, numericColumn: Column | null): IncomingChartConfig | null {
+function buildBarChart(
+  rows: Row[],
+  categoryColumn: Column,
+  numericColumn: Column | null,
+): IncomingChartConfig | null {
   const aggregation = numericColumn ? "sum" : "count";
-  const series = aggregateByCategory(rows, categoryColumn.name, numericColumn?.name ?? null, aggregation);
+  const series = aggregateByCategory(
+    rows,
+    categoryColumn.name,
+    numericColumn?.name ?? null,
+    aggregation,
+  );
   if (series.length === 0) {
     return null;
   }
@@ -434,7 +546,9 @@ function buildBarChart(rows: Row[], categoryColumn: Column, numericColumn: Colum
       ? `${numericColumn.name} by ${categoryColumn.name}`
       : `Records by ${categoryColumn.name}`,
     insight: buildBarInsight(series, categoryColumn.name, metricLabel),
-    columns: numericColumn ? [numericColumn.name, categoryColumn.name] : [categoryColumn.name],
+    columns: numericColumn
+      ? [numericColumn.name, categoryColumn.name]
+      : [categoryColumn.name],
     aggregation,
     groupBy: categoryColumn.name,
     timeColumn: null,
@@ -442,9 +556,18 @@ function buildBarChart(rows: Row[], categoryColumn: Column, numericColumn: Colum
   };
 }
 
-function buildDonutChart(rows: Row[], categoryColumn: Column, numericColumn: Column | null): IncomingChartConfig | null {
+function buildDonutChart(
+  rows: Row[],
+  categoryColumn: Column,
+  numericColumn: Column | null,
+): IncomingChartConfig | null {
   const aggregation = numericColumn ? "sum" : "count";
-  const series = aggregateByCategory(rows, categoryColumn.name, numericColumn?.name ?? null, aggregation);
+  const series = aggregateByCategory(
+    rows,
+    categoryColumn.name,
+    numericColumn?.name ?? null,
+    aggregation,
+  );
   if (series.length === 0) {
     return null;
   }
@@ -454,7 +577,9 @@ function buildDonutChart(rows: Row[], categoryColumn: Column, numericColumn: Col
       ? `${numericColumn.name} share by ${categoryColumn.name}`
       : `${categoryColumn.name} share`,
     insight: buildDonutInsight(series, categoryColumn.name),
-    columns: numericColumn ? [numericColumn.name, categoryColumn.name] : [categoryColumn.name],
+    columns: numericColumn
+      ? [numericColumn.name, categoryColumn.name]
+      : [categoryColumn.name],
     aggregation,
     groupBy: categoryColumn.name,
     timeColumn: null,
@@ -462,18 +587,23 @@ function buildDonutChart(rows: Row[], categoryColumn: Column, numericColumn: Col
   };
 }
 
-function buildScatterChart(rows: Row[], columns: Column[]): IncomingChartConfig | null {
+function buildScatterChart(
+  rows: Row[],
+  columns: Column[],
+): IncomingChartConfig | null {
   const numericColumns = columns.filter((column) => column.kind === "numeric");
-  let best:
-    | {
-      left: Column;
-      right: Column;
-      correlation: number;
-    }
-    | null = null;
+  let best: {
+    left: Column;
+    right: Column;
+    correlation: number;
+  } | null = null;
 
   for (let leftIndex = 0; leftIndex < numericColumns.length; leftIndex += 1) {
-    for (let rightIndex = leftIndex + 1; rightIndex < numericColumns.length; rightIndex += 1) {
+    for (
+      let rightIndex = leftIndex + 1;
+      rightIndex < numericColumns.length;
+      rightIndex += 1
+    ) {
       const left = numericColumns[leftIndex];
       const right = numericColumns[rightIndex];
       const leftValues: number[] = [];
@@ -490,7 +620,10 @@ function buildScatterChart(rows: Row[], columns: Column[]): IncomingChartConfig 
       }
 
       const correlation = pearsonCorrelation(leftValues, rightValues);
-      if (correlation === null || Math.abs(correlation) < BI_RULE_LIMITS.minScatterCorrelation) {
+      if (
+        correlation === null ||
+        Math.abs(correlation) < BI_RULE_LIMITS.minScatterCorrelation
+      ) {
         continue;
       }
       if (!best || Math.abs(correlation) > Math.abs(best.correlation)) {
@@ -506,7 +639,11 @@ function buildScatterChart(rows: Row[], columns: Column[]): IncomingChartConfig 
   return {
     type: "scatter",
     title: `${best.left.name} vs ${best.right.name}`,
-    insight: buildScatterInsight(best.correlation, best.left.name, best.right.name),
+    insight: buildScatterInsight(
+      best.correlation,
+      best.left.name,
+      best.right.name,
+    ),
     columns: [best.left.name, best.right.name],
     aggregation: null,
     groupBy: null,
@@ -515,7 +652,10 @@ function buildScatterChart(rows: Row[], columns: Column[]): IncomingChartConfig 
   };
 }
 
-function buildSingleValueBar(rows: Row[], numericColumn: Column): IncomingChartConfig | null {
+function buildSingleValueBar(
+  rows: Row[],
+  numericColumn: Column,
+): IncomingChartConfig | null {
   const values = rows
     .map((row) => toNumber(row[numericColumn.name]))
     .filter((value): value is number => value !== null);
@@ -535,7 +675,10 @@ function buildSingleValueBar(rows: Row[], numericColumn: Column): IncomingChartC
   };
 }
 
-function buildSingleValueDonut(rows: Row[], numericColumn: Column): IncomingChartConfig | null {
+function buildSingleValueDonut(
+  rows: Row[],
+  numericColumn: Column,
+): IncomingChartConfig | null {
   const values = rows
     .map((row) => toNumber(row[numericColumn.name]))
     .filter((value): value is number => value !== null);
@@ -587,7 +730,11 @@ function buildRecordCountDonut(rows: Row[]): IncomingChartConfig | null {
   };
 }
 
-function normalizeCharts(input: IncomingChartConfig[], source: ChartSource, chatbotGenerated: boolean): ChartConfig[] {
+function normalizeCharts(
+  input: IncomingChartConfig[],
+  source: ChartSource,
+  chatbotGenerated: boolean,
+): ChartConfig[] {
   const timestamp = nowIso();
   return input.map((chart, index) =>
     ChartConfigSchema.parse({
@@ -609,8 +756,15 @@ function normalizeCharts(input: IncomingChartConfig[], source: ChartSource, chat
   );
 }
 
-export function validateChartCollection(charts: ChartConfig[], columns: Column[], rows: Row[]): string | null {
-  if (charts.length < BI_RULE_LIMITS.minCharts || charts.length > BI_RULE_LIMITS.maxCharts) {
+export function validateChartCollection(
+  charts: ChartConfig[],
+  columns: Column[],
+  rows: Row[],
+): string | null {
+  if (
+    charts.length < BI_RULE_LIMITS.minCharts ||
+    charts.length > BI_RULE_LIMITS.maxCharts
+  ) {
     return "invalid_chart_count";
   }
 
@@ -663,7 +817,10 @@ export function validateChartCollection(charts: ChartConfig[], columns: Column[]
         rightValues.push(rightValue);
       }
       const correlation = pearsonCorrelation(leftValues, rightValues);
-      if (correlation === null || Math.abs(correlation) < BI_RULE_LIMITS.minScatterCorrelation) {
+      if (
+        correlation === null ||
+        Math.abs(correlation) < BI_RULE_LIMITS.minScatterCorrelation
+      ) {
         return "scatter_requires_correlation";
       }
     }
@@ -718,13 +875,20 @@ function buildFallbackCharts(rows: Row[], columns: Column[]): ChartConfig[] {
   maybeAdd(buildRecordCountBar(rows));
   maybeAdd(buildRecordCountDonut(rows));
 
-  const normalized = normalizeCharts(candidates.slice(0, BI_RULE_LIMITS.maxCharts), "fallback", false);
+  const normalized = normalizeCharts(
+    candidates.slice(0, BI_RULE_LIMITS.maxCharts),
+    "fallback",
+    false,
+  );
   const error = validateChartCollection(normalized, columns, rows);
   if (!error) {
     return normalized;
   }
   return normalizeCharts(
-    candidates.slice(0, Math.max(BI_RULE_LIMITS.minCharts, Math.min(2, candidates.length))),
+    candidates.slice(
+      0,
+      Math.max(BI_RULE_LIMITS.minCharts, Math.min(2, candidates.length)),
+    ),
     "fallback",
     false,
   );
@@ -746,7 +910,9 @@ function parseSuggestionPayload(text: string): IncomingChartConfig[] | null {
   }
 
   try {
-    const parsed = JSON.parse(trimmed.slice(start, end + 1)) as { charts?: Array<Record<string, unknown>> };
+    const parsed = JSON.parse(trimmed.slice(start, end + 1)) as {
+      charts?: Array<Record<string, unknown>>;
+    };
     if (!Array.isArray(parsed.charts)) {
       return null;
     }
@@ -758,13 +924,15 @@ function parseSuggestionPayload(text: string): IncomingChartConfig[] | null {
   }
 }
 
-function normalizeSuggestedChart(chart: Record<string, unknown>): IncomingChartConfig | null {
+function normalizeSuggestedChart(
+  chart: Record<string, unknown>,
+): IncomingChartConfig | null {
   const type =
     chart.type === "area" ||
-      chart.type === "bar" ||
-      chart.type === "donut" ||
-      chart.type === "scatter" ||
-      chart.type === "kpi"
+    chart.type === "bar" ||
+    chart.type === "donut" ||
+    chart.type === "scatter" ||
+    chart.type === "kpi"
       ? chart.type
       : null;
   if (!type || type === "kpi") {
@@ -778,7 +946,10 @@ function normalizeSuggestedChart(chart: Record<string, unknown>): IncomingChartC
         ? (chart.aggregation as ChartConfig["aggregation"])
         : null;
   const columns = Array.isArray(chart.columns)
-    ? chart.columns.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    ? chart.columns.filter(
+        (value): value is string =>
+          typeof value === "string" && value.trim().length > 0,
+      )
     : [];
 
   return {
@@ -789,21 +960,22 @@ function normalizeSuggestedChart(chart: Record<string, unknown>): IncomingChartC
     aggregation,
     groupBy: typeof chart.groupBy === "string" ? chart.groupBy : null,
     timeColumn: typeof chart.timeColumn === "string" ? chart.timeColumn : null,
-    size: chart.size === "small" || chart.size === "large" ? chart.size : "medium",
+    size:
+      chart.size === "small" || chart.size === "large" ? chart.size : "medium",
   };
 }
 
-async function suggestChartsWithLLM(rows: Row[], columns: Column[]): Promise<ChartConfig[] | null> {
-  const apiKey = process.env.GROQ_API_KEY;
+async function suggestChartsWithLLM(
+  rows: Row[],
+  columns: Column[],
+): Promise<ChartConfig[] | null> {
+  const apiKey = getGroqApiKey();
   if (!apiKey) {
     return null;
   }
 
   const client = new Groq({ apiKey });
-  const model = process.env.GROQ_DASHBOARD_MODEL;
-  if (!model) {
-    return null;
-  }
+  const model = env.GROQ_DASHBOARD_MODEL;
   const prompt = [
     "Return strict JSON only. No prose.",
     `Follow these rules exactly: ${BI_GENERATION_RULES.join(" ")}`,
@@ -811,7 +983,10 @@ async function suggestChartsWithLLM(rows: Row[], columns: Column[]): Promise<Cha
     "Return 2 to 6 charts. Use only provided column names.",
     JSON.stringify({
       rowCount: rows.length,
-      columns: columns.map((column) => ({ name: column.name, kind: column.kind })),
+      columns: columns.map((column) => ({
+        name: column.name,
+        kind: column.kind,
+      })),
       sampleRows: rows.slice(0, 20),
       columnStats: buildColumnPromptStats(rows, columns),
     }),
@@ -839,14 +1014,23 @@ async function suggestChartsWithLLM(rows: Row[], columns: Column[]): Promise<Cha
       return null;
     }
 
-    const normalized = normalizeCharts(parsed.slice(0, BI_RULE_LIMITS.maxCharts), "ai_initial", false);
-    return validateChartCollection(normalized, columns, rows) ? null : normalized;
+    const normalized = normalizeCharts(
+      parsed.slice(0, BI_RULE_LIMITS.maxCharts),
+      "ai_initial",
+      false,
+    );
+    return validateChartCollection(normalized, columns, rows)
+      ? null
+      : normalized;
   } catch {
     return null;
   }
 }
 
-export async function buildInitialChartConfigs(rows: Row[], columns: Column[]): Promise<ChartConfig[]> {
+export async function buildInitialChartConfigs(
+  rows: Row[],
+  columns: Column[],
+): Promise<ChartConfig[]> {
   const suggested = await suggestChartsWithLLM(rows, columns);
   if (suggested) {
     return suggested;
@@ -867,9 +1051,9 @@ function buildPrimaryKpi(rows: Row[], column: Column): KPIConfig | null {
   const lowerName = column.name.toLowerCase();
   const aggregation =
     lowerName.includes("avg") ||
-      lowerName.includes("rate") ||
-      lowerName.includes("ratio") ||
-      lowerName.includes("percent")
+    lowerName.includes("rate") ||
+    lowerName.includes("ratio") ||
+    lowerName.includes("percent")
       ? "avg"
       : "sum";
 
@@ -877,13 +1061,17 @@ function buildPrimaryKpi(rows: Row[], column: Column): KPIConfig | null {
     id: "kpi_primary",
     column: column.name,
     aggregation,
-    label: aggregation === "avg" ? `Average ${column.name}` : `Total ${column.name}`,
+    label:
+      aggregation === "avg" ? `Average ${column.name}` : `Total ${column.name}`,
     description: `Primary KPI selected from the highest-variance metric column: ${column.name}.`,
     isPrimary: true,
   };
 }
 
-function buildSecondaryNumericKpi(rows: Row[], column: Column): KPIConfig | null {
+function buildSecondaryNumericKpi(
+  rows: Row[],
+  column: Column,
+): KPIConfig | null {
   const values = rows
     .map((row) => toNumber(row[column.name]))
     .filter((value): value is number => value !== null);
@@ -1029,18 +1217,32 @@ function parseKpiSuggestionPayload(text: string): KPIConfig[] | null {
       return null;
     }
 
-    const validAggregations = new Set(["sum", "avg", "count", "min", "max", "mode", "range"]);
+    const validAggregations = new Set([
+      "sum",
+      "avg",
+      "count",
+      "min",
+      "max",
+      "mode",
+      "range",
+    ]);
 
     return parsed.kpis
       .map((kpi, index): KPIConfig | null => {
         const column = typeof kpi.column === "string" ? kpi.column : "";
-        const aggregation = typeof kpi.aggregation === "string" && validAggregations.has(kpi.aggregation)
-          ? kpi.aggregation
-          : "sum";
-        const label = typeof kpi.label === "string" && kpi.label.trim() ? kpi.label.trim() : "";
-        const description = typeof kpi.description === "string" && kpi.description.trim()
-          ? kpi.description.trim()
-          : "";
+        const aggregation =
+          typeof kpi.aggregation === "string" &&
+          validAggregations.has(kpi.aggregation)
+            ? kpi.aggregation
+            : "sum";
+        const label =
+          typeof kpi.label === "string" && kpi.label.trim()
+            ? kpi.label.trim()
+            : "";
+        const description =
+          typeof kpi.description === "string" && kpi.description.trim()
+            ? kpi.description.trim()
+            : "";
 
         if (!column || !label) {
           return null;
@@ -1061,20 +1263,24 @@ function parseKpiSuggestionPayload(text: string): KPIConfig[] | null {
   }
 }
 
-async function suggestKpisWithLLM(rows: Row[], columns: Column[]): Promise<KPIConfig[] | null> {
-  const apiKey = process.env.GROQ_API_KEY;
+async function suggestKpisWithLLM(
+  rows: Row[],
+  columns: Column[],
+): Promise<KPIConfig[] | null> {
+  const apiKey = getGroqApiKey();
   if (!apiKey) {
     return null;
   }
 
   const client = new Groq({ apiKey });
-  const model = process.env.GROQ_DASHBOARD_MODEL;
-  if (!model) {
-    return null;
-  }
+  const model = env.GROQ_DASHBOARD_MODEL;
 
-  const numericCols = columns.filter((c) => c.kind === "numeric").map((c) => c.name);
-  const categoricalCols = columns.filter((c) => c.kind === "categorical").map((c) => c.name);
+  const numericCols = columns
+    .filter((c) => c.kind === "numeric")
+    .map((c) => c.name);
+  const categoricalCols = columns
+    .filter((c) => c.kind === "categorical")
+    .map((c) => c.name);
   const dateCols = columns.filter((c) => c.kind === "date").map((c) => c.name);
 
   const prompt = [
@@ -1094,7 +1300,10 @@ async function suggestKpisWithLLM(rows: Row[], columns: Column[]): Promise<KPICo
     `Return ${BI_RULE_LIMITS.minKpis} to ${BI_RULE_LIMITS.maxKpis} KPIs. The first one is the primary KPI.`,
     JSON.stringify({
       rowCount: rows.length,
-      columns: columns.map((column) => ({ name: column.name, kind: column.kind })),
+      columns: columns.map((column) => ({
+        name: column.name,
+        kind: column.kind,
+      })),
       sampleRows: rows.slice(0, 10),
       columnStats: buildColumnPromptStats(rows, columns),
     }),
@@ -1141,11 +1350,13 @@ async function suggestKpisWithLLM(rows: Row[], columns: Column[]): Promise<KPICo
   }
 }
 
-export async function buildKpiConfigs(rows: Row[], columns: Column[]): Promise<KPIConfig[]> {
+export async function buildKpiConfigs(
+  rows: Row[],
+  columns: Column[],
+): Promise<KPIConfig[]> {
   const suggested = await suggestKpisWithLLM(rows, columns);
   if (suggested) {
     return suggested;
   }
   return buildFallbackKpis(rows, columns);
 }
-

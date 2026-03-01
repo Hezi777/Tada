@@ -1,3 +1,5 @@
+import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import tadaLogo from "@/assets/tada-logo.png";
 
@@ -31,17 +33,22 @@ export function Header({
       <header className="fixed left-0 right-0 top-8 z-50 px-4 pt-4 sm:px-6">
         <div className="container">
           <div className="glass flex h-16 items-center justify-between rounded-full border border-white/80 px-4 shadow-soft sm:px-6">
-            <a href="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
+            <Link
+              href="/"
+              className="flex items-center gap-3 transition-opacity hover:opacity-80"
+            >
               <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white shadow-card">
-                <img src={typeof tadaLogo === 'string' ? tadaLogo : tadaLogo.src} alt="Tada" className="h-7 w-7" />
+                <Image src={tadaLogo} alt="Tada" className="h-7 w-7" />
               </div>
               <div className="flex flex-col leading-none">
-                <span className="font-display text-lg font-semibold text-foreground">Tada</span>
+                <span className="font-display text-lg font-semibold text-foreground">
+                  Tada
+                </span>
                 <span className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-primary/80">
                   Instant Insights
                 </span>
               </div>
-            </a>
+            </Link>
 
             <nav className="hidden items-center gap-3 rounded-full border border-white/70 bg-white/70 px-2 py-1 md:flex">
               <a
@@ -69,7 +76,9 @@ export function Header({
                       <p className="truncate text-sm font-semibold text-foreground">
                         {userEmail ?? "Signed in"}
                       </p>
-                      <p className="text-xs text-muted-foreground">Workspace ready</p>
+                      <p className="text-xs text-muted-foreground">
+                        Workspace ready
+                      </p>
                     </div>
                   </div>
                   <Button variant="default" size="sm" onClick={onOpenWorkspace}>
