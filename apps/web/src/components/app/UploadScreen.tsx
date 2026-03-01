@@ -53,7 +53,7 @@ export const UploadScreen = ({ onFileUpload, onBack, errorMessage }: UploadScree
           <div className="glass flex items-center justify-between rounded-full border border-white/80 px-4 py-3 shadow-soft sm:px-6">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white shadow-card">
-                <img src={tadaLogo} alt="Tada" className="h-7 w-7" />
+                <img src={typeof tadaLogo === 'string' ? tadaLogo : tadaLogo.src} alt="Tada" className="h-7 w-7" />
               </div>
               <div>
                 <span className="font-display text-xl font-semibold text-foreground">Tada</span>

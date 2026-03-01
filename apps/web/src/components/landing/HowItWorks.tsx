@@ -12,7 +12,7 @@ const steps = [
   },
   {
     icon: Cpu,
-    step: "02", 
+    step: "02",
     title: "AI does the work",
     description: "Our AI instantly understands your data structure and relationships.",
   },
@@ -31,7 +31,7 @@ export function HowItWorks() {
   useEffect(() => {
     // Check if user prefers reduced motion
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    
+
     if (prefersReducedMotion) {
       setVisibleItems([0, 1, 2]);
       return;
@@ -77,33 +77,37 @@ export function HowItWorks() {
             </Card>
           </div>
 
-          <div className="relative grid gap-8 md:grid-cols-3">
-            <div className="absolute left-[16%] right-[16%] top-16 hidden h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent md:block" />
-            {steps.map((step, index) => (
-              <div
-                key={step.step}
-                className={`
-                  relative transition-all duration-500 ease-out
-                  motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-y-0
-                  ${visibleItems.includes(index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
-                `}
-                style={{ transitionDelay: `${index * 100}ms` }}
-              >
-                <Card
-                  className="surface-panel group relative z-10 rounded-[1.9rem] border border-white/80 p-7 shadow-card transition-all duration-300 ease-out hover:-translate-y-1.5 hover:shadow-soft focus-within:-translate-y-1.5 focus-within:shadow-soft motion-reduce:hover:translate-y-0 motion-reduce:transition-none"
-                  tabIndex={0}
+          <div className="relative mt-8">
+            {/* Dashed connecting line */}
+            <div className="absolute left-[16%] right-[16%] top-6 hidden h-0.5 border-t-2 border-dashed border-primary/20 md:block" />
+
+            <div className="relative grid gap-10 md:grid-cols-3">
+              {steps.map((step, index) => (
+                <div
+                  key={step.step}
+                  className={`
+                    relative flex flex-col items-center text-center transition-all duration-500 ease-out
+                    motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-y-0
+                    ${visibleItems.includes(index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+                  `}
+                  style={{ transitionDelay: `${index * 150}ms` }}
                 >
-                  <div className="mb-8 flex items-center justify-between">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-[1.45rem] border border-white/80 bg-white shadow-card">
-                      <step.icon className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110 motion-reduce:group-hover:scale-100" />
-                    </div>
-                    <Badge variant="outline" className="border-0 bg-transparent p-0 text-sm font-semibold uppercase tracking-[0.24em] text-primary/80 shadow-none hover:bg-transparent">{step.step}</Badge>
+                  <div className="relative z-10 mb-8 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-bold text-white shadow-glow ring-8 ring-white">
+                    {index + 1}
                   </div>
-                  <h3 className="font-display text-3xl font-semibold text-foreground">{step.title}</h3>
-                  <p className="mt-4 text-sm leading-7 text-muted-foreground">{step.description}</p>
-                </Card>
-              </div>
-            ))}
+
+                  <Card className="surface-panel relative w-full flex-1 rounded-[1.75rem] border border-white/80 p-6 shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card">
+                    <div className="mb-5 flex justify-center">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] bg-primary/[0.08]">
+                        <step.icon className="h-6 w-6 text-primary" />
+                      </div>
+                    </div>
+                    <h3 className="font-display text-2xl font-bold text-foreground">{step.title}</h3>
+                    <p className="mt-3 text-sm leading-7 text-muted-foreground">{step.description}</p>
+                  </Card>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

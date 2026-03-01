@@ -88,7 +88,7 @@ export function AppShell({ dashboardContent, showFloatingChat = true }: AppShell
       <aside className="fixed inset-y-0 left-0 z-30 flex w-[260px] flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-6">
         <Link href="/" className="flex items-center gap-3 px-1 transition-opacity hover:opacity-80">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#3B82F6] shadow-[0_2px_8px_rgba(59,130,246,0.25)]">
-            <img src={tadaLogo} alt="TADA" className="h-5 w-5 brightness-0 invert" />
+            <img src={typeof tadaLogo === 'string' ? tadaLogo : tadaLogo.src} alt="TADA" className="h-5 w-5 brightness-0 invert" />
           </div>
           <div>
             <div className="font-display text-[22px] font-normal tracking-tight text-[#0F172A]">TADA</div>

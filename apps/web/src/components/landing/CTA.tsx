@@ -11,32 +11,38 @@ export function CTA({ onGetStarted }: CTAProps) {
   return (
     <section className="relative overflow-hidden px-4 py-24 sm:px-6">
       <div className="container relative z-10">
-        <div className="relative overflow-hidden rounded-[2.2rem] border border-white/80 px-6 py-12 shadow-soft sm:px-10 sm:py-16">
-          <div className="absolute inset-0 gradient-primary opacity-[0.11]" />
-          <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top,hsl(0_0%_100%/.86),transparent_55%)]" />
-          <div className="relative mx-auto max-w-3xl text-center">
-            <Badge variant="outline" className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-4 py-2 text-sm font-semibold text-primary shadow-card hover:bg-white/80">
-              <Lightbulb className="h-4 w-4" />
-              Start free, no credit card
-            </Badge>
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#3B82F6] to-[#2563EB] px-6 py-16 shadow-2xl sm:px-16 sm:py-20">
+          {/* Subtle dot pattern texture overlay */}
+          <div
+            className="absolute inset-0 opacity-20 mix-blend-overlay"
+            style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}
+          />
+          {/* Large soft glow accents */}
+          <div className="absolute -left-32 -top-32 h-64 w-64 rounded-full bg-white/20 blur-[80px]" />
+          <div className="absolute -bottom-32 -right-32 h-64 w-64 rounded-full bg-blue-300/30 blur-[80px]" />
 
-            <h2 className="mt-8 text-4xl text-foreground sm:text-5xl">
+          <div className="relative mx-auto max-w-3xl text-center flex flex-col items-center">
+            <h2 className="text-4xl text-white font-bold sm:text-5xl leading-tight">
               Ready to understand your data?
             </h2>
 
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-blue-100">
               Upload your first file and see Tada in action. It takes 30 seconds to go from
               spreadsheet to insight.
             </p>
 
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button variant="hero" size="xl" onClick={onGetStarted}>
+            <div className="mt-10 flex flex-col items-center justify-center">
+              <Button
+                size="xl"
+                onClick={onGetStarted}
+                className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg transition-all hover:scale-105 active:scale-95 text-lg h-14 px-8"
+              >
                 Get started for free
-                <ArrowRight className="ml-1 h-5 w-5" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Card className="rounded-full border border-white/80 bg-white/80 px-5 py-3 text-sm font-medium text-muted-foreground shadow-card">
-                Average first dashboard time: under 1 minute
-              </Card>
+              <p className="mt-5 text-sm font-medium text-blue-200/80">
+                No credit card required &bull; Cancel anytime
+              </p>
             </div>
           </div>
         </div>
