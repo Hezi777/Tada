@@ -1,153 +1,123 @@
 # Tada Instant Insights
 
-Tada Instant Insights is a monorepo MVP that turns uploaded CSV or Excel files into an AI-styled dashboard with charts, KPIs, and a copilot chat UI. The web app handles the guided flow (upload -> processing -> dashboard), while the API parses files, infers column types, and generates chart/KPI state that the UI renders and iterates on.
+Tada Instant Insights is a monorepo MVP that turns uploaded CSV or Excel files into an AI-assisted dashboard with charts, KPIs, and a copilot chat UI.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white" />
-  <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" />
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
   <img src="https://img.shields.io/badge/Tailwind-3-38B2AC?logo=tailwindcss&logoColor=white" />
-  <img src="https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white" />
-  <img src="https://img.shields.io/badge/HuggingFace-API-FFD21E?logo=huggingface&logoColor=black" />
+  <img src="https://img.shields.io/badge/Supabase-Auth%20%26%20Data-3ECF8E?logo=supabase&logoColor=white" />
+  <img src="https://img.shields.io/badge/Groq-API-F55036" />
 </p>
 
 ## Features
 
-- **Instant Drill-downs**: Next-gen Zustand caching and optimized `/meta` endpoints load existing dashboards in <100ms.
-- **Animated Interactive Landing Page**: An actively rendered, code-built dashboard mockup (`<AnimatedDashboardMockup />`) demonstrating real chart draws and typing insights on the marketing surface.
-- **Zero-config Intake**: CSV/XLSX upload with automatic backend parsing, schema detection, and column inference.
-- **Smart Generation**: Heuristic and AI-driven KPI + chart generation mapping automatically derived from categorical, numeric, and date fields.
-- **Natural Language Chatbot**: Copilot chat that actively patches the dashboard (hiding charts, reconfiguring metric aggregation, applying groupings) instantly.
-- **Premium UI**: Modern frontend built with Framer Motion, deep gradients, glassmorphism, and responsive React dashboards.
-- **Shared Types**: Strongly typed contracts across web + API via a local workspace package.
+- Upload CSV/XLSX files and infer columns, KPIs, and chart recommendations automatically.
+- Render dashboards with centralized chart config state and cached client-side dashboard memory.
+- Modify dashboard structure through copilot chat backed by validated server responses.
+- Persist dashboards, dataset metadata, charts, and KPIs with Supabase.
+- Share types and runtime schemas through the local `@tada/shared` workspace package.
 
 ## Tech Stack
 
 | Layer | Technology |
 | --- | --- |
-| Web | Vite, React, TypeScript, Tailwind CSS, shadcn/ui, Recharts, TanStack Query |
-| API | Node.js, Express, TypeScript, multer, papaparse, xlsx |
-| AI | Hugging Face Inference API (configurable model) |
-| Shared | Local workspace package with shared types |
+| App | Next.js App Router, React, TypeScript, Tailwind CSS, shadcn/ui, Framer Motion |
+| Server | Next.js route handlers on Node runtime, Supabase, Papa Parse, XLSX |
+| AI | Groq-backed model calls from server-only code |
+| Shared | Local workspace package with shared types and Zod schemas |
 
 ## Architecture
 
-1. User uploads a CSV/XLSX file in the web app.
-2. The API parses the file, infers column types, and builds KPI + chart state.
-3. The web app renders the dashboard and stores the dataset ID.
-4. Copilot chat calls the API to interpret intents (hide chart, set metric, reset) and refreshes the dashboard state.
+1. The user uploads a CSV/XLSX file in the Next.js app.
+2. Route handlers under `apps/web/src/app/api` parse the file and build dashboard state through `apps/web/src/server`.
+3. The client stores dashboard state in Zustand and renders charts, KPIs, and chat UI.
+4. Dashboard metadata and persisted configs are stored in Supabase.
 
-The API keeps dataset rows in memory and rebuilds KPIs/charts on demand. This is designed for a local MVP and can be swapped for persistent storage later.
+There is no separate `apps/api` service anymore. The server layer now lives inside the Next.js app.
 
 ## Project Structure
 
-- `apps/web` - Vite React frontend and UI flows.
-- `apps/api` - Express API for upload parsing, KPI/chart generation, and chat.
-- `packages/shared` - Shared TypeScript types.
+- `apps/web` - Next.js app containing the UI, App Router pages, route handlers, and server modules.
+- `packages/shared` - shared TypeScript contracts and Zod schemas.
+- `agent_docs` - internal project and workflow notes.
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
-
-- Node.js 18+ (or the version your environment already uses)
+- Node.js 20+
 - npm
-- A Hugging Face API token for chat insights
+- Supabase project credentials
+- Groq API key
 
-### Install
+## Install
 
 ```bash
 npm install
 ```
 
-### Configure Environment Variables
+## Environment Variables
 
-Create or update `apps/api/.env` with:
-
-```env
-PORT=3001
-HF_API_KEY=your_hf_api_key
-HF_MODEL=HuggingFaceH4/zephyr-7b-beta
-```
-
-Optional web environment override (defaults to `http://localhost:3001`):
+Create `apps/web/.env.local` with the values your environment needs:
 
 ```env
-# apps/web/.env
-VITE_API_BASE_URL=http://localhost:3001
+GROQ_API_KEY=your_key_here
+GROQ_DASHBOARD_MODEL=openai/gpt-oss-120b
+GROQ_CHAT_MODEL=moonshotai/kimi-k2-instruct-0905
+NEXT_PUBLIC_SUPABASE_URL=your_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
 
-### Run Development Servers
+Reference example: `apps/web/.env.example`
+
+## Run Locally
 
 ```bash
 npm run dev
 ```
 
-This starts both the API and the web app via the root `concurrently` script.
+This starts the Next.js app from `apps/web`.
 
-### Build
+## Build
 
 ```bash
 npm run build
 ```
 
-## API Endpoints
+This builds `packages/shared` first, then the Next.js app.
+
+## Main Endpoints
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| GET | `/health` | Health check |
-| POST | `/api/upload` | Upload dataset (`multipart/form-data`, field name `file`) |
-| POST | `/api/chat` | Chat actions; expects `datasetId` and `message` |
-| GET | `/api/dashboard?datasetId=...` | Fetch latest dashboard state |
-
-## Web App Flow
-
-- Landing -> Upload -> Processing -> Dashboard (state machine in `apps/web/src/pages/Index.tsx`).
-- Dashboard shows KPI cards, charts, and an AI insight callout.
-- Floating chat supports quick actions and free-form messages that map to supported intents.
+| GET | `/health` | Health check route |
+| GET | `/api/health` | API health check route |
+| POST | `/api/upload` | Upload dataset |
+| POST | `/api/upload/chain` | Append a compatible file to an existing dataset |
+| POST | `/api/chat` | Copilot chat actions |
+| GET | `/api/dashboard` | Load the latest dashboard |
+| GET | `/api/dashboards` | List dashboards |
 
 ## Scripts
 
 Root:
 
-- `npm run dev` - start web + API in watch mode
-- `npm run build` - build shared, API, and web
+- `npm run dev` - start the Next.js app
+- `npm run build` - build shared package and app
 - `npm run lint` - lint the web app
 
-Web (from `apps/web`):
+Web:
 
-- `npm run dev` - start Vite dev server
-- `npm run build` - production build
-- `npm run preview` - preview production build
+- `npm run dev` - start Next.js dev server
+- `npm run build` - build the app
 - `npm run lint` - run ESLint
+- `npm run typecheck` - run TypeScript without emitting
 - `npm run test` - run Vitest
-- `npm run test:watch` - watch mode for Vitest
+- `npm run test:watch` - run Vitest in watch mode
 
-API (from `apps/api`):
+## Notes
 
-- `npm run dev` - watch with tsx
-- `npm run build` - compile TypeScript
-- `npm run start` - start compiled server
-- `npm run typecheck` - typecheck only
-
-## Notes and Limitations
-
-- Dataset state is stored in memory and resets when the API restarts.
-- Chat requires a valid Hugging Face API key and may fall back to simple intent parsing.
-- CORS is permissive for local development.
-
-## Roadmap Ideas
-
-- Persist datasets in a database (Postgres, SQLite, or S3-backed storage).
-- Add authentication and multi-tenant dataset management.
-- Improve chart recommendations and narrative insight generation.
-- Add export/shareable dashboards.
-
-## Contributing
-
-1. Fork the repo and create a feature branch.
-2. Make changes with clear commits.
-3. Open a pull request with context and screenshots when applicable.
-
-## License
-
-MIT (add a `LICENSE` file if you plan to publish this publicly).
+- Use npm as the package manager for this repo.
+- Some dataset state is cached in memory for fast local interactions.
+- AI outputs are validated through shared Zod schemas before state updates.
