@@ -57,6 +57,8 @@ import {
 } from "@/lib/api";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  clearActiveDashboard,
+  resetDashboardStore,
   initializeDashboardStore,
   setActiveDashboard,
   useDashboardStore,
@@ -253,8 +255,16 @@ export default function FileManager() {
   async function handleDeleteDashboard() {
     if (!deleteConfirmId) return;
     try {
+      const deletingActiveDashboard = activeDash?.id === deleteConfirmId;
       await deleteDashboard(deleteConfirmId);
       setDashboards((prev) => prev.filter((d) => d.id !== deleteConfirmId));
+      if (deletingActiveDashboard) {
+        setView("dashboards");
+        setActiveDash(null);
+        setScopedFiles([]);
+        clearActiveDashboard();
+        resetDashboardStore();
+      }
       setDeleteConfirmId(null);
     } catch {
       // silent

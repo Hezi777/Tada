@@ -1,5 +1,6 @@
 import {
   BI_RULE_LIMITS,
+  normalizeChartConfig,
   type ChartConfig,
   type DashboardColumn,
   type DatasetMeta,
@@ -108,27 +109,37 @@ function chartIdentityKey(
 function normalizeChartOrders(charts: ChartConfig[]): ChartConfig[] {
   return [...charts]
     .sort((left, right) => left.order - right.order)
-    .map((chart, index) => ({ ...chart, order: index }));
+    .map((chart, index) => normalizeChartConfig({ ...chart, order: index }));
+}
+
+export function isChartVisible(chart: ChartConfig): boolean {
+  return chart.visibilityState === "visible" && chart.visible;
 }
 
 export function validateChartCollection(
   charts: ChartConfig[],
   context: DashboardRuntimeContext,
 ): string | null {
+  if (charts.length > BI_RULE_LIMITS.maxSavedCharts) {
+    return `Dashboard can save up to ${BI_RULE_LIMITS.maxSavedCharts} charts.`;
+  }
+
+  const visibleCharts = charts.filter(isChartVisible);
   if (
-    charts.length < BI_RULE_LIMITS.minCharts ||
-    charts.length > BI_RULE_LIMITS.maxCharts
+    visibleCharts.length < BI_RULE_LIMITS.minCharts ||
+    visibleCharts.length > BI_RULE_LIMITS.maxCharts
   ) {
-    return `Dashboard must contain between ${BI_RULE_LIMITS.minCharts} and ${BI_RULE_LIMITS.maxCharts} charts.`;
+    return `Dashboard must keep between ${BI_RULE_LIMITS.minCharts} and ${BI_RULE_LIMITS.maxCharts} visible charts.`;
   }
 
   const seen = new Set<string>();
-  const normalized = normalizeChartOrders(charts);
+  const normalized = normalizeChartOrders(visibleCharts);
   if (normalized[0]?.order !== 0) {
     return "The highest-priority chart must remain at order 0.";
   }
 
-  for (const chart of normalized) {
+  for (const rawChart of charts) {
+    const chart = normalizeChartConfig(rawChart);
     if (!hasHumanTitle(chart.title)) {
       return "Chart titles must be specific and human-readable.";
     }

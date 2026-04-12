@@ -1,6 +1,9 @@
 import {
   BI_GENERATION_RULES,
+  BI_RULE_LIMITS,
   ChatbotChartPatchSchema,
+  normalizeChartConfig,
+  type ChatChartProposal,
   type ChatbotChartPatch,
   type ChatKpiValue,
   type ChartConfig,
@@ -18,7 +21,9 @@ type Row = Record<string, unknown>;
 
 type ChatResponse = {
   assistantMessage: string;
+  mode: "answer" | "apply_patch" | "proposal";
   patch: ChatbotChartPatch | null;
+  proposal: ChatChartProposal | null;
 };
 
 type AggregatedPoint = {
@@ -148,11 +153,17 @@ function parseLlmResponse(text: string): ChatResponse | null {
           : patch
             ? "I prepared a dashboard change."
             : "I could not produce a valid answer.",
+      mode: patch ? "apply_patch" : "answer",
       patch,
+      proposal: null,
     };
   } catch {
     return null;
   }
+}
+
+function isChartVisible(chart: ChartConfig): boolean {
+  return chart.visibilityState === "visible" && chart.visible;
 }
 
 function aggregateByTime(
@@ -362,6 +373,8 @@ async function requestChatResponseFromLlm(input: {
         timeColumn: chart.timeColumn,
         order: chart.order,
         visible: chart.visible,
+        pinned: chart.pinned,
+        visibilityState: chart.visibilityState,
         summary: buildChartSummary(chart, input.rows),
       })),
     }),
@@ -412,27 +425,91 @@ function applyPatchToCharts(
   patch: ChatbotChartPatch,
 ): ChartConfig[] {
   if (patch.action === "add") {
-    return [...charts, patch.config].map((chart, index) => ({
-      ...chart,
-      order: index,
-    }));
+    const nextCharts = [...charts, normalizeChartConfig(patch.config)];
+    const visibleCharts = nextCharts.filter(isChartVisible);
+    const hiddenCharts = nextCharts.filter((chart) => !isChartVisible(chart));
+    return [...visibleCharts, ...hiddenCharts].map((chart, index) =>
+      normalizeChartConfig({ ...chart, order: index }),
+    );
   }
   if (patch.action === "remove") {
     return charts
       .filter((chart) => chart.id !== patch.chartId)
-      .map((chart, index) => ({ ...chart, order: index }));
+      .map((chart, index) => normalizeChartConfig({ ...chart, order: index }));
   }
   return charts
     .map((chart) =>
       chart.id === patch.chartId
-        ? {
+        ? normalizeChartConfig({
             ...chart,
             ...patch.config,
             id: chart.id,
-          }
+          })
         : chart,
     )
-    .map((chart, index) => ({ ...chart, order: index }));
+    .map((chart, index) => normalizeChartConfig({ ...chart, order: index }));
+}
+
+function pickReplacementChart(
+  charts: ChartConfig[],
+  nextType: ChartConfig["type"],
+): ChartConfig | null {
+  const replaceable = [...charts]
+    .filter(
+      (chart) => isChartVisible(chart) && chart.order !== 0 && !chart.pinned,
+    )
+    .sort((left, right) => right.order - left.order);
+
+  return (
+    replaceable.find(
+      (chart) => chart.type === nextType && chart.chatbotGenerated,
+    ) ??
+    replaceable.find((chart) => chart.type === nextType) ??
+    replaceable.find((chart) => chart.chatbotGenerated) ??
+    replaceable[0] ??
+    null
+  );
+}
+
+function buildReplacementProposal(
+  incomingConfig: ChartConfig,
+  currentCharts: ChartConfig[],
+) : ChatChartProposal | null {
+  const replacementChart = pickReplacementChart(
+    currentCharts,
+    incomingConfig.type,
+  );
+  if (!replacementChart) {
+    return null;
+  }
+
+  return {
+    type: "replace_chart",
+    targetChartId: replacementChart.id,
+    targetChartTitle: replacementChart.title,
+    incomingConfig: normalizeChartConfig({
+      ...incomingConfig,
+      order: replacementChart.order,
+      priority: replacementChart.priority,
+    }),
+    reason: `I can add that view by replacing ${replacementChart.title}.`,
+  };
+}
+
+function normalizeIncomingChatChart(
+  config: ChartConfig,
+  currentCharts: ChartConfig[],
+): ChartConfig {
+  const visibleCharts = currentCharts.filter(isChartVisible);
+  return normalizeChartConfig({
+    ...config,
+    size: config.size === "large" ? "medium" : config.size,
+    visible: true,
+    pinned: false,
+    priority: visibleCharts.length,
+    lastTouchedBy: "chatbot",
+    visibilityState: "visible",
+  });
 }
 
 function validateChatPatch(
@@ -440,63 +517,96 @@ function validateChatPatch(
   currentCharts: ChartConfig[],
   columns: Column[],
   rows: Row[],
-): { patch: ChatbotChartPatch | null; error: string | null } {
+): {
+  patch: ChatbotChartPatch | null;
+  error: string | null;
+  proposal: ChatChartProposal | null;
+} {
   if (!patch) {
-    return { patch: null, error: null };
+    return { patch: null, error: null, proposal: null };
   }
 
   const chartIds = new Set(currentCharts.map((chart) => chart.id));
+  const nextPatch =
+    patch.action === "add"
+      ? {
+          action: "add" as const,
+          config: normalizeIncomingChatChart(patch.config, currentCharts),
+        }
+      : patch;
 
-  if (patch.action === "add") {
-    const columnError = validatePatchColumns(patch.config, columns);
+  if (nextPatch.action === "add") {
+    const columnError = validatePatchColumns(nextPatch.config, columns);
     if (columnError) {
-      return { patch: null, error: columnError };
+      return { patch: null, error: columnError, proposal: null };
+    }
+
+    if (
+      currentCharts.filter(isChartVisible).length >= BI_RULE_LIMITS.maxCharts ||
+      currentCharts.length >= BI_RULE_LIMITS.maxSavedCharts
+    ) {
+      const proposal = buildReplacementProposal(nextPatch.config, currentCharts);
+      if (proposal) {
+        return { patch: null, error: null, proposal };
+      }
+      return {
+        patch: null,
+        error:
+          "Your dashboard is already full. I can only replace an unpinned chart.",
+        proposal: null,
+      };
     }
   } else {
-    if (!chartIds.has(patch.chartId)) {
+    if (!chartIds.has(nextPatch.chartId)) {
       return {
         patch: null,
         error: "That chart no longer exists on the current dashboard.",
+        proposal: null,
       };
     }
-    if (patch.action === "update") {
+    if (nextPatch.action === "update") {
       const currentChart = currentCharts.find(
-        (chart) => chart.id === patch.chartId,
+        (chart) => chart.id === nextPatch.chartId,
       );
       if (!currentChart) {
         return {
           patch: null,
           error: "That chart no longer exists on the current dashboard.",
+          proposal: null,
         };
       }
       const columnError = validatePatchColumns(
         {
-          type: patch.config.type ?? currentChart.type,
-          columns: patch.config.columns ?? currentChart.columns,
+          type: nextPatch.config.type ?? currentChart.type,
+          columns: nextPatch.config.columns ?? currentChart.columns,
           groupBy:
-            patch.config.groupBy === undefined
+            nextPatch.config.groupBy === undefined
               ? currentChart.groupBy
-              : patch.config.groupBy,
+              : nextPatch.config.groupBy,
           timeColumn:
-            patch.config.timeColumn === undefined
+            nextPatch.config.timeColumn === undefined
               ? currentChart.timeColumn
-              : patch.config.timeColumn,
+              : nextPatch.config.timeColumn,
         },
         columns,
       );
       if (columnError) {
-        return { patch: null, error: columnError };
+        return { patch: null, error: columnError, proposal: null };
       }
     }
   }
 
-  const nextCharts = applyPatchToCharts(currentCharts, patch);
+  const nextCharts = applyPatchToCharts(currentCharts, nextPatch);
   const collectionError = validateChartCollection(nextCharts, columns, rows);
   if (collectionError) {
-    return { patch: null, error: collectionError };
+    return { patch: null, error: collectionError, proposal: null };
   }
 
-  return { patch, error: null };
+  return {
+    patch: nextPatch,
+    error: null,
+    proposal: null,
+  };
 }
 
 function finalizeChatResponse(
@@ -514,12 +624,24 @@ function finalizeChatResponse(
   if (validated.error) {
     return {
       assistantMessage: `I could not apply that chart change: ${validated.error}`,
+      mode: "answer",
       patch: null,
+      proposal: null,
+    };
+  }
+  if (validated.proposal) {
+    return {
+      assistantMessage: validated.proposal.reason,
+      mode: "proposal",
+      patch: null,
+      proposal: validated.proposal,
     };
   }
   return {
     assistantMessage: response.assistantMessage,
+    mode: response.patch ? "apply_patch" : "answer",
     patch: validated.patch,
+    proposal: null,
   };
 }
 
@@ -548,7 +670,9 @@ export async function handleChat({
     return finalizeChatResponse(
       {
         assistantMessage: "I prepared a chart removal.",
+        mode: "apply_patch",
         patch: explicitRemove,
+        proposal: null,
       },
       chartConfigs,
       state.columns,
@@ -570,6 +694,8 @@ export async function handleChat({
   return {
     assistantMessage:
       "I could not produce a grounded answer or a valid chart change from that request.",
+    mode: "answer",
     patch: null,
+    proposal: null,
   };
 }

@@ -75,6 +75,16 @@ export const ChartSourceSchema = z.enum([
 ]);
 export type ChartSource = z.infer<typeof ChartSourceSchema>;
 
+export const ChartLastTouchedBySchema = z.enum([
+  "ai_initial",
+  "chatbot",
+  "user",
+]);
+export type ChartLastTouchedBy = z.infer<typeof ChartLastTouchedBySchema>;
+
+export const ChartVisibilityStateSchema = z.enum(["visible", "hidden"]);
+export type ChartVisibilityState = z.infer<typeof ChartVisibilityStateSchema>;
+
 export const ChartConfigSchema = z.object({
   id: z.string().min(1),
   type: ChartTypeSchema,
@@ -85,13 +95,56 @@ export const ChartConfigSchema = z.object({
   groupBy: z.string().min(1).nullable(),
   timeColumn: z.string().min(1).nullable(),
   size: ChartSizeSchema,
-  visible: z.boolean(),
+  visible: z.boolean().default(true),
   order: z.number().int().nonnegative(),
   source: ChartSourceSchema,
-  chatbotGenerated: z.boolean(),
+  chatbotGenerated: z.boolean().default(false),
   generatedAt: z.string().datetime(),
+  pinned: z.boolean().default(false),
+  priority: z.number().int().nonnegative().default(0),
+  lastTouchedBy: ChartLastTouchedBySchema.default("user"),
+  visibilityState: ChartVisibilityStateSchema.default("visible"),
 });
 export type ChartConfig = z.infer<typeof ChartConfigSchema>;
+
+export function deriveChartLastTouchedBy(
+  source: ChartSource,
+): ChartLastTouchedBy {
+  if (source === "chatbot") {
+    return "chatbot";
+  }
+  if (source === "user") {
+    return "user";
+  }
+  return "ai_initial";
+}
+
+export function normalizeChartConfig(
+  chart: Omit<
+    ChartConfig,
+    "pinned" | "priority" | "lastTouchedBy" | "visibilityState"
+  > &
+    Partial<
+      Pick<
+        ChartConfig,
+        "pinned" | "priority" | "lastTouchedBy" | "visibilityState"
+      >
+    >,
+): ChartConfig {
+  const visible = chart.visibilityState
+    ? chart.visibilityState === "visible"
+    : chart.visible;
+
+  return {
+    ...chart,
+    visible,
+    pinned: chart.pinned ?? false,
+    priority: chart.priority ?? chart.order,
+    lastTouchedBy:
+      chart.lastTouchedBy ?? deriveChartLastTouchedBy(chart.source),
+    visibilityState: chart.visibilityState ?? (visible ? "visible" : "hidden"),
+  };
+}
 
 export const KPIConfigSchema = z.object({
   id: z.string().min(1),
@@ -144,6 +197,15 @@ export const ChatbotChartPatchSchema = z.discriminatedUnion("action", [
 ]);
 export type ChatbotChartPatch = z.infer<typeof ChatbotChartPatchSchema>;
 
+export const ChatChartProposalSchema = z.object({
+  type: z.enum(["replace_chart", "show_hidden_chart"]),
+  targetChartId: z.string().min(1).nullable(),
+  targetChartTitle: z.string().min(1).nullable(),
+  incomingConfig: ChartConfigSchema,
+  reason: z.string().min(1),
+});
+export type ChatChartProposal = z.infer<typeof ChatChartProposalSchema>;
+
 export const UploadDashboardResponseSchema =
   DashboardConfigSnapshotSchema.extend({
     fileName: z.string().min(1),
@@ -172,13 +234,16 @@ export type ChatDashboardRequest = z.infer<typeof ChatDashboardRequestSchema>;
 
 export const ChatDashboardResponseSchema = z.object({
   assistantMessage: z.string(),
+  mode: z.enum(["answer", "apply_patch", "proposal"]),
   patch: ChatbotChartPatchSchema.nullable(),
+  proposal: ChatChartProposalSchema.nullable(),
 });
 export type ChatDashboardResponse = z.infer<typeof ChatDashboardResponseSchema>;
 
 export const BI_RULE_LIMITS = {
   minCharts: 2,
   maxCharts: 6,
+  maxSavedCharts: 12,
   minKpis: 2,
   maxKpis: 4,
   maxDonutSegments: 6,
@@ -187,7 +252,7 @@ export const BI_RULE_LIMITS = {
 } as const;
 
 export const BI_GENERATION_RULES = [
-  "Max 6 charts total, min 2.",
+  "Max 6 visible charts on the canvas and up to 12 saved charts total.",
   "No two charts of the same type on the same column set.",
   "Area charts require a valid date or time column.",
   "Donut charts must show at most 6 segments and group the remainder as Other.",

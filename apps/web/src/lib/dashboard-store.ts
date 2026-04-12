@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type {
+  ChatChartProposal,
   ChatbotChartPatch,
   ChartConfig,
   DashboardColumn,
@@ -10,7 +11,9 @@ import type {
   UploadDashboardResponse,
   DashboardListItem,
 } from "@tada/shared";
+import { normalizeChartConfig } from "@tada/shared";
 import {
+  isChartVisible,
   toStoreContext,
   validateChartCollection,
   validateKpiCollection,
@@ -71,9 +74,19 @@ function emit(): void {
 }
 
 function normalizeOrders(charts: ChartConfig[]): ChartConfig[] {
-  return [...charts]
+  const normalized = charts.map((chart) => normalizeChartConfig(chart));
+  const visible = normalized.filter(isChartVisible);
+  const hidden = normalized.filter((chart) => !isChartVisible(chart));
+
+  return [...visible, ...hidden]
     .sort((left, right) => left.order - right.order)
-    .map((chart, index) => ({ ...chart, order: index }));
+    .map((chart, index) =>
+      normalizeChartConfig({
+        ...chart,
+        order: index,
+        priority: chart.priority ?? index,
+      }),
+    );
 }
 
 function setState(next: DashboardStoreState): void {
@@ -122,7 +135,9 @@ function prepareInitialState(
     datasetMeta: snapshot.datasetMeta,
     files: snapshot.files,
     rows: snapshot.rows,
-    charts: normalizeOrders(snapshot.charts),
+    charts: normalizeOrders(
+      snapshot.charts.map((chart) => normalizeChartConfig(chart)),
+    ),
     kpis: [...snapshot.kpis],
     activeDashboardId: null,
     activeDashboardName: null,
@@ -286,7 +301,7 @@ export function addChart(config: ChartConfig): void {
   withValidatedState((current) => ({
     ...current,
     version: current.version + 1,
-    charts: [...current.charts, config],
+    charts: [...current.charts, normalizeChartConfig(config)],
   }));
 }
 
@@ -304,14 +319,165 @@ export function updateChart(id: string, patch: Partial<ChartConfig>): void {
     version: current.version + 1,
     charts: current.charts.map((chart) =>
       chart.id === id
-        ? {
+        ? normalizeChartConfig({
             ...chart,
             ...patch,
             id: chart.id,
-          }
+          })
         : chart,
     ),
   }));
+}
+
+export function setChartVisibility(id: string, visible: boolean): void {
+  withValidatedState((current) => ({
+    ...current,
+    version: current.version + 1,
+    charts: current.charts.map((chart) =>
+      chart.id === id
+        ? normalizeChartConfig({
+            ...chart,
+            visible,
+            visibilityState: visible ? "visible" : "hidden",
+          })
+        : chart,
+    ),
+  }));
+}
+
+export function toggleChartPinned(id: string): void {
+  withValidatedState((current) => ({
+    ...current,
+    version: current.version + 1,
+    charts: current.charts.map((chart) =>
+      chart.id === id
+        ? normalizeChartConfig({
+            ...chart,
+            pinned: !chart.pinned,
+            lastTouchedBy: "user",
+          })
+        : chart,
+    ),
+  }));
+}
+
+export function applyChartProposal(
+  proposal: ChatChartProposal,
+  action: "replace" | "hide_target",
+): void {
+  withValidatedState((current) => {
+    if (!proposal.targetChartId) {
+      return current;
+    }
+
+    if (action === "replace") {
+      return {
+        ...current,
+        version: current.version + 1,
+        charts: current.charts.map((chart) =>
+          chart.id === proposal.targetChartId
+            ? normalizeChartConfig({
+                ...proposal.incomingConfig,
+                id: chart.id,
+                order: chart.order,
+                priority: chart.priority,
+              })
+            : chart,
+        ),
+      };
+    }
+
+    const targetChart = current.charts.find(
+      (chart) => chart.id === proposal.targetChartId,
+    );
+    if (!targetChart) {
+      return current;
+    }
+
+    const hiddenTarget = current.charts.map((chart) =>
+      chart.id === proposal.targetChartId
+        ? normalizeChartConfig({
+            ...chart,
+            visible: false,
+            visibilityState: "hidden",
+          })
+        : chart,
+    );
+
+    return {
+      ...current,
+      version: current.version + 1,
+      charts: [
+        ...hiddenTarget,
+        normalizeChartConfig({
+          ...proposal.incomingConfig,
+          id: proposal.incomingConfig.id,
+          order: targetChart.order,
+          priority: targetChart.priority,
+        }),
+      ],
+    };
+  });
+}
+
+export function promoteHiddenChart(
+  chartId: string,
+  replaceChartId?: string,
+): void {
+  withValidatedState((current) => {
+    const incomingChart = current.charts.find((chart) => chart.id === chartId);
+    if (!incomingChart) {
+      return current;
+    }
+
+    if (!replaceChartId) {
+      const visibleCount = current.charts.filter(isChartVisible).length;
+      return {
+        ...current,
+        version: current.version + 1,
+        charts: current.charts.map((chart) =>
+          chart.id === chartId
+            ? normalizeChartConfig({
+                ...chart,
+                visible: true,
+                visibilityState: "visible",
+                order: visibleCount,
+                priority: visibleCount,
+              })
+            : chart,
+        ),
+      };
+    }
+
+    const replaceChart = current.charts.find((chart) => chart.id === replaceChartId);
+    if (!replaceChart) {
+      return current;
+    }
+
+    return {
+      ...current,
+      version: current.version + 1,
+      charts: current.charts.map((chart) => {
+        if (chart.id === replaceChartId) {
+          return normalizeChartConfig({
+            ...chart,
+            visible: false,
+            visibilityState: "hidden",
+          });
+        }
+        if (chart.id === chartId) {
+          return normalizeChartConfig({
+            ...chart,
+            visible: true,
+            visibilityState: "visible",
+            order: replaceChart.order,
+            priority: replaceChart.priority,
+          });
+        }
+        return chart;
+      }),
+    };
+  });
 }
 
 export function reorderCharts(orderedIds: string[]): void {
@@ -378,6 +544,10 @@ declare global {
       addChart: typeof addChart;
       removeChart: typeof removeChart;
       updateChart: typeof updateChart;
+      setChartVisibility: typeof setChartVisibility;
+      toggleChartPinned: typeof toggleChartPinned;
+      applyChartProposal: typeof applyChartProposal;
+      promoteHiddenChart: typeof promoteHiddenChart;
       reorderCharts: typeof reorderCharts;
       setKPI: typeof setKPI;
       applyChatbotPatch: typeof applyChatbotPatch;
@@ -391,6 +561,10 @@ if (typeof window !== "undefined") {
     addChart,
     removeChart,
     updateChart,
+    setChartVisibility,
+    toggleChartPinned,
+    applyChartProposal,
+    promoteHiddenChart,
     reorderCharts,
     setKPI,
     applyChatbotPatch,

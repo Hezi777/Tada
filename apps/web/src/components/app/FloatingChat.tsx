@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { MessageCircle, Send, Sparkles, WandSparkles, X } from "lucide-react";
-import type { ChatKpiValue } from "@tada/shared";
+import {
+  BI_RULE_LIMITS,
+  type ChatChartProposal,
+  type ChatKpiValue,
+} from "@tada/shared";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +12,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { sendChat } from "@/lib/api";
 import { computeKpiValue } from "@/lib/dashboard-runtime";
-import { applyChatbotPatch, useDashboardStore } from "@/lib/dashboard-store";
+import {
+  applyChartProposal,
+  applyChatbotPatch,
+  useDashboardStore,
+} from "@/lib/dashboard-store";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  proposal?: ChatChartProposal | null;
+  proposalState?: "pending" | "accepted" | "dismissed";
 }
 
 function emitChartPulse(chartId: string | undefined): void {
@@ -75,18 +85,22 @@ export function FloatingChat() {
         chartConfigs,
         kpis: liveKpis,
       });
-      applyChatbotPatch(response.patch);
-      emitChartPulse(
-        response.patch?.action === "add"
-          ? response.patch.config.id
-          : response.patch?.action === "remove"
-            ? response.patch.chartId
-            : response.patch?.chartId,
-      );
+      if (response.patch) {
+        applyChatbotPatch(response.patch);
+        emitChartPulse(
+          response.patch.action === "add"
+            ? response.patch.config.id
+            : response.patch.action === "remove"
+              ? response.patch.chartId
+              : response.patch.chartId,
+        );
+      }
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
         content: response.assistantMessage,
+        proposal: response.proposal,
+        proposalState: response.proposal ? "pending" : undefined,
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
@@ -115,6 +129,64 @@ export function FloatingChat() {
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleProposalAction = (
+    messageId: string,
+    action: "replace" | "hide_target" | "cancel",
+  ) => {
+    const targetMessage = messages.find((message) => message.id === messageId);
+    const proposal = targetMessage?.proposal;
+    if (!proposal) {
+      return;
+    }
+
+    if (action === "cancel") {
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === messageId
+            ? { ...message, proposalState: "dismissed" }
+            : message,
+        ),
+      );
+      return;
+    }
+
+    if (
+      action === "hide_target" &&
+      chartConfigs.length >= BI_RULE_LIMITS.maxSavedCharts
+    ) {
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === messageId
+            ? {
+                ...message,
+                content:
+                  "I can replace a chart right now, but hidden views are already full.",
+                proposalState: "dismissed",
+              }
+            : message,
+        ),
+      );
+      return;
+    }
+
+    applyChartProposal(proposal, action);
+    emitChartPulse(proposal.targetChartId ?? proposal.incomingConfig.id);
+    setMessages((prev) =>
+      prev.map((message) =>
+        message.id === messageId
+          ? {
+              ...message,
+              content:
+                action === "replace"
+                  ? `Added ${proposal.incomingConfig.title} by replacing ${proposal.targetChartTitle ?? "the selected chart"}.`
+                  : `Added ${proposal.incomingConfig.title} and moved ${proposal.targetChartTitle ?? "the selected chart"} to hidden views.`,
+              proposalState: "accepted",
+            }
+          : message,
+      ),
+    );
   };
 
   return (
@@ -207,6 +279,59 @@ export function FloatingChat() {
                       }`}
                     >
                       {message.content}
+                      {message.role === "assistant" &&
+                      message.proposal &&
+                      message.proposalState === "pending" ? (
+                        <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-white p-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                            Proposed change
+                          </p>
+                          <p className="mt-2 text-sm font-semibold text-[var(--color-text-primary)]">
+                            Add {message.proposal.incomingConfig.title}
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                            This will replace{" "}
+                            {message.proposal.targetChartTitle ?? "a chart"}.
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="h-8 rounded-full bg-[#3B82F6] px-3 text-xs text-white hover:bg-[#2563EB]"
+                              onClick={() =>
+                                handleProposalAction(message.id, "replace")
+                              }
+                            >
+                              Replace
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-8 rounded-full px-3 text-xs"
+                              onClick={() =>
+                                handleProposalAction(message.id, "hide_target")
+                              }
+                              disabled={
+                                chartConfigs.length >= BI_RULE_LIMITS.maxSavedCharts
+                              }
+                            >
+                              Hide current instead
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 rounded-full px-3 text-xs"
+                              onClick={() =>
+                                handleProposalAction(message.id, "cancel")
+                              }
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 ))}

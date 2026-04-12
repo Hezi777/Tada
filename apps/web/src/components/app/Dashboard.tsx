@@ -11,13 +11,15 @@ import {
   ChevronDown,
   Eye,
   EyeOff,
-  GripVertical,
   Hash,
   LayoutPanelLeft,
   MoreHorizontal,
+  Pin,
+  PinOff,
   Plus,
   Sigma,
   Tag,
+  Trash2,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -71,11 +73,15 @@ import {
   computeKpiValue,
   formatNumber as legacyFormatNumber,
   hasRenderableChartData,
+  isChartVisible,
 } from "@/lib/dashboard-runtime";
 import { calculateLayout, type LayoutItem } from "@/lib/chart-layout";
 import {
+  promoteHiddenChart,
   reorderCharts,
-  updateChart,
+  removeChart,
+  setChartVisibility,
+  toggleChartPinned,
   useDashboardStore,
   initializeDashboardStore,
   setActiveDashboard,
@@ -87,6 +93,14 @@ import { listDashboards, loadDashboard, createDashboard } from "@/lib/api";
 import { getIconComponent } from "@/components/app/CreateDashboardModal";
 import CreateDashboardModal from "@/components/app/CreateDashboardModal";
 import type { DashboardListItem } from "@tada/shared";
+import { BI_RULE_LIMITS } from "@tada/shared";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 const donutPalette = [
   "#3B82F6",
@@ -584,6 +598,11 @@ function ChartCard({ chart, rows }: ChartCardProps) {
             </p>
           </div>
           <div className="flex items-center gap-1.5">
+            {chart.pinned ? (
+              <Badge className="rounded-[4px] border-0 bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 hover:bg-amber-100">
+                pinned
+              </Badge>
+            ) : null}
             <Badge className="rounded-[4px] border-0 bg-[var(--color-accent-light)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
               {chart.type}
             </Badge>
@@ -614,80 +633,237 @@ function ChartCard({ chart, rows }: ChartCardProps) {
   );
 }
 
-function ChartStructurePopover({
+function ManageViewsSection({
+  title,
+  description,
   charts,
-  onClose,
+  allCharts,
+  visibleCount,
 }: {
+  title: string;
+  description: string;
   charts: ChartConfig[];
-  onClose: () => void;
+  allCharts: ChartConfig[];
+  visibleCount: number;
 }) {
+  const [replaceTargetFor, setReplaceTargetFor] = useState<string | null>(null);
+  const replaceableCharts = allCharts.filter(
+    (chart) => isChartVisible(chart) && chart.order !== 0 && !chart.pinned,
+  );
+
+  if (charts.length === 0) {
+    return null;
+  }
+
   return (
-    <div className="absolute right-0 top-12 z-20 w-[280px] rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-[0_12px_32px_rgba(15,23,42,0.12)]">
-      <div className="mb-2 flex items-center justify-between px-1">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
-            Chart Structure
-          </p>
-          <p className="mt-1 text-sm font-semibold text-[var(--color-text-primary)]">
-            Dashboard order
-          </p>
-        </div>
+    <section className="space-y-3">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+          {title}
+        </p>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+          {description}
+        </p>
       </div>
 
-      <div className="dashboard-scroll max-h-[360px] space-y-2 overflow-y-auto pr-1">
-        {charts.map((chart, index) => (
-          <div
-            key={chart.id}
-            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <GripVertical className="h-3.5 w-3.5 text-[var(--color-text-muted)]" />
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
+      <div className="space-y-2">
+        {charts.map((chart, index) => {
+          const visible = isChartVisible(chart);
+          const canHide = visibleCount > BI_RULE_LIMITS.minCharts;
+          const canDelete = !visible || canHide;
+
+          return (
+            <div
+              key={chart.id}
+              className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <Badge className="rounded-full border-0 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-100">
+                      {chart.type}
+                    </Badge>
+                    <Badge
+                      className={`rounded-full border-0 px-2 py-0.5 text-[10px] font-semibold ${
+                        visible
+                          ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      {visible ? "visible" : "hidden"}
+                    </Badge>
+                    {chart.pinned ? (
+                      <Badge className="rounded-full border-0 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 hover:bg-amber-100">
+                        pinned
+                      </Badge>
+                    ) : null}
+                    {chart.chatbotGenerated ? (
+                      <Badge className="rounded-full border-0 bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 hover:bg-blue-100">
+                        suggested
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <p className="mt-2 truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                    {chart.title}
+                  </p>
+                  <p className="mt-1 line-clamp-1 text-xs text-[var(--color-text-secondary)]">
+                    {chart.insight}
+                  </p>
                 </div>
-                <p className="mt-2 truncate text-sm font-semibold text-[var(--color-text-primary)]">
-                  {chart.title}
-                </p>
-                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-                  {chart.type} • {chart.size}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
-                onClick={() =>
-                  updateChart(chart.id, { visible: !chart.visible })
-                }
-                aria-label={
-                  chart.visible ? `Hide ${chart.title}` : `Show ${chart.title}`
-                }
-              >
-                {chart.visible ? (
-                  <Eye className="h-4 w-4" />
-                ) : (
-                  <EyeOff className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
 
-      <div className="mt-3 border-t border-[var(--color-border)] pt-3">
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-9 w-full justify-center rounded-lg text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
-          onClick={onClose}
-        >
-          Close
-        </Button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+                    onClick={() => toggleChartPinned(chart.id)}
+                    aria-label={
+                      chart.pinned ? `Unpin ${chart.title}` : `Pin ${chart.title}`
+                    }
+                  >
+                    {chart.pinned ? (
+                      <PinOff className="h-4 w-4" />
+                    ) : (
+                      <Pin className="h-4 w-4" />
+                    )}
+                  </Button>
+
+                  {visible ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+                      onClick={() => setChartVisibility(chart.id, false)}
+                      disabled={!canHide}
+                      aria-label={`Hide ${chart.title}`}
+                    >
+                      <EyeOff className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+                      onClick={() => {
+                        if (visibleCount < BI_RULE_LIMITS.maxCharts) {
+                          promoteHiddenChart(chart.id);
+                          return;
+                        }
+                        setReplaceTargetFor((current) =>
+                          current === chart.id ? null : chart.id,
+                        );
+                      }}
+                      aria-label={`Show ${chart.title}`}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-md text-[var(--color-text-muted)] hover:bg-red-50 hover:text-red-600"
+                    onClick={() => removeChart(chart.id)}
+                    disabled={!canDelete}
+                    aria-label={`Remove ${chart.title}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {!visible && replaceTargetFor === chart.id ? (
+                <div className="mt-3 rounded-lg border border-dashed border-[var(--color-border)] bg-white p-3">
+                  <p className="text-xs font-medium text-[var(--color-text-secondary)]">
+                    Replace one visible chart to show this view:
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {replaceableCharts.map((candidate) => (
+                      <Button
+                        key={candidate.id}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-full px-3 text-xs"
+                        onClick={() => {
+                          promoteHiddenChart(chart.id, candidate.id);
+                          setReplaceTargetFor(null);
+                        }}
+                      >
+                        {candidate.title}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
-    </div>
+    </section>
+  );
+}
+
+function ManageViewsSheet({
+  open,
+  onOpenChange,
+  charts,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  charts: ChartConfig[];
+}) {
+  const visibleCharts = charts.filter(isChartVisible);
+  const hiddenCharts = charts.filter((chart) => !isChartVisible(chart));
+  const pinnedCharts = charts.filter((chart) => chart.pinned);
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="w-[420px] border-l border-[var(--color-border)] bg-white p-0 sm:max-w-[420px]"
+      >
+        <SheetHeader className="border-b border-[var(--color-border)] px-6 py-5 text-left">
+          <SheetTitle className="text-[var(--color-text-primary)]">
+            Manage Views
+          </SheetTitle>
+          <SheetDescription>
+            Keep the main canvas readable while saving alternate chart views.
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="dashboard-scroll h-full space-y-6 overflow-y-auto px-6 py-5">
+          <ManageViewsSection
+            title="On Dashboard"
+            description="These charts are currently on the main canvas."
+            charts={visibleCharts}
+            allCharts={charts}
+            visibleCount={visibleCharts.length}
+          />
+          <ManageViewsSection
+            title="Saved but Hidden"
+            description="Bring these views back when you need them."
+            charts={hiddenCharts}
+            allCharts={charts}
+            visibleCount={visibleCharts.length}
+          />
+          <ManageViewsSection
+            title="Pinned"
+            description="Pinned charts stay off limits for automatic replacements."
+            charts={pinnedCharts}
+            allCharts={charts}
+            visibleCount={visibleCharts.length}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -697,7 +873,7 @@ export function Dashboard() {
   const charts = useDashboardStore((snapshot) => snapshot.charts);
   const kpiConfigs = useDashboardStore((snapshot) => snapshot.kpis);
   const fileName = useDashboardStore((snapshot) => snapshot.fileName);
-  const [isStructureOpen, setIsStructureOpen] = useState(false);
+  const [isManageViewsOpen, setIsManageViewsOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -713,7 +889,7 @@ export function Dashboard() {
   const visibleCharts = useMemo(
     () =>
       orderedCharts.filter(
-        (chart) => chart.visible && hasRenderableChartData(chart, rows),
+        (chart) => isChartVisible(chart) && hasRenderableChartData(chart, rows),
       ),
     [orderedCharts, rows],
   );
@@ -747,14 +923,12 @@ export function Dashboard() {
 
   // ── Dashboard Header with switcher ──
 
-  function DashboardHeader({
-    orderedCharts: headerCharts,
-    isStructureOpen: structureOpen,
-    setIsStructureOpen: setStructureOpen,
+    function DashboardHeader({
+    isManageViewsOpen: manageViewsOpen,
+    setIsManageViewsOpen: setManageViewsOpen,
   }: {
-    orderedCharts: ChartConfig[];
-    isStructureOpen: boolean;
-    setIsStructureOpen: (fn: (c: boolean) => boolean) => void;
+    isManageViewsOpen: boolean;
+    setIsManageViewsOpen: (fn: (c: boolean) => boolean) => void;
   }) {
     const activeDashboardId = useDashboardStore((s) => s.activeDashboardId);
     const activeDashboardName = useDashboardStore((s) => s.activeDashboardName);
@@ -907,24 +1081,20 @@ export function Dashboard() {
             </div>
 
             {/* Chart structure button */}
-            <div className="relative">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setStructureOpen((current) => !current)}
-                className="h-8 w-8 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
-                aria-label="Open chart structure"
-              >
-                <LayoutPanelLeft className="h-4 w-4" />
-              </Button>
-              {structureOpen ? (
-                <ChartStructurePopover
-                  charts={headerCharts}
-                  onClose={() => setStructureOpen(() => false)}
-                />
-              ) : null}
-            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setManageViewsOpen((current) => !current)}
+              className={`h-8 w-8 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)] ${
+                manageViewsOpen
+                  ? "border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]"
+                  : ""
+              }`}
+              aria-label="Open manage views"
+            >
+              <LayoutPanelLeft className="h-4 w-4" />
+            </Button>
           </div>
         </div>
         <CreateDashboardModal
@@ -967,9 +1137,13 @@ export function Dashboard() {
       ) : (
         <>
           <DashboardHeader
-            orderedCharts={orderedCharts}
-            isStructureOpen={isStructureOpen}
-            setIsStructureOpen={setIsStructureOpen}
+            isManageViewsOpen={isManageViewsOpen}
+            setIsManageViewsOpen={setIsManageViewsOpen}
+          />
+          <ManageViewsSheet
+            open={isManageViewsOpen}
+            onOpenChange={setIsManageViewsOpen}
+            charts={orderedCharts}
           />
 
           <div className="grid shrink-0 grid-cols-1 gap-3 px-5 py-3 md:grid-cols-2 xl:grid-cols-4">

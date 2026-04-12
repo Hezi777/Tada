@@ -3,6 +3,7 @@ import {
   BI_RULE_LIMITS,
   ChartAggregationSchema,
   ChartConfigSchema,
+  normalizeChartConfig,
   type ChartConfig,
   type ChartSource,
   type ChartType,
@@ -111,6 +112,10 @@ function pearsonCorrelation(left: number[], right: number[]): number | null {
 
 function createChartId(order: number): string {
   return `chart_${String(order + 1).padStart(2, "0")}`;
+}
+
+function isChartVisible(chart: ChartConfig): boolean {
+  return chart.visibilityState === "visible" && chart.visible;
 }
 
 function hasHumanTitle(title: string): boolean {
@@ -737,22 +742,28 @@ function normalizeCharts(
 ): ChartConfig[] {
   const timestamp = nowIso();
   return input.map((chart, index) =>
-    ChartConfigSchema.parse({
-      id: createChartId(index),
-      type: chart.type,
-      title: chart.title.trim(),
-      insight: chart.insight.trim(),
-      columns: [...chart.columns],
-      aggregation: chart.aggregation,
-      groupBy: chart.groupBy,
-      timeColumn: chart.timeColumn,
-      size: chart.size,
-      visible: true,
-      order: index,
-      source,
-      chatbotGenerated,
-      generatedAt: timestamp,
-    }),
+    normalizeChartConfig(
+      ChartConfigSchema.parse({
+        id: createChartId(index),
+        type: chart.type,
+        title: chart.title.trim(),
+        insight: chart.insight.trim(),
+        columns: [...chart.columns],
+        aggregation: chart.aggregation,
+        groupBy: chart.groupBy,
+        timeColumn: chart.timeColumn,
+        size: chart.size,
+        visible: true,
+        order: index,
+        source,
+        chatbotGenerated,
+        generatedAt: timestamp,
+        pinned: false,
+        priority: index,
+        lastTouchedBy: source === "user" ? "user" : "ai_initial",
+        visibilityState: "visible",
+      }),
+    ),
   );
 }
 
@@ -761,9 +772,14 @@ export function validateChartCollection(
   columns: Column[],
   rows: Row[],
 ): string | null {
+  if (charts.length > BI_RULE_LIMITS.maxSavedCharts) {
+    return "too_many_saved_charts";
+  }
+
+  const visibleCharts = charts.filter(isChartVisible);
   if (
-    charts.length < BI_RULE_LIMITS.minCharts ||
-    charts.length > BI_RULE_LIMITS.maxCharts
+    visibleCharts.length < BI_RULE_LIMITS.minCharts ||
+    visibleCharts.length > BI_RULE_LIMITS.maxCharts
   ) {
     return "invalid_chart_count";
   }
@@ -771,7 +787,8 @@ export function validateChartCollection(
   const columnNames = new Set(columns.map((column) => column.name));
   const duplicateKeys = new Set<string>();
 
-  for (const chart of charts) {
+  for (const rawChart of charts) {
+    const chart = normalizeChartConfig(rawChart);
     if (!hasHumanTitle(chart.title) || !chart.insight.trim()) {
       return "invalid_chart_text";
     }
@@ -832,7 +849,9 @@ export function validateChartCollection(
     duplicateKeys.add(duplicateKey);
   }
 
-  const ordered = [...charts].sort((left, right) => left.order - right.order);
+  const ordered = [...visibleCharts]
+    .map((chart) => normalizeChartConfig(chart))
+    .sort((left, right) => left.order - right.order);
   if (ordered[0]?.order !== 0) {
     return "missing_primary_order";
   }
