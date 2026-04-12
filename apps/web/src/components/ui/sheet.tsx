@@ -47,10 +47,16 @@ const sheetVariants = cva(
   },
 );
 
+type RadixSheetContentProps = React.ComponentPropsWithoutRef<
+  typeof SheetPrimitive.Content
+>;
+
 interface SheetContentProps
-  extends
-    React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
+  extends RadixSheetContentProps,
+    VariantProps<typeof sheetVariants> {
+  children?: React.ReactNode;
+  className?: string;
+}
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,

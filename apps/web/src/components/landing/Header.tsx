@@ -1,7 +1,11 @@
-import Image from "next/image";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import tadaLogo from "@/assets/tada-logo.png";
+'use client';
+
+import { motion } from 'framer-motion';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import tadaLogo from '@/assets/tada-logo.png';
+import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -13,9 +17,9 @@ interface HeaderProps {
 
 function getDisplayInitial(email: string | null): string {
   if (!email) {
-    return "T";
+    return 'T';
   }
-  return email.trim().charAt(0).toUpperCase() || "T";
+  return email.trim().charAt(0).toUpperCase() || 'T';
 }
 
 export function Header({
@@ -25,80 +29,102 @@ export function Header({
   onGetStarted,
   onOpenWorkspace,
 }: HeaderProps) {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 80);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <>
-      <div className="fixed left-0 right-0 top-0 z-[60] flex h-8 items-center justify-center bg-primary/10 px-4 text-xs font-medium text-primary backdrop-blur-md">
-        ✨ Now in beta — free while it lasts
-      </div>
-      <header className="fixed left-0 right-0 top-8 z-50 px-4 pt-4 sm:px-6">
-        <div className="container">
-          <div className="glass flex h-16 items-center justify-between rounded-full border border-white/80 px-4 shadow-soft sm:px-6">
-            <Link
-              href="/"
-              className="flex items-center gap-3 transition-opacity hover:opacity-80"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white shadow-card">
-                <Image src={tadaLogo} alt="Tada" className="h-7 w-7" />
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="font-display text-lg font-semibold text-foreground">
-                  Tada
-                </span>
-                <span className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-primary/80">
-                  Instant Insights
-                </span>
-              </div>
-            </Link>
-
-            <nav className="hidden items-center gap-3 rounded-full border border-white/70 bg-white/70 px-2 py-1 md:flex">
-              <a
-                href="#features"
-                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
-              >
-                Features
-              </a>
-              <a
-                href="#how-it-works"
-                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
-              >
-                How it works
-              </a>
-            </nav>
-
-            <div className="flex items-center gap-2">
-              {isAuthenticated ? (
-                <>
-                  <div className="hidden items-center gap-3 rounded-full border border-white/80 bg-white/80 px-2 py-1.5 sm:flex">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                      {getDisplayInitial(userEmail)}
-                    </div>
-                    <div className="max-w-[160px] pr-2">
-                      <p className="truncate text-sm font-semibold text-foreground">
-                        {userEmail ?? "Signed in"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Workspace ready
-                      </p>
-                    </div>
-                  </div>
-                  <Button variant="default" size="sm" onClick={onOpenWorkspace}>
-                    Open workspace
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button variant="ghost" size="sm" onClick={onLogin}>
-                    Log in
-                  </Button>
-                  <Button variant="default" size="sm" onClick={onGetStarted}>
-                    Get started
-                  </Button>
-                </>
-              )}
+    <motion.header
+      // No static border-b class — border colour is driven entirely by animate
+      // so it's invisible (transparent) when unscrolled and subtle when scrolled.
+      className="fixed left-0 right-0 top-0 z-50 border-b border-transparent"
+      initial={{ y: -60, opacity: 0 }}
+      animate={
+        scrolled
+          ? {
+            y: 0,
+            opacity: 1,
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            borderColor: 'rgba(148,163,184,0.5)',
+            backdropFilter: 'blur(12px)',
+          }
+          : {
+            y: 0,
+            opacity: 1,
+            backgroundColor: 'rgba(255,255,255,0)',
+            borderColor: 'rgba(148,163,184,0)',
+            backdropFilter: 'blur(0px)',
+          }
+      }
+      transition={{ duration: 0.4, ease: 'easeInOut' }}
+    >
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+        {/* Logo */}
+        <Link
+          href="/"
+          className="flex items-center gap-3 transition-opacity hover:opacity-80"
+        >
+          <Image src={tadaLogo} alt="Tada" className="h-7 w-7" />
+          <div className="flex flex-col leading-none">
+            <div className="flex items-center gap-1.5">
+              <span className="font-sans text-lg font-semibold text-foreground">
+                Tada
+              </span>
+              {/* Inline beta indicator */}
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+              <span className="text-xs font-medium text-blue-600">Beta</span>
             </div>
+            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-primary/80">
+              Instant Insights
+            </span>
           </div>
+        </Link>
+
+        {/* Nav */}
+        <nav className="hidden items-center gap-6 md:flex">
+          <a
+            href="#features"
+            className="text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
+          >
+            Features
+          </a>
+          <a
+            href="#how-it-works"
+            className="text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
+          >
+            How it works
+          </a>
+        </nav>
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          {isAuthenticated ? (
+            <>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                {getDisplayInitial(userEmail)}
+              </div>
+              <Button variant="default" size="sm" onClick={onOpenWorkspace}>
+                Open workspace
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" onClick={onLogin}>
+                Log in
+              </Button>
+              <Button variant="default" size="sm" onClick={onGetStarted}>
+                Get started
+              </Button>
+            </>
+          )}
         </div>
-      </header>
-    </>
+      </div>
+    </motion.header>
   );
 }
