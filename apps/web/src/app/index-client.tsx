@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { Header } from "@/components/landing/Header";
 import { Hero } from "@/components/landing/Hero";
+import { BrandMarquee } from "@/components/landing/BrandMarquee";
 import { Features } from "@/components/landing/Features";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { FAQ } from "@/components/landing/FAQ";
@@ -72,6 +73,7 @@ export default function IndexClient() {
         onOpenWorkspace={handleOpenWorkspace}
       />
       <Hero onGetStarted={handleGetStarted} />
+      <BrandMarquee />
       <Features />
       <HowItWorks />
       <FAQ />
