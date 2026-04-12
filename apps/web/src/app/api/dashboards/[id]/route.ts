@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { inferColumns } from "@/server/infer";
+import { normalizeChartConfig } from "@tada/shared";
 import {
   createDatasetState,
   setDatasetFiles,
@@ -123,7 +124,9 @@ export async function GET(
         .order("is_primary", { ascending: false }),
     ]);
 
-  const charts = Array.isArray(chartRow?.configs) ? chartRow.configs : [];
+  const charts = Array.isArray(chartRow?.configs)
+    ? chartRow.configs.map((chart) => normalizeChartConfig(chart))
+    : [];
   const kpis = Array.isArray(kpiRow?.configs) ? kpiRow.configs : [];
   const files = (fileRows ?? []).map((file) => ({
     id: String(file.id),

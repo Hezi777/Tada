@@ -56,7 +56,6 @@ export async function POST(request: Request) {
         user_id: user.id,
         name: file.originalname,
         rows: state.rows,
-        row_count: state.rows.length,
       })
       .select("id")
       .single();

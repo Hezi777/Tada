@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
+  clearActiveDashboard,
   getDashboardStoreState,
   initializeDashboardStore,
   resetDashboardStore,
@@ -17,7 +18,6 @@ import {
 import {
   listDashboards,
   loadDashboard,
-  loadLatestDashboard,
   createDashboard,
   persistDashboardCharts,
   uploadDataset,
@@ -155,19 +155,10 @@ export default function DashboardPage() {
           return;
         }
 
-        // Fallback: try old loadLatestDashboard (for users without dashboards yet)
-        const response = await loadLatestDashboard();
-        if (cancelled) return;
-        if ("empty" in response) {
-          resetDashboardStore();
-          lastPersistedChartsRef.current = null;
-          setPageState("empty");
-          return;
-        }
-        isHydratingRef.current = true;
-        lastPersistedChartsRef.current = JSON.stringify(response.charts);
-        initializeDashboardStore(response);
-        setPageState("loaded");
+        clearActiveDashboard();
+        resetDashboardStore();
+        lastPersistedChartsRef.current = null;
+        setPageState("empty");
       } catch (error) {
         if (cancelled) return;
         setLoadError(
@@ -175,6 +166,7 @@ export default function DashboardPage() {
             ? error.message.replace(/_/g, " ")
             : "Unable to load your dashboard.",
         );
+        clearActiveDashboard();
         resetDashboardStore();
         setPageState("empty");
       } finally {

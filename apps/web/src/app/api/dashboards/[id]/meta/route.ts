@@ -54,7 +54,7 @@ export async function GET(
   const datasetIds = junctions.map((j) => j.dataset_id);
   const { data: dataset, error: datasetError } = await supabaseAdmin
     .from("datasets")
-    .select("id, name, created_at, row_count")
+    .select("id, name, created_at")
     .in("id", datasetIds)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -77,7 +77,7 @@ export async function GET(
   const [{ data: fileRows }] = await Promise.all([
     supabaseAdmin
       .from("dataset_files")
-      .select("id, file_name, is_primary")
+      .select("id, file_name, is_primary, row_count")
       .eq("dataset_id", datasetId)
       .order("is_primary", { ascending: false }),
   ]);
@@ -85,7 +85,7 @@ export async function GET(
   const files = (fileRows ?? []).map((file) => ({
     id: String(file.id),
     fileName: String(file.file_name),
-    rowCount: file.is_primary ? (dataset.row_count ?? 0) : 0,
+    rowCount: file.is_primary ? (file.row_count ?? 0) : 0,
     isPrimary: Boolean(file.is_primary),
   }));
 
@@ -100,11 +100,11 @@ export async function GET(
     files:
       files.length > 0
         ? files
-        : [
+          : [
             {
               id: crypto.randomUUID(),
               fileName: String(dataset.name ?? "dataset"),
-              rowCount: dataset.row_count ?? 0,
+              rowCount: 0,
               isPrimary: true,
             },
           ],
