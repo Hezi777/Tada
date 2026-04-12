@@ -90,3 +90,32 @@ The target user is a small business owner, not a data analyst.
 - Do not bypass shared schemas when adding or changing contracts
 - Do not make AI calls from client components
 - Do not add placeholder abstractions that are not used by the current Next app
+
+## Landing Page Rules (UI Refactor)
+
+### Scope
+- Landing page files live in `apps/web/src/components/landing/`
+- Layout file: `apps/web/src/app/layout.tsx`
+- Global styles: `apps/web/src/index.css`
+- Do not touch any app/, server/, or lib/ files during landing page tasks
+
+### UI Stack for Landing
+- Animations: Framer Motion only — no GSAP, no CSS animation libraries
+- Smooth scroll: @studio-freight/lenis (to be installed)
+- Font: Satoshi from Fontshare via @import in index.css
+- Components: existing shadcn/ui components only, no new UI libraries
+
+### Animation Standards
+- All scroll-triggered animations use whileInView with once: true
+- Above-the-fold animations trigger on mount, not whileInView
+- Easing: easeOut for entrances, easeInOut for interactions
+- Standard entrance: y:30-60 → 0, opacity:0 → 1, duration 0.6-0.8s
+- Stagger between siblings: 0.1s - 0.15s delay increments
+- No animation on prefers-reduced-motion users
+
+### Do Not
+- Do not over-engineer — one file changed per task unless explicitly told otherwise
+- Do not install new packages without confirming first (exception: lenis)
+- Do not change any props, interfaces, or logic in landing components
+- Do not touch AnimatedDashboardMockup.tsx internals
+- After every change run npm run typecheck and confirm zero errors
