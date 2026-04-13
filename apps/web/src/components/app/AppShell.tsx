@@ -1,16 +1,13 @@
 import { type ReactNode, useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { Files, LayoutDashboard, LogOut, Settings } from "lucide-react";
+import { Bell, CircleUserRound, LogOut, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Dashboard } from "./Dashboard";
 import FileManager from "./FileManager";
 import { SettingsPanel } from "./SettingsPanel";
 import { FloatingChat } from "./FloatingChat";
-import tadaLogo from "@/assets/tada-logo.png";
-import { useDashboardStore } from "@/lib/dashboard-store";
 import { logout } from "@/app/actions";
+import { TadaLogo } from "@/components/brand/TadaLogo";
 
 interface AppShellProps {
   dashboardContent?: ReactNode;
@@ -18,41 +15,49 @@ interface AppShellProps {
 }
 
 type ThemeMode = "system" | "light" | "dark";
-type NavTab = "dashboard" | "files" | "settings";
+type NavTab = "dashboard" | "dashboards" | "settings";
 
 const THEME_STORAGE_KEY = "tada-theme";
+const THEME_EVENT = "tada-theme-change";
 
-function SidebarItem({
-  icon: Icon,
+function readThemeMode(): ThemeMode {
+  if (typeof window === "undefined") {
+    return "system";
+  }
+
+  const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+  return stored === "light" || stored === "dark" || stored === "system"
+    ? stored
+    : "system";
+}
+
+function applyThemeMode(mode: ThemeMode, prefersDark: boolean) {
+  const root = window.document.documentElement;
+  const isDark = mode === "dark" || (mode === "system" && prefersDark);
+  root.classList.toggle("dark", isDark);
+}
+
+function NavItem({
   label,
   active,
   onClick,
-  disabled = false,
 }: {
-  icon: typeof LayoutDashboard;
   label: string;
   active: boolean;
   onClick: () => void;
-  disabled?: boolean;
 }) {
   return (
-    <Button
+    <button
       type="button"
-      variant="ghost"
       onClick={onClick}
-      disabled={disabled}
-      className={`relative h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold transition-all duration-200 ${
+      className={`h-8 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
         active
-          ? "bg-blue-50 text-[#3B82F6]"
-          : "text-[var(--color-text-secondary)] hover:bg-blue-50/60 hover:text-[#3B82F6]"
+          ? "bg-[#191c1e] text-white"
+          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
       }`}
     >
-      {active ? (
-        <span className="absolute inset-y-2 left-0 w-[3px] rounded-r-full bg-[#3B82F6]" />
-      ) : null}
-      <Icon className="h-[18px] w-[18px]" />
-      <span>{label}</span>
-    </Button>
+      {label}
+    </button>
   );
 }
 
@@ -60,116 +65,130 @@ export function AppShell({
   dashboardContent,
   showFloatingChat = true,
 }: AppShellProps) {
-  const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
-  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    if (typeof window === "undefined") {
-      return "system";
-    }
-    const stored = window.localStorage.getItem(
-      THEME_STORAGE_KEY,
-    ) as ThemeMode | null;
-    return stored === "light" || stored === "dark" || stored === "system"
-      ? stored
-      : "system";
-  });
+  const [themeMode, setThemeMode] = useState<ThemeMode>(readThemeMode);
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-    window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
-    const root = window.document.documentElement;
-    const applyMode = (mode: ThemeMode, prefersDark: boolean) => {
-      const isDark = mode === "dark" || (mode === "system" && prefersDark);
-      root.classList.toggle("dark", isDark);
+
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const syncTheme = (nextMode: ThemeMode) => {
+      applyThemeMode(nextMode, media.matches);
     };
-    if (themeMode === "system") {
-      const media = window.matchMedia("(prefers-color-scheme: dark)");
-      applyMode("system", media.matches);
-      const listener = (event: MediaQueryListEvent) =>
-        applyMode("system", event.matches);
-      media.addEventListener("change", listener);
-      return () => media.removeEventListener("change", listener);
-    }
-    applyMode(themeMode, false);
+
+    syncTheme(themeMode);
+    window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+
+    const handleThemeEvent = () => {
+      const nextMode = readThemeMode();
+      setThemeMode(nextMode);
+      syncTheme(nextMode);
+    };
+
+    const handleMediaChange = (event: MediaQueryListEvent) => {
+      if (readThemeMode() === "system") {
+        applyThemeMode("system", event.matches);
+      }
+    };
+
+    window.addEventListener(THEME_EVENT, handleThemeEvent);
+    window.addEventListener("storage", handleThemeEvent);
+    media.addEventListener("change", handleMediaChange);
+
+    return () => {
+      window.removeEventListener(THEME_EVENT, handleThemeEvent);
+      window.removeEventListener("storage", handleThemeEvent);
+      media.removeEventListener("change", handleMediaChange);
+    };
   }, [themeMode]);
 
   return (
     <div className="h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text-primary)]">
-      <aside className="fixed inset-y-0 left-0 z-30 flex w-[260px] flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-6">
-        <Link
-          href="/"
-          className="flex items-center gap-3 px-1 transition-opacity hover:opacity-80"
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#3B82F6] shadow-[0_2px_8px_rgba(59,130,246,0.25)]">
-            <Image
-              src={tadaLogo}
-              alt="TADA"
-              className="h-5 w-5 brightness-0 invert"
-            />
-          </div>
-          <div>
-            <div className="font-display text-[22px] font-normal tracking-tight text-[#0F172A]">
-              TADA
-            </div>
-            <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
-              Workspace
-            </div>
-          </div>
-        </Link>
-
-        <nav className="mt-10 space-y-1">
-          <SidebarItem
-            icon={LayoutDashboard}
-            label="Dashboard"
-            active={activeTab === "dashboard"}
-            onClick={() => setActiveTab("dashboard")}
-          />
-          <SidebarItem
-            icon={Files}
-            label="Files"
-            active={activeTab === "files"}
-            disabled={!datasetId}
-            onClick={() => setActiveTab("files")}
-          />
-        </nav>
-
-        <div className="flex-1" />
-
-        <Separator className="mb-4 bg-[var(--color-border)]" />
-
-        <div className="space-y-1">
-          <SidebarItem
-            icon={Settings}
-            label="Settings"
-            active={activeTab === "settings"}
-            onClick={() => setActiveTab("settings")}
-          />
-          <form action={logout}>
-            <Button
-              type="submit"
-              variant="ghost"
-              className="h-11 w-full justify-start gap-3 rounded-lg px-4 text-sm font-semibold text-[var(--color-text-secondary)] transition-all duration-200 hover:bg-blue-50/60 hover:text-[#3B82F6]"
+      <header className="fixed inset-x-0 top-0 z-40 bg-[rgba(247,249,251,0.92)] backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-4 sm:px-6">
+          <div className="flex items-center gap-6">
+            <Link
+              href="/"
+              className="flex items-center gap-3 transition-opacity hover:opacity-80"
             >
-              <LogOut className="h-[18px] w-[18px]" />
-              Logout
-            </Button>
-          </form>
-        </div>
-      </aside>
+              <TadaLogo className="h-8 w-8 shrink-0" priority />
+              <span className="font-display text-[1.375rem] font-bold tracking-[-0.04em] text-[var(--color-text-primary)]">
+                Tada
+              </span>
+            </Link>
 
-      <div className="ml-[260px] h-screen">
+            <nav className="hidden items-center gap-2 md:flex">
+              <NavItem
+                label="Dashboard"
+                active={activeTab === "dashboard"}
+                onClick={() => setActiveTab("dashboard")}
+              />
+              <NavItem
+                label="Dashboards"
+                active={activeTab === "dashboards"}
+                onClick={() => setActiveTab("dashboards")}
+              />
+              <NavItem
+                label="Settings"
+                active={activeTab === "settings"}
+                onClick={() => setActiveTab("settings")}
+              />
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="relative hidden lg:block">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
+              <input
+                type="search"
+                aria-label="Search workspace"
+                placeholder="Search workspace..."
+                className="h-10 w-56 rounded-full border border-transparent bg-[var(--color-surface-muted)] pl-10 pr-4 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[rgba(0,50,125,0.14)] focus:bg-white"
+              />
+            </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
+              aria-label="Notifications"
+            >
+              <Bell className="h-4 w-4" />
+            </Button>
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--color-text-secondary)] shadow-[0_8px_24px_rgba(25,28,30,0.06)]">
+              <CircleUserRound className="h-5 w-5" />
+            </div>
+
+            <form action={logout}>
+              <Button
+                type="submit"
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
+                aria-label="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </form>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto h-[calc(100vh-64px)] max-w-[1280px] overflow-y-auto pt-16">
         {activeTab === "settings" ? (
           <SettingsPanel />
-        ) : activeTab === "files" ? (
+        ) : activeTab === "dashboards" ? (
           <FileManager />
         ) : dashboardContent ? (
           dashboardContent
         ) : (
           <Dashboard />
         )}
-      </div>
+      </main>
 
       {showFloatingChat ? <FloatingChat /> : null}
     </div>
