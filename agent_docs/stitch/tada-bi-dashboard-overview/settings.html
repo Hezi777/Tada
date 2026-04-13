@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tada - Settings</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface": "#f7f9fb",
+                      "on-tertiary-container": "#8f98f6",
+                      "on-surface": "#191c1e",
+                      "error": "#ba1a1a",
+                      "primary-fixed-dim": "#b1c5ff",
+                      "error-container": "#ffdad6",
+                      "on-primary-fixed-variant": "#1d438e",
+                      "on-secondary-fixed": "#001946",
+                      "background": "#f7f9fb",
+                      "primary": "#001e52",
+                      "outline": "#747782",
+                      "on-error-container": "#93000a",
+                      "primary-fixed": "#dae2ff",
+                      "on-surface-variant": "#434651",
+                      "primary-container": "#00327d",
+                      "on-tertiary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "tertiary-fixed": "#e0e0ff",
+                      "tertiary-container": "#222b85",
+                      "surface-container-highest": "#e0e3e5",
+                      "surface-container-high": "#e6e8ea",
+                      "secondary-fixed": "#dae2ff",
+                      "inverse-surface": "#2d3133",
+                      "tertiary-fixed-dim": "#bdc2ff",
+                      "surface-tint": "#395ca7",
+                      "inverse-primary": "#b1c5ff",
+                      "on-tertiary-fixed": "#000767",
+                      "secondary": "#2559bd",
+                      "on-secondary-container": "#002f76",
+                      "on-secondary-fixed-variant": "#00419e",
+                      "on-secondary": "#ffffff",
+                      "on-primary-fixed": "#001946",
+                      "on-tertiary-fixed-variant": "#343d96",
+                      "outline-variant": "#c4c6d3",
+                      "surface-bright": "#f7f9fb",
+                      "surface-variant": "#e0e3e5",
+                      "surface-container": "#eceef0",
+                      "surface-container-low": "#f2f4f6",
+                      "surface-dim": "#d8dadc",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "on-background": "#191c1e",
+                      "inverse-on-surface": "#eff1f3",
+                      "on-primary-container": "#7d9eee",
+                      "tertiary": "#050e71",
+                      "secondary-fixed-dim": "#b1c5ff",
+                      "secondary-container": "#6c98ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline": ["Manrope"],
+                      "body": ["Inter"],
+                      "label": ["Inter"]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface-container-low min-h-screen text-on-surface font-body">
+<!-- TopAppBar from JSON Authority -->
+<header class="flex justify-between items-center px-6 h-16 w-full sticky top-0 z-50 bg-[#f7f9fb] dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 font-['Manrope'] antialiased">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-black text-[#00327d] dark:text-white tracking-tighter cursor-pointer active:scale-95 duration-150">Tada</span>
+<nav class="hidden md:flex items-center space-x-2">
+<a class="text-slate-600 dark:text-slate-400 font-medium px-4 py-1.5 hover:text-[#00327d] dark:hover:text-blue-300 transition-colors" href="#">Dashboard</a>
+<a class="text-slate-600 dark:text-slate-400 font-medium px-4 py-1.5 hover:text-[#00327d] dark:hover:text-blue-300 transition-colors" href="#">Files</a>
+<a class="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-1.5 rounded-full font-bold transition-all" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+<input class="bg-surface-container-highest border-none rounded-full pl-10 pr-4 py-1.5 text-sm w-64 focus:ring-2 focus:ring-primary-container rounded-[12px]" placeholder="Search settings..." type="text"/>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container-high rounded-full transition-colors">notifications</button>
+<img alt="User profile" class="w-8 h-8 rounded-full object-cover border border-outline-variant cursor-pointer active:scale-95 duration-150" data-alt="Close-up portrait of a professional man in a business casual shirt with soft natural office lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5U9ALCV7KEjNa9OF1fvQ07J-4oOImd5AQhyRwKhjYNBkIVyvU_GLwjTVBO6lt_gj9G8BgPFaZkM4-xJVAXpcRylyE0KMgb-pFxlVyJiEQVKbkVfhTiIh1QC7FjaUtHIy3u_-4igQASvWPpt3F1FcPrNbQD6f_aoDYJoCKxPLUw7RjYDqn4EVZVehN4dtAtpIomx-4hiTEip2gZpASwec33zcbBks972_j9563wnfH3JIAPl5-UmLyYKpFRrB_UNb9f_rR8qhY6bFv"/>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-6 py-10">
+<h1 class="text-4xl font-bold text-primary mb-10 tracking-tight">Settings</h1>
+<div class="flex flex-col md:flex-row gap-10">
+<!-- Left Column: Navigation (SideNavBar structure) -->
+<aside class="w-full md:w-[220px] flex-shrink-0">
+<nav class="flex flex-col space-y-1">
+<!-- Account - Active -->
+<a class="flex items-center gap-3 px-4 py-3 bg-slate-100 border-l-[3px] border-[#00327d] rounded-r-[8px] group transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-slate-700" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="text-sm font-semibold text-slate-700">Account</span>
+</a>
+<!-- Appearance -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg group transition-all duration-200" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">palette</span>
+<span class="text-sm font-medium">Appearance</span>
+</a>
+<!-- Billing -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg group transition-all duration-200" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">payments</span>
+<span class="text-sm font-medium">Billing</span>
+</a>
+<!-- Security -->
+<!-- Privacy -->
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-lg group transition-all duration-200" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">lock</span>
+<span class="text-sm font-medium">Privacy</span>
+</a>
+</nav>
+</aside>
+<!-- Right Column: Content Cards -->
+<div class="flex-1 space-y-8">
+<!-- Card 1: Account -->
+<section class="bg-surface-container-lowest p-8 shadow-sm rounded-[20px]">
+<h2 class="text-xl font-bold text-on-surface mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">account_circle</span>
+                        Account Information
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold text-outline uppercase tracking-wider">First Name</label>
+<input class="border-outline-variant focus:ring-primary focus:border-primary px-4 py-2 text-sm font-body rounded-[12px]" type="text" value="Jordan"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold text-outline uppercase tracking-wider">Last Name</label>
+<input class="border-outline-variant focus:ring-primary focus:border-primary px-4 py-2 text-sm font-body rounded-[12px]" type="text" value="Smith"/>
+</div>
+<div class="flex flex-col gap-2 md:col-span-2">
+<label class="text-xs font-bold text-outline uppercase tracking-wider">Email Address</label>
+<input class="bg-surface-container border-none text-on-surface-variant px-4 py-2 text-sm font-body cursor-not-allowed rounded-[12px]" readonly="" type="email" value="j.smith@tada-app.io"/>
+</div>
+<div class="flex flex-col gap-2 md:col-span-2">
+<label class="text-xs font-bold text-outline uppercase tracking-wider">Language Preference</label>
+<select class="border-outline-variant focus:ring-primary focus:border-primary px-4 py-2 text-sm font-body rounded-[12px]">
+<option>English (US)</option>
+<option>Hebrew (IL)</option>
+<option>Spanish (ES)</option>
+</select>
+</div>
+</div>
+<div class="mt-8 flex justify-end">
+<button class="bg-gradient-to-r from-primary-container to-secondary py-2.5 px-8 rounded-full text-white font-bold text-sm hover:opacity-90 active:scale-95 transition-all shadow-md">
+                            Save Changes
+                        </button>
+</div>
+</section>
+<!-- Card 2: Appearance -->
+<section class="bg-surface-container-lowest p-8 shadow-sm rounded-[20px]">
+<h2 class="text-xl font-bold text-on-surface mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">palette</span>
+                        Appearance
+                    </h2>
+<p class="text-sm text-on-surface-variant mb-6">Select how you want Tada to look on your screen.</p>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<!-- Light Theme (Active) -->
+<div class="cursor-pointer border-2 border-primary-container p-3 bg-surface-container-lowest relative group rounded-[16px]">
+<div class="bg-white border border-outline-variant aspect-video rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+<div class="w-full p-2 space-y-1">
+<div class="h-2 w-3/4 bg-slate-200 rounded"></div>
+<div class="h-2 w-1/2 bg-slate-100 rounded"></div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-sm font-bold text-primary-container">Light</span>
+<span class="material-symbols-outlined text-primary-container text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Dark Theme -->
+<div class="cursor-pointer border-2 border-transparent hover:border-outline-variant p-3 bg-surface-container-highest transition-colors group rounded-[16px]">
+<div class="bg-slate-900 border border-slate-800 aspect-video rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+<div class="w-full p-2 space-y-1">
+<div class="h-2 w-3/4 bg-slate-700 rounded"></div>
+<div class="h-2 w-1/2 bg-slate-800 rounded"></div>
+</div>
+</div>
+<span class="text-sm font-medium text-on-surface-variant group-hover:text-on-surface">Dark</span>
+</div>
+<!-- System Theme -->
+<div class="cursor-pointer border-2 border-transparent hover:border-outline-variant p-3 bg-surface-container-highest transition-colors group rounded-[16px]">
+<div class="bg-gradient-to-br from-white via-slate-400 to-slate-900 border border-outline-variant aspect-video rounded-lg mb-3"></div>
+<span class="text-sm font-medium text-on-surface-variant group-hover:text-on-surface">System</span>
+</div>
+</div>
+</section>
+<!-- Card 3: Billing -->
+<section class="bg-surface-container-lowest p-8 shadow-sm rounded-[20px]">
+<div class="flex items-start justify-between mb-8">
+<div>
+<h2 class="text-xl font-bold text-on-surface mb-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">payments</span>
+                                Billing &amp; Plan
+                            </h2>
+<p class="text-sm text-on-surface-variant">Manage your subscription and usage.</p>
+</div>
+<span class="bg-surface-container-high text-on-surface px-3 py-1 rounded-full text-xs font-bold tracking-wide">FREE PLAN</span>
+</div>
+<div class="mb-8">
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-semibold text-on-surface">Storage Usage</span>
+<span class="text-xs font-bold text-primary-container">3 of 5 dashboards</span>
+</div>
+<div class="w-full bg-surface-container-highest h-3 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full w-[60%] rounded-full"></div>
+</div>
+</div>
+<div class="bg-secondary-fixed/20 p-6 flex flex-col sm:flex-row items-center justify-between gap-6 border border-secondary-fixed/30 rounded-[12px]">
+<div class="text-center sm:text-left">
+<h3 class="text-lg font-bold text-primary mb-1">Upgrade to Pro</h3>
+<p class="text-sm text-on-secondary-fixed-variant leading-relaxed">Unlock unlimited dashboards, team collaboration, and advanced data exports.</p>
+</div>
+<button class="bg-gradient-to-r from-primary to-primary-container text-white font-bold py-2.5 px-6 rounded-full text-sm shadow-lg whitespace-nowrap hover:scale-105 transition-transform active:scale-95">
+                            Upgrade Now
+                        </button>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Simple Footer for Context -->
+<footer class="mt-20 border-t border-outline-variant py-8 px-6 text-center">
+<p class="text-xs text-outline font-medium">© 2024 Tada Analytics Inc. All rights reserved.</p>
+</footer>
+</body></html>

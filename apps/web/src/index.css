@@ -1,60 +1,90 @@
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Satoshi";
+  src: url("/assets/fonts/satoshi/Satoshi-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("/assets/fonts/satoshi/Satoshi-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("/assets/fonts/satoshi/Satoshi-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
-    --color-bg: #f8fafc;
+    --color-bg: #f7f9fb;
     --color-surface: #ffffff;
-    --color-border: #e2e8f0;
-    --color-accent: #2563eb;
-    --color-accent-light: #eff6ff;
-    --color-text-primary: #0f172a;
-    --color-text-secondary: #64748b;
-    --color-text-muted: #94a3b8;
+    --color-surface-muted: #f2f4f8;
+    --color-surface-subtle: #eceef0;
+    --color-border: #d8e0eb;
+    --color-accent: #00327d;
+    --color-accent-secondary: #0047ab;
+    --color-accent-tertiary: #1a237e;
+    --color-accent-light: #e7eef8;
+    --color-text-primary: #111827;
+    --color-text-secondary: #66758c;
+    --color-text-muted: #8b96a8;
+    --color-chart-grid: #e6ecf4;
+    --color-chart-axis: #90a0b8;
 
-    --background: 210 100% 99%;
-    --foreground: 217 35% 16%;
+    --background: 210 43% 98%;
+    --foreground: 217 30% 13%;
     --card: 0 0% 100%;
-    --card-foreground: 217 35% 16%;
+    --card-foreground: 217 30% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 217 35% 16%;
-    --primary: 211 90% 54%;
+    --popover-foreground: 217 30% 13%;
+    --primary: 216 100% 24%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 212 74% 96%;
-    --secondary-foreground: 216 29% 26%;
-    --muted: 212 55% 96%;
-    --muted-foreground: 216 15% 46%;
-    --accent: 201 94% 91%;
-    --accent-foreground: 214 73% 32%;
+    --secondary: 213 58% 95%;
+    --secondary-foreground: 217 28% 24%;
+    --muted: 213 40% 95%;
+    --muted-foreground: 215 14% 48%;
+    --accent: 213 57% 93%;
+    --accent-foreground: 216 88% 28%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 213 45% 88%;
-    --input: 213 45% 88%;
-    --ring: 211 90% 54%;
-    --radius: 1rem;
-    --glow: 210 100% 72%;
-    --surface: 210 100% 98%;
+    --border: 214 34% 88%;
+    --input: 214 34% 88%;
+    --ring: 216 100% 24%;
+    --radius: 1.1rem;
+    --glow: 216 96% 42%;
+    --surface: 210 43% 98%;
     --surface-elevated: 0 0% 100%;
-    --hero-tint: 210 100% 97%;
-    --hero-grid: 212 65% 90%;
-    --shadow-color: 215 74% 31%;
-    --panel: 210 82% 98%;
+    --hero-tint: 213 52% 97%;
+    --hero-grid: 213 42% 89%;
+    --shadow-color: 216 65% 24%;
+    --panel: 213 52% 97%;
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 216 29% 26%;
-    --sidebar-primary: 211 90% 54%;
+    --sidebar-foreground: 217 28% 24%;
+    --sidebar-primary: 216 100% 24%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 213 94% 96%;
-    --sidebar-accent-foreground: 216 29% 26%;
-    --sidebar-border: 213 45% 88%;
-    --sidebar-ring: 211 90% 54%;
-    --chart-1: 217 91% 60%;
-    --chart-2: 160 84% 39%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 258 90% 66%;
-    --chart-5: 330 81% 60%;
+    --sidebar-accent: 213 57% 93%;
+    --sidebar-accent-foreground: 217 28% 24%;
+    --sidebar-border: 214 34% 88%;
+    --sidebar-ring: 216 100% 24%;
+    --chart-1: 216 100% 24%;
+    --chart-2: 215 100% 34%;
+    --chart-3: 232 65% 30%;
+    --chart-4: 218 96% 71%;
+    --chart-5: 213 45% 84%;
   }
 
   .dark {
@@ -110,11 +140,14 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Inter', 'Satoshi', sans-serif;
     background-image:
       radial-gradient(circle at top left,
-        hsl(var(--glow) / 0.18),
-        transparent 34%),
+        hsl(var(--glow) / 0.08),
+        transparent 30%),
+      radial-gradient(circle at top right,
+        hsl(var(--primary) / 0.05),
+        transparent 26%),
       linear-gradient(180deg,
         hsl(var(--background)) 0%,
         hsl(var(--hero-tint)) 100%);
@@ -136,7 +169,7 @@
   h4,
   h5,
   h6 {
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Satoshi', 'Manrope', sans-serif;
   }
 
   ::selection {
@@ -391,21 +424,30 @@
   }
 
   .dashboard-surface {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
+    background:
+      linear-gradient(180deg,
+        rgba(255, 255, 255, 0.98) 0%,
+        rgba(247, 249, 251, 0.96) 100%);
+    border: 1px solid rgba(216, 224, 235, 0.9);
+    border-radius: 2rem;
+    box-shadow:
+      0 26px 60px -44px rgba(0, 50, 125, 0.24),
+      0 2px 10px rgba(17, 24, 39, 0.03);
   }
 
   .dashboard-hover {
-    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dashboard-hover:hover {
-    border-color: var(--color-accent);
+    border-color: rgba(0, 71, 171, 0.28);
     transform: translateY(-2px);
     box-shadow:
-      0 8px 24px hsl(215 74% 31% / 0.1),
-      0 2px 6px hsl(215 74% 31% / 0.05);
+      0 32px 70px -42px rgba(0, 50, 125, 0.28),
+      0 8px 24px rgba(17, 24, 39, 0.05);
   }
 
   @keyframes fab-ring-pulse {
