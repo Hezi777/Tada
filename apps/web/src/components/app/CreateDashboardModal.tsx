@@ -6,7 +6,13 @@ import {
   type ComponentType,
   type FormEvent,
 } from "react";
-import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DASHBOARD_ICON_OPTIONS, DASHBOARD_COLOR_OPTIONS } from "@tada/shared";
@@ -21,7 +27,6 @@ import {
   Target,
   Zap,
   Layers,
-  X,
 } from "lucide-react";
 
 type Props = {
@@ -65,8 +70,6 @@ export default function CreateDashboardModal({
     className: "h-5 w-5",
   });
 
-  if (!open) return null;
-
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
@@ -81,44 +84,52 @@ export default function CreateDashboardModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <Card className="relative w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-white p-0 shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-4">
-          <h2 className="font-display text-lg text-[var(--color-text-primary)]">
-            New Dashboard
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-slate-100"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent
+        className="overflow-hidden border border-[var(--color-border)] bg-white p-0 text-[var(--color-text-primary)] shadow-2xl sm:max-w-lg"
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+        }}
+      >
+        <div className="bg-[linear-gradient(180deg,rgba(59,130,246,0.08)_0%,rgba(255,255,255,0)_100%)] px-6 pb-6 pt-5">
+          <DialogHeader className="space-y-1 text-left">
+            <DialogTitle className="font-display text-xl tracking-tight text-[var(--color-text-primary)]">
+              New Dashboard
+            </DialogTitle>
+            <DialogDescription className="max-w-sm text-sm text-[var(--color-text-muted)]">
+              Give it a name, choose an icon, and pick an accent color to make
+              it easy to spot.
+            </DialogDescription>
+          </DialogHeader>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 px-6 py-5">
-          {/* Name */}
-          <div>
-            <label className="mb-1.5 block text-[12px] font-medium text-[var(--color-text-secondary)]">
+        <form onSubmit={handleSubmit} className="space-y-6 px-6 pb-6">
+          <div className="space-y-2">
+            <label
+              htmlFor="dashboard-name"
+              className="block text-[12px] font-medium text-[var(--color-text-secondary)]"
+            >
               Name
             </label>
             <Input
+              id="dashboard-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Q4 Sales Analysis"
-              className="h-10 rounded-lg border-[var(--color-border)] bg-[var(--color-bg)] text-sm focus-visible:ring-[#3B82F6]"
+              className="h-11 rounded-xl border-[var(--color-border)] bg-[var(--color-bg)] text-sm shadow-sm transition-shadow focus-visible:ring-[var(--color-accent)]"
               autoFocus
             />
           </div>
 
-          {/* Icon picker */}
-          <div>
-            <label className="mb-2 block text-[12px] font-medium text-[var(--color-text-secondary)]">
+          <div className="space-y-2">
+            <p className="block text-[12px] font-medium text-[var(--color-text-secondary)]">
               Icon
-            </label>
-            <div className="flex flex-wrap gap-2">
+            </p>
+            <div
+              className="grid grid-cols-5 gap-2 sm:grid-cols-6"
+              role="radiogroup"
+              aria-label="Dashboard icon"
+            >
               {DASHBOARD_ICON_OPTIONS.map((iconName) => {
                 const IconComp = getIconComponent(iconName);
                 const isSelected = iconName === selectedIcon;
@@ -126,16 +137,18 @@ export default function CreateDashboardModal({
                   <button
                     key={iconName}
                     type="button"
+                    aria-pressed={isSelected}
+                    aria-label={`Select ${iconName.replace(/-/g, " ")} icon`}
                     onClick={() => setSelectedIcon(iconName)}
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all ${
+                    className={`flex h-11 w-11 items-center justify-center rounded-xl border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 ${
                       isSelected
-                        ? "ring-2 ring-[#3B82F6] ring-offset-2"
-                        : "hover:bg-slate-50"
+                        ? "border-transparent shadow-sm"
+                        : "border-[var(--color-border)] hover:-translate-y-0.5 hover:bg-slate-50"
                     }`}
                     style={{
                       backgroundColor: isSelected
-                        ? selectedColor + "18"
-                        : undefined,
+                        ? `${selectedColor}18`
+                        : "white",
                       color: isSelected
                         ? selectedColor
                         : "var(--color-text-muted)",
@@ -148,70 +161,84 @@ export default function CreateDashboardModal({
             </div>
           </div>
 
-          {/* Color picker */}
-          <div>
-            <label className="mb-2 block text-[12px] font-medium text-[var(--color-text-secondary)]">
+          <div className="space-y-2">
+            <p className="block text-[12px] font-medium text-[var(--color-text-secondary)]">
               Color
-            </label>
-            <div className="flex gap-2">
-              {DASHBOARD_COLOR_OPTIONS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() => setSelectedColor(color)}
-                  className={`h-8 w-8 rounded-full transition-all ${
-                    color === selectedColor
-                      ? "ring-2 ring-offset-2"
-                      : "hover:scale-110"
-                  }`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
+            </p>
+            <div
+              className="flex flex-wrap gap-2"
+              role="radiogroup"
+              aria-label="Dashboard color"
+            >
+              {DASHBOARD_COLOR_OPTIONS.map((color) => {
+                const isSelected = color === selectedColor;
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    aria-pressed={isSelected}
+                    aria-label={`Select ${color} color`}
+                    onClick={() => setSelectedColor(color)}
+                    className={`h-9 w-9 rounded-full border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 ${
+                      isSelected
+                        ? "border-white shadow-md"
+                        : "border-white/80 hover:-translate-y-0.5 hover:shadow-sm"
+                    }`}
+                    style={{
+                      backgroundColor: color,
+                      boxShadow: isSelected ? `0 0 0 2px ${color}` : undefined,
+                    }}
+                  />
+                );
+              })}
             </div>
           </div>
 
-          {/* Preview */}
-          <div className="rounded-xl border border-[var(--color-border)] p-4">
-            <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[linear-gradient(180deg,rgba(248,250,252,0.95)_0%,rgba(255,255,255,1)_100%)] p-4">
+            <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--color-text-muted)]">
               Preview
             </p>
             <div className="flex items-center gap-3">
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                className="flex h-11 w-11 items-center justify-center rounded-xl"
                 style={{
-                  backgroundColor: selectedColor + "20",
+                  backgroundColor: `${selectedColor}20`,
                   color: selectedColor,
                 }}
               >
                 {previewIcon}
               </div>
-              <span className="text-sm font-semibold text-[var(--color-text-primary)]">
-                {name || "Untitled dashboard"}
-              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                  {name || "Untitled dashboard"}
+                </p>
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  This is how it will appear in your workspace.
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 border-t border-[var(--color-border)] pt-4">
             <Button
               type="button"
               variant="ghost"
               onClick={onClose}
-              className="h-9 rounded-lg px-4 text-sm text-[var(--color-text-secondary)]"
+              className="h-10 rounded-xl px-4 text-sm text-[var(--color-text-secondary)] hover:bg-slate-50"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={!name.trim()}
-              className="h-9 rounded-lg px-5 text-sm"
+              className="h-10 rounded-xl px-5 text-sm text-white shadow-sm transition-opacity disabled:opacity-50"
               style={{ backgroundColor: selectedColor }}
             >
               Create Dashboard
             </Button>
           </div>
         </form>
-      </Card>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

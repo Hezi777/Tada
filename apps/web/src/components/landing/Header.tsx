@@ -1,11 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import tadaLogo from '@/assets/tada-logo.png';
 import { Button } from '@/components/ui/button';
+import { TadaLogo } from '@/components/brand/TadaLogo';
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -70,7 +69,7 @@ export function Header({
           href="/"
           className="flex items-center gap-3 transition-opacity hover:opacity-80"
         >
-          <Image src={tadaLogo} alt="Tada" className="h-7 w-7" />
+          <TadaLogo className="h-7 w-7 text-[var(--color-accent)]" />
           <div className="flex flex-col leading-none">
             <div className="flex items-center gap-1.5">
               <span className="font-sans text-lg font-semibold text-foreground">

@@ -7,13 +7,10 @@ export type LayoutItem = ChartConfig & {
 const GRID_COLUMNS = 12;
 
 function baseColSpan(size: ChartConfig["size"]): number {
-  if (size === "small") {
-    return 4;
+  if (size === "large") {
+    return 8;
   }
-  if (size === "medium") {
-    return 6;
-  }
-  return 12;
+  return 4;
 }
 
 function normalizeLastRow(row: LayoutItem[]): LayoutItem[] {

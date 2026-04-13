@@ -51,7 +51,7 @@ function DashboardUploadEmptyState({
         <div className="flex flex-1 items-center justify-center px-6 py-8">
           <Card className="w-full max-w-2xl rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-none">
             <div className="mx-auto flex max-w-xl flex-col items-center text-center">
-              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-blue-50 text-[#3B82F6]">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-[var(--color-accent-light)] text-[var(--color-accent)]">
                 <Upload className="h-8 w-8" />
               </div>
               <h2 className="font-display text-3xl text-[var(--color-text-primary)]">
@@ -216,7 +216,7 @@ export default function DashboardPage() {
           const created = await createDashboard({
             name: file.name.replace(/\.[^.]+$/, ""),
             icon: "bar-chart",
-            color: "#3B82F6",
+            color: "#00327D",
           });
           dashboardId = created.id;
           setActiveDashboard({

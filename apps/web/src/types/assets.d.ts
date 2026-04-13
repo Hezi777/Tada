@@ -1,4 +1,4 @@
-declare module "*.png" {
-  const src: import("next/image").StaticImageData;
-  export default src;
+declare module "*.svg" {
+  const content: import("next/image").StaticImageData;
+  export default content;
 }
