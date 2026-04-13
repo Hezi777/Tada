@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
+  Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   FileText,
   LayoutGrid,
   List,
   Loader2,
   MoreHorizontal,
-  Palette,
   Pencil,
   Plus,
   Search,
@@ -19,6 +21,7 @@ import {
   Upload,
   UploadCloud,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +42,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table as UITable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Tooltip,
   TooltipContent,
@@ -46,27 +59,40 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  listDashboards,
   createDashboard,
-  updateDashboard,
   deleteDashboard,
-  uploadToDashboard,
-  removeFileFromDashboard,
-  loadDashboard,
+  listDashboards,
   loadDashboardMeta,
+  removeFileFromDashboard,
+  updateDashboard,
+  uploadToDashboard,
 } from "@/lib/api";
-import { AnimatePresence, motion } from "framer-motion";
 import {
   clearActiveDashboard,
-  resetDashboardStore,
-  initializeDashboardStore,
-  setActiveDashboard,
-  useDashboardStore,
   getCachedDashboard,
+  initializeDashboardStore,
+  resetDashboardStore,
+  setActiveDashboard,
 } from "@/lib/dashboard-store";
 import CreateDashboardModal, {
   getIconComponent,
 } from "@/components/app/CreateDashboardModal";
+import {
+  DASHBOARD_COLOR_OPTIONS,
+  DASHBOARD_ICON_OPTIONS,
+  type DashboardListItem,
+} from "@tada/shared";
+
+type View = "dashboards" | "files";
+type FileView = "card" | "list";
+type SortMode = "updated" | "name" | "files";
+
+type ScopedFile = {
+  id: string;
+  fileName: string;
+  rowCount: number;
+  isPrimary: boolean;
+};
 
 const LOADING_PHRASES = [
   "Reading your data...",
@@ -79,17 +105,17 @@ const LOADING_PHRASES = [
   "Analyzing metrics...",
   "Generating insights...",
   "Polishing pixels...",
-  "Extracting value...",
-  "Doing the math...",
-  "Looking for trends...",
-  "Structuring datasets...",
-  "Processing files...",
-  "Preparing your dashboard...",
-  "Applying intelligence...",
-  "Assembling views...",
-  "Almost there...",
-  "Finalizing setup...",
 ];
+
+const DASHBOARD_TINTS = [
+  "#f0fff4",
+  "#fff0f0",
+  "#f0f4ff",
+  "#f5f0ff",
+  "#fffbf0",
+];
+
+const PAGE_SIZE = 6;
 
 function AnimatedLoadingText() {
   const [index, setIndex] = useState(0);
@@ -102,7 +128,7 @@ function AnimatedLoadingText() {
   }, []);
 
   return (
-    <div className="relative h-5 w-[130px] overflow-hidden text-left font-medium">
+    <div className="relative h-5 w-[150px] overflow-hidden text-left font-medium">
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.span
           key={index}
@@ -118,18 +144,10 @@ function AnimatedLoadingText() {
     </div>
   );
 }
-import {
-  DASHBOARD_ICON_OPTIONS,
-  DASHBOARD_COLOR_OPTIONS,
-  type DashboardListItem,
-} from "@tada/shared";
-
-type View = "dashboards" | "files";
-type FileView = "card" | "list";
 
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -140,34 +158,131 @@ function formatApiMessage(message: string): string {
   return message.includes("_") ? message.replace(/_/g, " ") : message;
 }
 
-// ── File item for the scoped file view ──
+function DashboardPreview({ index }: { index: number }) {
+  const pattern = index % 5;
 
-type ScopedFile = {
-  id: string;
-  fileName: string;
-  rowCount: number;
-  isPrimary: boolean;
-};
+  if (pattern === 0) {
+    return (
+      <div className="grid h-full grid-cols-3 grid-rows-2 gap-3">
+        <div className="col-span-2 flex items-end rounded-2xl bg-white/50 p-4">
+          <div className="flex h-full w-full items-end gap-1.5">
+            <div className="h-[55%] flex-1 rounded-t-full bg-[rgba(0,50,125,0.16)]" />
+            <div className="h-[78%] flex-1 rounded-t-full bg-[rgba(0,50,125,0.16)]" />
+            <div className="h-[46%] flex-1 rounded-t-full bg-[rgba(0,50,125,0.16)]" />
+            <div className="h-full flex-1 rounded-t-full bg-[rgba(0,50,125,0.16)]" />
+          </div>
+        </div>
+        <div className="flex items-center justify-center rounded-2xl bg-white/45">
+          <div className="h-10 w-10 rounded-full border-4 border-[rgba(0,50,125,0.16)] border-t-transparent" />
+        </div>
+        <div className="col-span-3 rounded-2xl bg-white/45 p-4">
+          <div className="h-2 rounded-full bg-[rgba(0,50,125,0.08)]">
+            <div className="h-full w-2/3 rounded-full bg-[rgba(0,50,125,0.2)]" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-// ── Main component ──
+  if (pattern === 1) {
+    return (
+      <div className="grid h-full grid-cols-4 grid-rows-2 gap-3">
+        <div className="row-span-2 flex items-center justify-center rounded-2xl bg-white/50">
+          <div className="rounded-2xl bg-[rgba(0,50,125,0.08)] p-3">
+            <LayoutGrid className="h-7 w-7 text-[rgba(0,50,125,0.24)]" />
+          </div>
+        </div>
+        <div className="col-span-3 rounded-2xl bg-white/45 p-4">
+          <div className="space-y-2">
+            <div className="h-2 w-3/4 rounded-full bg-[rgba(0,50,125,0.12)]" />
+            <div className="h-2 w-1/2 rounded-full bg-[rgba(0,50,125,0.08)]" />
+          </div>
+        </div>
+        <div className="col-span-3 grid grid-cols-3 gap-2 rounded-2xl bg-white/45 p-3">
+          <div className="rounded-xl bg-[rgba(0,50,125,0.06)]" />
+          <div className="rounded-xl bg-[rgba(0,50,125,0.12)]" />
+          <div className="rounded-xl bg-[rgba(0,50,125,0.18)]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (pattern === 2) {
+    return (
+      <div className="flex h-full flex-col gap-3">
+        <div className="flex flex-1 items-center justify-between rounded-2xl bg-white/50 p-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,50,125,0.1)]">
+            <Search className="h-5 w-5 text-[rgba(0,50,125,0.28)]" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-3 w-16 rounded-full bg-[rgba(0,50,125,0.12)]" />
+            <div className="h-2 w-24 rounded-full bg-[rgba(0,50,125,0.08)]" />
+          </div>
+        </div>
+        <div className="grid flex-1 grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-white/45" />
+          <div className="rounded-2xl bg-white/45" />
+        </div>
+      </div>
+    );
+  }
+
+  if (pattern === 3) {
+    return (
+      <div className="grid h-full grid-cols-2 gap-3">
+        <div className="flex items-center justify-center rounded-2xl bg-white/50">
+          <div className="h-14 w-14 rounded-full bg-[rgba(0,50,125,0.1)]" />
+        </div>
+        <div className="space-y-2 rounded-2xl bg-white/45 p-4">
+          <div className="h-2 rounded-full bg-[rgba(0,50,125,0.12)]" />
+          <div className="h-2 rounded-full bg-[rgba(0,50,125,0.12)]" />
+          <div className="h-2 w-2/3 rounded-full bg-[rgba(0,50,125,0.12)]" />
+        </div>
+        <div className="col-span-2 flex items-end gap-1 rounded-2xl bg-white/45 p-4">
+          <div className="h-1/2 flex-1 rounded-t-2xl bg-[rgba(0,50,125,0.16)]" />
+          <div className="h-3/4 flex-1 rounded-t-2xl bg-[rgba(0,50,125,0.16)]" />
+          <div className="h-full flex-1 rounded-t-2xl bg-[rgba(0,50,125,0.16)]" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col gap-3">
+      <div className="grid h-1/3 grid-cols-3 gap-3">
+        <div className="rounded-2xl bg-white/50" />
+        <div className="rounded-2xl bg-white/50" />
+        <div className="rounded-2xl bg-white/50" />
+      </div>
+      <div className="flex-1 space-y-3 rounded-2xl bg-white/50 p-4">
+        <div className="h-2 rounded-full bg-[rgba(0,50,125,0.1)]" />
+        <div className="h-2 w-5/6 rounded-full bg-[rgba(0,50,125,0.1)]" />
+        <div className="h-2 w-4/6 rounded-full bg-[rgba(0,50,125,0.1)]" />
+      </div>
+    </div>
+  );
+}
 
 export default function FileManager() {
-  // ── Top-level: dashboards vs scoped files ──
   const [view, setView] = useState<View>("dashboards");
   const [dashboards, setDashboards] = useState<DashboardListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>("updated");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [quickUploadError, setQuickUploadError] = useState<string | null>(null);
+  const [isQuickUploading, setIsQuickUploading] = useState(false);
 
-  // ── Scoped file view state ──
   const [activeDash, setActiveDash] = useState<DashboardListItem | null>(null);
   const [scopedFiles, setScopedFiles] = useState<ScopedFile[]>([]);
   const [fileView, setFileView] = useState<FileView>("card");
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const dashboardUploadInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Rename / edit popovers ──
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -176,28 +291,52 @@ export default function FileManager() {
     null,
   );
 
-  // ── Icon / color pickers ──
   const [iconPickerId, setIconPickerId] = useState<string | null>(null);
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
 
-  // ── Load dashboards ──
   const refresh = useCallback(async () => {
     setIsLoading(true);
     try {
       const items = await listDashboards();
       setDashboards(items);
     } catch {
-      // silent
+      setDashboards([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [refresh]);
 
-  // ── Handlers: dashboard CRUD ──
+  const sortedDashboards = useMemo(() => {
+    const items = [...dashboards];
+
+    if (sortMode === "name") {
+      items.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortMode === "files") {
+      items.sort((a, b) => b.fileCount - a.fileCount);
+    } else {
+      items.sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
+    }
+
+    return items;
+  }, [dashboards, sortMode]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedDashboards.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const pagedDashboards = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return sortedDashboards.slice(start, start + PAGE_SIZE);
+  }, [currentPage, sortedDashboards]);
 
   async function handleCreate(input: {
     name: string;
@@ -208,23 +347,83 @@ export default function FileManager() {
       const created = await createDashboard(input);
       setDashboards((prev) => [created, ...prev]);
       setCreateOpen(false);
-      // Drill into the new dashboard
-      handleDrillIn(created);
     } catch {
-      // silent
+      // Ignore create failures in the gallery view.
+    }
+  }
+
+  async function handleQuickUpload(file: File) {
+    setIsQuickUploading(true);
+    setQuickUploadError(null);
+
+    try {
+      const created = await createDashboard({
+        name: file.name.replace(/\.[^.]+$/, ""),
+        icon: "bar-chart",
+        color: "#00327D",
+      });
+      const snapshot = await uploadToDashboard(created.id, file);
+
+      const hydratedDashboard: DashboardListItem = {
+        ...created,
+        fileCount: snapshot.files.length,
+        updatedAt: new Date().toISOString(),
+      };
+
+      setDashboards((prev) => [
+        hydratedDashboard,
+        ...prev.filter((item) => item.id !== hydratedDashboard.id),
+      ]);
+
+      initializeDashboardStore(snapshot, {
+        id: hydratedDashboard.id,
+        name: hydratedDashboard.name,
+        icon: hydratedDashboard.icon,
+        color: hydratedDashboard.color,
+      });
+      setActiveDashboard({
+        id: hydratedDashboard.id,
+        name: hydratedDashboard.name,
+        icon: hydratedDashboard.icon,
+        color: hydratedDashboard.color,
+      });
+      setActiveDash(hydratedDashboard);
+      setScopedFiles(
+        snapshot.files.map((item) => ({
+          id: item.id,
+          fileName: item.fileName,
+          rowCount: item.rowCount,
+          isPrimary: item.isPrimary,
+        })),
+      );
+      setView("files");
+    } catch (error) {
+      setQuickUploadError(
+        error instanceof Error ? formatApiMessage(error.message) : "Upload failed",
+      );
+    } finally {
+      setIsQuickUploading(false);
     }
   }
 
   async function handleRename(id: string) {
-    if (!renameValue.trim()) return;
+    if (!renameValue.trim()) {
+      return;
+    }
+
     try {
       await updateDashboard(id, { name: renameValue.trim() });
       setDashboards((prev) =>
-        prev.map((d) => (d.id === id ? { ...d, name: renameValue.trim() } : d)),
+        prev.map((item) =>
+          item.id === id ? { ...item, name: renameValue.trim() } : item,
+        ),
+      );
+      setActiveDash((current) =>
+        current?.id === id ? { ...current, name: renameValue.trim() } : current,
       );
       setRenamingId(null);
     } catch {
-      // silent
+      // Ignore rename failures in-place.
     }
   }
 
@@ -232,11 +431,14 @@ export default function FileManager() {
     try {
       await updateDashboard(id, { icon });
       setDashboards((prev) =>
-        prev.map((d) => (d.id === id ? { ...d, icon } : d)),
+        prev.map((item) => (item.id === id ? { ...item, icon } : item)),
+      );
+      setActiveDash((current) =>
+        current?.id === id ? { ...current, icon } : current,
       );
       setIconPickerId(null);
     } catch {
-      // silent
+      // Ignore update failures in-place.
     }
   }
 
@@ -244,20 +446,27 @@ export default function FileManager() {
     try {
       await updateDashboard(id, { color });
       setDashboards((prev) =>
-        prev.map((d) => (d.id === id ? { ...d, color } : d)),
+        prev.map((item) => (item.id === id ? { ...item, color } : item)),
+      );
+      setActiveDash((current) =>
+        current?.id === id ? { ...current, color } : current,
       );
       setColorPickerId(null);
     } catch {
-      // silent
+      // Ignore update failures in-place.
     }
   }
 
   async function handleDeleteDashboard() {
-    if (!deleteConfirmId) return;
+    if (!deleteConfirmId) {
+      return;
+    }
+
     try {
       const deletingActiveDashboard = activeDash?.id === deleteConfirmId;
       await deleteDashboard(deleteConfirmId);
-      setDashboards((prev) => prev.filter((d) => d.id !== deleteConfirmId));
+      setDashboards((prev) => prev.filter((item) => item.id !== deleteConfirmId));
+
       if (deletingActiveDashboard) {
         setView("dashboards");
         setActiveDash(null);
@@ -265,28 +474,26 @@ export default function FileManager() {
         clearActiveDashboard();
         resetDashboardStore();
       }
+
       setDeleteConfirmId(null);
     } catch {
-      // silent
+      // Ignore delete failures in-place.
     }
   }
 
-  // ── Drill into a dashboard's files ──
-
-  async function handleDrillIn(dash: DashboardListItem) {
-    setActiveDash(dash);
+  async function handleDrillIn(dashboard: DashboardListItem) {
+    setActiveDash(dashboard);
     setView("files");
     setSearchQuery("");
     setUploadError(null);
 
-    // If we already have the full dashboard in memory, use it instantly
-    const cached = getCachedDashboard(dash.id);
+    const cached = getCachedDashboard(dashboard.id);
     if (cached) {
       setScopedFiles(
-        cached.files.map((f) => ({
-          id: f.id,
-          fileName: f.fileName,
-          rowCount: f.rowCount,
+        cached.files.map((file) => ({
+          id: file.id,
+          fileName: file.fileName,
+          rowCount: file.rowCount,
           isPrimary: true,
         })),
       );
@@ -294,7 +501,7 @@ export default function FileManager() {
     }
 
     try {
-      const result = await loadDashboardMeta(dash.id);
+      const result = await loadDashboardMeta(dashboard.id);
       if ("empty" in result) {
         setScopedFiles([]);
       } else {
@@ -309,26 +516,27 @@ export default function FileManager() {
     setView("dashboards");
     setActiveDash(null);
     setScopedFiles([]);
-    refresh();
+    void refresh();
   }
 
-  // ── File operations scoped to a dashboard ──
-
   async function handleUploadFile(file: File) {
-    if (!activeDash) return;
+    if (!activeDash) {
+      return;
+    }
+
     setIsUploading(true);
     setUploadError(null);
+
     try {
       const result = await uploadToDashboard(activeDash.id, file);
       setScopedFiles(
-        result.files.map((f) => ({
-          id: f.id,
-          fileName: f.fileName,
-          rowCount: f.rowCount,
-          isPrimary: f.isPrimary,
+        result.files.map((item) => ({
+          id: item.id,
+          fileName: item.fileName,
+          rowCount: item.rowCount,
+          isPrimary: item.isPrimary,
         })),
       );
-      // Update the dashboard store so the chart view is current
       initializeDashboardStore(result, {
         id: activeDash.id,
         name: activeDash.name,
@@ -341,9 +549,20 @@ export default function FileManager() {
         icon: activeDash.icon,
         color: activeDash.color,
       });
-    } catch (err) {
+      setDashboards((prev) =>
+        prev.map((item) =>
+          item.id === activeDash.id
+            ? {
+                ...item,
+                fileCount: result.files.length,
+                updatedAt: new Date().toISOString(),
+              }
+            : item,
+        ),
+      );
+    } catch (error) {
       setUploadError(
-        err instanceof Error ? formatApiMessage(err.message) : "Upload failed",
+        error instanceof Error ? formatApiMessage(error.message) : "Upload failed",
       );
     } finally {
       setIsUploading(false);
@@ -351,247 +570,403 @@ export default function FileManager() {
   }
 
   async function handleRemoveFile() {
-    if (!deleteFileConfirm || !activeDash) return;
+    if (!deleteFileConfirm || !activeDash) {
+      return;
+    }
+
     try {
       await removeFileFromDashboard(activeDash.id, deleteFileConfirm.id);
       setScopedFiles((prev) =>
-        prev.filter((f) => f.id !== deleteFileConfirm.id),
+        prev.filter((file) => file.id !== deleteFileConfirm.id),
       );
       setDeleteFileConfirm(null);
     } catch {
-      // silent
+      // Ignore file removal failures in-place.
     }
   }
 
   const filteredFiles = useMemo(() => {
-    if (!searchQuery.trim()) return scopedFiles;
-    const q = searchQuery.toLowerCase();
-    return scopedFiles.filter((f) => f.fileName.toLowerCase().includes(q));
-  }, [scopedFiles, searchQuery]);
+    if (!searchQuery.trim()) {
+      return scopedFiles;
+    }
 
-  // ── RENDER: Dashboard card grid ──
+    const query = searchQuery.toLowerCase();
+    return scopedFiles.filter((file) =>
+      file.fileName.toLowerCase().includes(query),
+    );
+  }, [scopedFiles, searchQuery]);
 
   if (view === "dashboards") {
     return (
-      <div className="flex h-full flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5">
-          <h1 className="font-display text-[20px] text-[var(--color-text-primary)]">
-            Dashboards
-          </h1>
+      <div className="dashboard-scroll flex h-full flex-col overflow-y-auto px-6 py-10 sm:px-8">
+        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="font-display text-[2.25rem] font-bold tracking-[-0.05em] text-[var(--color-accent)]">
+              My Dashboards
+            </h1>
+            <p className="mt-2 text-sm font-medium text-[var(--color-text-secondary)]">
+              Manage and monitor your visual intelligence assets.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => dashboardUploadInputRef.current?.click()}
+              disabled={isQuickUploading}
+              className="h-10 rounded-full px-4 text-[var(--color-accent)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
+            >
+              {isQuickUploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
+              Upload CSV
+            </Button>
+
+            <Button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="h-10 rounded-full bg-[linear-gradient(135deg,#00327d,#0047ab)] px-5 text-white shadow-[0_18px_40px_-24px_rgba(0,50,125,0.5)] hover:opacity-95"
+            >
+              <Plus className="h-4 w-4" />
+              New Dashboard
+            </Button>
+          </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <input
+          ref={dashboardUploadInputRef}
+          type="file"
+          accept=".csv,.xlsx,.xls"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (file) {
+              void handleQuickUpload(file);
+            }
+          }}
+        />
+
+        {quickUploadError ? (
+          <div className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+            {quickUploadError}
+          </div>
+        ) : null}
+
+        <div className="mt-8 flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-10 rounded-full px-4 text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-white"
+              >
+                Sort by:{" "}
+                {sortMode === "updated"
+                  ? "Last Modified"
+                  : sortMode === "name"
+                    ? "Name"
+                    : "File Count"}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 rounded-2xl p-2">
+              <DropdownMenuItem onSelect={() => setSortMode("updated")}>
+                <span className="flex-1">Last Modified</span>
+                {sortMode === "updated" ? <Check className="h-4 w-4" /> : null}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setSortMode("name")}>
+                <span className="flex-1">Name</span>
+                {sortMode === "name" ? <Check className="h-4 w-4" /> : null}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setSortMode("files")}>
+                <span className="flex-1">File Count</span>
+                {sortMode === "files" ? <Check className="h-4 w-4" /> : null}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="mt-6">
           {isLoading ? (
-            <div className="flex h-48 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-[var(--color-text-muted)]" />
+            <div className="flex min-h-[420px] items-center justify-center">
+              <div className="flex items-center gap-3 rounded-full bg-white px-5 py-3 text-sm font-medium text-[var(--color-text-secondary)] shadow-[0_20px_44px_-30px_rgba(25,28,30,0.2)]">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading dashboards...
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {dashboards.map((dash) => {
-                const IconComp = getIconComponent(dash.icon);
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+              {pagedDashboards.map((dashboard, index) => {
+                const IconComponent = getIconComponent(dashboard.icon);
+                const tint = DASHBOARD_TINTS[index % DASHBOARD_TINTS.length];
+
                 return (
                   <Card
-                    key={dash.id}
-                    className="group relative cursor-pointer overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)]"
-                    onClick={() => handleDrillIn(dash)}
+                    key={dashboard.id}
+                    className="group relative flex aspect-[3/2] cursor-pointer flex-col overflow-hidden rounded-[20px] border-0 bg-white shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_60px_-30px_rgba(25,28,30,0.24)]"
+                    onClick={() => void handleDrillIn(dashboard)}
                   >
-                    {/* Colored header area */}
                     <div
-                      className="flex h-[72px] items-center justify-center"
-                      style={{ backgroundColor: dash.color + "18" }}
+                      className="relative flex-[1.7] p-6"
+                      style={{ backgroundColor: tint }}
                     >
-                      <div
-                        className="flex h-12 w-12 items-center justify-center rounded-[14px]"
-                        style={{
-                          backgroundColor: dash.color + "30",
-                          color: dash.color,
-                        }}
-                      >
-                        <IconComp className="h-6 w-6" />
+                      <div className="mb-4 flex items-start justify-between">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/60 text-[var(--color-accent)]">
+                          <IconComponent className="h-5 w-5" />
+                        </div>
+
+                        <div
+                          className="flex items-center gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <Popover
+                            open={iconPickerId === dashboard.id}
+                            onOpenChange={(open) =>
+                              setIconPickerId(open ? dashboard.id : null)
+                            }
+                          >
+                            <PopoverTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full bg-white/80 text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm hover:bg-white"
+                                aria-label="Change dashboard icon"
+                              >
+                                <Smile className="h-4 w-4" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-72 p-3">
+                              <div className="mb-2 text-xs font-medium text-[var(--color-text-secondary)]">
+                                Choose icon
+                              </div>
+                              <div className="grid grid-cols-5 gap-1.5">
+                                {DASHBOARD_ICON_OPTIONS.map((iconName) => {
+                                  const OptionIcon = getIconComponent(iconName);
+                                  return (
+                                    <button
+                                      key={iconName}
+                                      type="button"
+                                      onClick={() =>
+                                        void handleChangeIcon(
+                                          dashboard.id,
+                                          iconName,
+                                        )
+                                      }
+                                      className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${
+                                        iconName === dashboard.icon
+                                          ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
+                                          : "text-[var(--color-text-muted)] hover:bg-slate-50"
+                                      }`}
+                                    >
+                                      <OptionIcon className="h-4 w-4" />
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+
+                          <Popover
+                            open={colorPickerId === dashboard.id}
+                            onOpenChange={(open) =>
+                              setColorPickerId(open ? dashboard.id : null)
+                            }
+                          >
+                            <PopoverTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full bg-white/80 shadow-sm backdrop-blur-sm hover:bg-white"
+                                aria-label="Change dashboard color"
+                              >
+                                <span
+                                  className="h-4 w-4 rounded-full border border-white/70 shadow-sm"
+                                  style={{ backgroundColor: dashboard.color }}
+                                />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-72 p-3">
+                              <div className="mb-2 text-xs font-medium text-[var(--color-text-secondary)]">
+                                Choose color
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {DASHBOARD_COLOR_OPTIONS.map((color) => (
+                                  <button
+                                    key={color}
+                                    type="button"
+                                    onClick={() =>
+                                      void handleChangeColor(dashboard.id, color)
+                                    }
+                                    className={`h-7 w-7 rounded-full border border-white/70 transition-all ${
+                                      color === dashboard.color
+                                        ? "ring-2 ring-slate-900 ring-offset-1"
+                                        : "hover:scale-110"
+                                    }`}
+                                    style={{ backgroundColor: color }}
+                                  />
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full bg-white/80 text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm hover:bg-white"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem
+                                onSelect={() => {
+                                  setRenamingId(dashboard.id);
+                                  setRenameValue(dashboard.name);
+                                }}
+                              >
+                                <Pencil className="mr-2 h-3.5 w-3.5" />
+                                Rename
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() => {
+                                  setDeleteConfirmId(dashboard.id);
+                                  setDeleteConfirmName(dashboard.name);
+                                }}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+
+                      <DashboardPreview index={index} />
+
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                        <div className="rounded-full bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-white opacity-0 shadow-[0_18px_40px_-26px_rgba(0,50,125,0.7)] transition-all duration-200 group-hover:opacity-100">
+                          Open Dashboard
+                        </div>
                       </div>
                     </div>
 
-                    {/* Body */}
-                    <div className="px-4 pb-4 pt-3">
-                      {/* Inline rename */}
-                      {renamingId === dash.id ? (
+                    <div className="flex flex-1 flex-col justify-center px-5 pb-5 pt-4">
+                      {renamingId === dashboard.id ? (
                         <form
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleRename(dash.id);
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void handleRename(dashboard.id);
                           }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="mb-1"
+                          onClick={(event) => event.stopPropagation()}
                         >
                           <Input
                             value={renameValue}
-                            onChange={(e) => setRenameValue(e.target.value)}
-                            className="h-7 text-sm font-semibold"
-                            onBlur={() => handleRename(dash.id)}
+                            onChange={(event) => setRenameValue(event.target.value)}
+                            className="h-9 rounded-xl border-[rgba(25,28,30,0.12)] bg-white text-sm font-semibold"
+                            onBlur={() => void handleRename(dashboard.id)}
                             autoFocus
                           />
                         </form>
                       ) : (
-                        <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
-                          {dash.name}
-                        </p>
+                        <h3 className="truncate font-display text-xl font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                          {dashboard.name}
+                        </h3>
                       )}
 
-                      <div className="mt-1.5 flex items-center gap-3 text-[11px] text-[var(--color-text-muted)]">
-                        <span>
-                          {dash.fileCount}{" "}
-                          {dash.fileCount === 1 ? "file" : "files"}
-                        </span>
-                        <span>·</span>
-                        <span>{formatDate(dash.updatedAt)}</span>
-                      </div>
+                      <p className="mt-2 text-sm font-medium text-[var(--color-text-secondary)]">
+                        {dashboard.fileCount}{" "}
+                        {dashboard.fileCount === 1 ? "file" : "files"} ·{" "}
+                        {formatDate(dashboard.updatedAt)}
+                      </p>
                     </div>
-
-                    {/* ⋯ menu */}
-                    <div
-                      className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-full bg-white/80 text-[var(--color-text-muted)] shadow-sm backdrop-blur-sm hover:bg-white"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                          <DropdownMenuItem
-                            onSelect={() => {
-                              setRenamingId(dash.id);
-                              setRenameValue(dash.name);
-                            }}
-                          >
-                            <Pencil className="mr-2 h-3.5 w-3.5" />
-                            Rename
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() =>
-                              setIconPickerId(
-                                iconPickerId === dash.id ? null : dash.id,
-                              )
-                            }
-                          >
-                            <Smile className="mr-2 h-3.5 w-3.5" />
-                            Change Icon
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() =>
-                              setColorPickerId(
-                                colorPickerId === dash.id ? null : dash.id,
-                              )
-                            }
-                          >
-                            <Palette className="mr-2 h-3.5 w-3.5" />
-                            Change Color
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => {
-                              setDeleteConfirmId(dash.id);
-                              setDeleteConfirmName(dash.name);
-                            }}
-                            className="text-red-600 focus:text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-3.5 w-3.5" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-
-                    {/* Icon picker popover */}
-                    {iconPickerId === dash.id && (
-                      <div
-                        className="absolute right-2 top-10 z-10 rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-lg"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="grid grid-cols-5 gap-1.5">
-                          {DASHBOARD_ICON_OPTIONS.map((iconName) => {
-                            const IC = getIconComponent(iconName);
-                            return (
-                              <button
-                                key={iconName}
-                                type="button"
-                                onClick={() =>
-                                  handleChangeIcon(dash.id, iconName)
-                                }
-                                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${
-                                  iconName === dash.icon
-                                    ? "bg-blue-50 text-[#3B82F6]"
-                                    : "text-[var(--color-text-muted)] hover:bg-slate-50"
-                                }`}
-                              >
-                                <IC className="h-4 w-4" />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Color picker popover */}
-                    {colorPickerId === dash.id && (
-                      <div
-                        className="absolute right-2 top-10 z-10 rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-lg"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="flex gap-1.5">
-                          {DASHBOARD_COLOR_OPTIONS.map((color) => (
-                            <button
-                              key={color}
-                              type="button"
-                              onClick={() => handleChangeColor(dash.id, color)}
-                              className={`h-7 w-7 rounded-full transition-all ${
-                                color === dash.color
-                                  ? "ring-2 ring-offset-1"
-                                  : "hover:scale-110"
-                              }`}
-                              style={{
-                                backgroundColor: color,
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </Card>
                 );
               })}
 
-              {/* + New Dashboard card */}
-              <Card
-                className="flex h-full min-h-[148px] cursor-pointer items-center justify-center rounded-2xl border-2 border-dashed border-[var(--color-border)] bg-transparent transition-all duration-200 hover:border-[#3B82F6] hover:bg-blue-50/30"
+              <button
+                type="button"
                 onClick={() => setCreateOpen(true)}
+                className="group flex aspect-[3/2] flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-[rgba(25,28,30,0.18)] bg-[rgba(255,255,255,0.62)] transition-all duration-300 hover:border-[var(--color-accent)] hover:bg-white"
               >
-                <div className="flex flex-col items-center gap-2 text-[var(--color-text-muted)]">
-                  <Plus className="h-8 w-8" />
-                  <span className="text-sm font-medium">New Dashboard</span>
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-muted)] transition-colors group-hover:text-[var(--color-accent)]">
+                  <Plus className="h-7 w-7" />
                 </div>
-              </Card>
+                <span className="font-display text-lg font-bold tracking-[-0.03em] text-[var(--color-text-secondary)] group-hover:text-[var(--color-accent)]">
+                  Create New Dashboard
+                </span>
+              </button>
             </div>
           )}
         </div>
 
-        {/* Create modal */}
+        <footer className="mt-14 flex flex-col gap-4 border-t border-[rgba(25,28,30,0.08)] pt-8 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+            Showing {pagedDashboards.length} of {sortedDashboards.length} dashboards
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              className="h-9 w-9 rounded-full"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: totalPages }).map((_, pageIndex) => {
+              const page = pageIndex + 1;
+              const active = page === currentPage;
+
+              return (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setCurrentPage(page)}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+                    active
+                      ? "bg-[var(--color-accent)] text-white"
+                      : "text-[var(--color-text-secondary)] hover:bg-white"
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={currentPage === totalPages}
+              onClick={() =>
+                setCurrentPage((page) => Math.min(totalPages, page + 1))
+              }
+              className="h-9 w-9 rounded-full"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </footer>
+
         <CreateDashboardModal
           open={createOpen}
           onClose={() => setCreateOpen(false)}
           onCreated={handleCreate}
         />
 
-        {/* Delete confirmation */}
         <AlertDialog
-          open={!!deleteConfirmId}
+          open={Boolean(deleteConfirmId)}
           onOpenChange={(open) => !open && setDeleteConfirmId(null)}
         >
           <AlertDialogContent>
@@ -599,14 +974,13 @@ export default function FileManager() {
               <AlertDialogTitle>Delete dashboard</AlertDialogTitle>
               <AlertDialogDescription>
                 Are you sure you want to delete &quot;{deleteConfirmName}&quot;?
-                This will remove the dashboard and unlink all attached files.
-                The files themselves will not be deleted.
+                This removes the dashboard and unlinks its attached files.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={handleDeleteDashboard}
+                onClick={() => void handleDeleteDashboard()}
                 className="bg-red-600 text-white hover:bg-red-700"
               >
                 Delete
@@ -618,164 +992,95 @@ export default function FileManager() {
     );
   }
 
-  // ── RENDER: Scoped file view (drilled into a dashboard) ──
-
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      {/* Header with back arrow */}
-      <div className="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5">
-        <TooltipProvider delayDuration={100}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleBack}
-                className="h-8 w-8 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[#3B82F6]"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Back to dashboards</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+    <div className="dashboard-scroll flex h-full flex-col overflow-y-auto px-6 py-8 sm:px-8">
+      <div className="flex flex-col gap-5 rounded-[24px] bg-white px-6 py-6 shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
+        <div className="flex flex-wrap items-center gap-3">
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleBack}
+                  className="h-10 w-10 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Back to dashboards</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-        {activeDash && (
-          <div className="flex items-center gap-2">
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-lg"
-              style={{
-                backgroundColor: activeDash.color + "20",
-                color: activeDash.color,
+          {activeDash ? (
+            <div className="flex items-center gap-3">
+              <div
+                className="flex h-11 w-11 items-center justify-center rounded-2xl"
+                style={{
+                  backgroundColor: `${activeDash.color}18`,
+                  color: activeDash.color,
+                }}
+              >
+                {(() => {
+                  const ActiveIcon = getIconComponent(activeDash.icon);
+                  return <ActiveIcon className="h-5 w-5" />;
+                })()}
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                  Dashboard Assets
+                </p>
+                <h1 className="font-display text-[1.75rem] font-bold tracking-[-0.04em] text-[var(--color-text-primary)]">
+                  {activeDash.name}
+                </h1>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="ml-auto flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
+              <Input
+                placeholder="Search files..."
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="h-10 w-56 rounded-full border-[rgba(25,28,30,0.12)] bg-[var(--color-surface-muted)] pl-10 text-sm"
+              />
+            </div>
+
+            <Tabs
+              value={fileView}
+              onValueChange={(value) => {
+                if (value === "card" || value === "list") {
+                  setFileView(value);
+                }
               }}
             >
-              {(() => {
-                const IC = getIconComponent(activeDash.icon);
-                return <IC className="h-3.5 w-3.5" />;
-              })()}
-            </div>
-            <h1 className="font-display text-[16px] text-[var(--color-text-primary)]">
-              {activeDash.name}
-            </h1>
-          </div>
-        )}
-
-        <div className="ml-auto flex items-center gap-2">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-text-muted)]" />
-            <Input
-              placeholder="Search files…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 w-48 rounded-lg border-[var(--color-border)] bg-[var(--color-bg)] pl-8 text-xs"
-            />
-          </div>
-
-          {/* View toggle */}
-          <div className="flex gap-0.5 rounded-lg border border-[var(--color-border)] p-0.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setFileView("card")}
-              className={`h-7 w-7 rounded-md ${
-                fileView === "card"
-                  ? "bg-[#3B82F6] text-white"
-                  : "text-[var(--color-text-muted)]"
-              }`}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setFileView("list")}
-              className={`h-7 w-7 rounded-md ${
-                fileView === "list"
-                  ? "bg-[#3B82F6] text-white"
-                  : "text-[var(--color-text-muted)]"
-              }`}
-            >
-              <List className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-
-          {/* Upload button */}
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className={`relative h-8 overflow-hidden rounded-lg bg-[#3B82F6] px-0 text-xs font-medium text-white hover:bg-[#2563EB] transition-[width] duration-300 ${
-              isUploading ? "w-[170px]" : "w-24"
-            }`}
-          >
-            <AnimatePresence mode="popLayout" initial={false}>
-              {isUploading ? (
-                <motion.div
-                  key="uploading"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -20, opacity: 0 }}
-                  transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-                  className="absolute inset-0 flex items-center justify-center gap-1.5"
+              <TabsList className="h-10 rounded-full border border-[rgba(25,28,30,0.08)] bg-[var(--color-surface-muted)] p-1">
+                <TabsTrigger
+                  value="card"
+                  aria-label="Card view"
+                  className="h-8 w-8 rounded-full px-0 text-[var(--color-text-muted)] data-[state=active]:bg-[var(--color-accent)] data-[state=active]:text-white"
                 >
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <AnimatedLoadingText />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="idle"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -20, opacity: 0 }}
-                  transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-                  className="absolute inset-0 flex items-center justify-center gap-1.5"
+                  <LayoutGrid className="h-4 w-4" />
+                </TabsTrigger>
+                <TabsTrigger
+                  value="list"
+                  aria-label="List view"
+                  className="h-8 w-8 rounded-full px-0 text-[var(--color-text-muted)] data-[state=active]:bg-[var(--color-accent)] data-[state=active]:text-white"
                 >
-                  <Upload className="h-3.5 w-3.5" />
-                  <span>Upload</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.xlsx,.xls"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleUploadFile(f);
-              e.target.value = "";
-            }}
-          />
-        </div>
-      </div>
+                  <List className="h-4 w-4" />
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
 
-      {/* Error banner */}
-      {uploadError && (
-        <div className="border-b border-red-200 bg-red-50 px-5 py-2 text-xs text-red-700">
-          {uploadError}
-        </div>
-      )}
-
-      {/* File grid / list */}
-      <div className="flex-1 overflow-y-auto p-5">
-        {filteredFiles.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-blue-50 text-[#3B82F6]">
-              <UploadCloud className="h-7 w-7" />
-            </div>
-            <h2 className="font-display text-lg text-[var(--color-text-primary)]">
-              No files yet
-            </h2>
-            <p className="max-w-xs text-sm text-[var(--color-text-muted)]">
-              Upload a CSV or Excel file to start building charts for this
-              dashboard.
-            </p>
             <Button
+              type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className={`relative mt-2 h-9 overflow-hidden rounded-lg bg-[#3B82F6] px-0 text-sm text-white hover:bg-[#2563EB] transition-[width] duration-300 ${
-                isUploading ? "w-[180px]" : "w-32"
+              className={`relative h-10 overflow-hidden rounded-full bg-[linear-gradient(135deg,#00327d,#0047ab)] px-0 text-sm font-semibold text-white transition-[width] duration-300 ${
+                isUploading ? "w-[200px]" : "w-[132px]"
               }`}
             >
               <AnimatePresence mode="popLayout" initial={false}>
@@ -806,93 +1111,160 @@ export default function FileManager() {
                 )}
               </AnimatePresence>
             </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) {
+                  void handleUploadFile(file);
+                }
+              }}
+            />
+          </div>
+        </div>
+
+        {uploadError ? (
+          <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+            {uploadError}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="mt-8 flex-1">
+        {filteredFiles.length === 0 ? (
+          <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[24px] bg-white px-6 py-10 text-center shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
+            <div className="flex h-20 w-20 items-center justify-center rounded-[28px] bg-[var(--color-accent-light)] text-[var(--color-accent)]">
+              <UploadCloud className="h-8 w-8" />
+            </div>
+            <h2 className="mt-6 font-display text-[1.875rem] font-bold tracking-[-0.04em] text-[var(--color-text-primary)]">
+              No files yet
+            </h2>
+            <p className="mt-3 max-w-sm text-sm leading-7 text-[var(--color-text-secondary)]">
+              Upload a CSV or Excel file to start building charts for this
+              dashboard.
+            </p>
+            <Button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="mt-6 h-10 rounded-full bg-[linear-gradient(135deg,#00327d,#0047ab)] px-6 text-sm font-semibold text-white hover:opacity-95"
+            >
+              <Upload className="h-4 w-4" />
+              Upload File
+            </Button>
           </div>
         ) : fileView === "card" ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {filteredFiles.map((f) => (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {filteredFiles.map((file) => (
               <Card
-                key={f.id}
-                className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.06)]"
+                key={file.id}
+                className="group relative overflow-hidden rounded-[20px] border-0 bg-white p-5 shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_54px_-30px_rgba(25,28,30,0.24)]"
               >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B82F6]">
-                    {f.fileName.endsWith(".csv") ? (
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-accent-light)] text-[var(--color-accent)]">
+                    {file.fileName.endsWith(".csv") ? (
                       <Table className="h-5 w-5" />
                     ) : (
                       <FileText className="h-5 w-5" />
                     )}
                   </div>
+
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
-                      {f.fileName}
+                      {file.fileName}
                     </p>
-                    <div className="mt-1 flex items-center gap-2 text-[11px] text-[var(--color-text-muted)]">
-                      <span>{f.rowCount.toLocaleString()} rows</span>
-                      {f.isPrimary && (
-                        <Badge className="rounded bg-[#3B82F6]/10 px-1.5 py-0 text-[10px] font-medium text-[#3B82F6]">
+                    <div className="mt-2 flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
+                      <span>{file.rowCount.toLocaleString()} rows</span>
+                      {file.isPrimary ? (
+                        <Badge className="rounded-full border-0 bg-[var(--color-accent-light)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
                           Primary
                         </Badge>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 </div>
 
-                {/* Delete on hover */}
-                <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100">
                   <Button
+                    type="button"
                     variant="ghost"
                     size="icon"
-                    onClick={() => setDeleteFileConfirm(f)}
-                    className="h-7 w-7 rounded-full text-[var(--color-text-muted)] hover:bg-red-50 hover:text-red-600"
+                    onClick={() => setDeleteFileConfirm(file)}
+                    className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-red-50 hover:text-red-600"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </Card>
             ))}
           </div>
         ) : (
-          <div className="space-y-1">
-            {filteredFiles.map((f) => (
-              <div
-                key={f.id}
-                className="group flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-slate-50"
-              >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-[#3B82F6]">
-                  {f.fileName.endsWith(".csv") ? (
-                    <Table className="h-4 w-4" />
-                  ) : (
-                    <FileText className="h-4 w-4" />
-                  )}
-                </div>
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--color-text-primary)]">
-                  {f.fileName}
-                </span>
-                <span className="text-[11px] text-[var(--color-text-muted)]">
-                  {f.rowCount.toLocaleString()} rows
-                </span>
-                {f.isPrimary && (
-                  <Badge className="rounded bg-[#3B82F6]/10 px-1.5 py-0 text-[10px] font-medium text-[#3B82F6]">
-                    Primary
-                  </Badge>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setDeleteFileConfirm(f)}
-                  className="h-7 w-7 rounded-full text-[var(--color-text-muted)] opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ))}
+          <div className="overflow-hidden rounded-[24px] bg-white shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
+            <UITable>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>File</TableHead>
+                  <TableHead className="w-40">Rows</TableHead>
+                  <TableHead className="w-32">Status</TableHead>
+                  <TableHead className="w-20 text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredFiles.map((file) => (
+                  <TableRow key={file.id} className="group">
+                    <TableCell>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent-light)] text-[var(--color-accent)]">
+                          {file.fileName.endsWith(".csv") ? (
+                            <Table className="h-4 w-4" />
+                          ) : (
+                            <FileText className="h-4 w-4" />
+                          )}
+                        </div>
+                        <span className="min-w-0 truncate text-sm font-medium text-[var(--color-text-primary)]">
+                          {file.fileName}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-sm text-[var(--color-text-secondary)]">
+                      {file.rowCount.toLocaleString()} rows
+                    </TableCell>
+                    <TableCell>
+                      {file.isPrimary ? (
+                        <Badge className="rounded-full border-0 bg-[var(--color-accent-light)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
+                          Primary
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-[var(--color-text-muted)]">
+                          -
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setDeleteFileConfirm(file)}
+                        className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </UITable>
           </div>
         )}
       </div>
 
-      {/* Delete file confirmation */}
       <AlertDialog
-        open={!!deleteFileConfirm}
+        open={Boolean(deleteFileConfirm)}
         onOpenChange={(open) => !open && setDeleteFileConfirm(null)}
       >
         <AlertDialogContent>
@@ -906,7 +1278,7 @@ export default function FileManager() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleRemoveFile}
+              onClick={() => void handleRemoveFile()}
               className="bg-red-600 text-white hover:bg-red-700"
             >
               Remove
