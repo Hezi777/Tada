@@ -1,10 +1,9 @@
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import Image from "next/image";
 import { ArrowLeft, FileSpreadsheet, Lightbulb, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import tadaLogo from "@/assets/tada-logo.png";
+import { TadaLogo } from "@/components/brand/TadaLogo";
 
 interface UploadScreenProps {
   onFileUpload: (file: File) => void;
@@ -57,9 +56,7 @@ export const UploadScreen = ({
         <div className="container">
           <div className="glass flex items-center justify-between rounded-full border border-white/80 px-4 py-3 shadow-soft sm:px-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white shadow-card">
-                <Image src={tadaLogo} alt="Tada" className="h-7 w-7" />
-              </div>
+              <TadaLogo className="h-10 w-10 text-[var(--color-accent)]" />
               <div>
                 <span className="font-display text-xl font-semibold text-foreground">
                   Tada

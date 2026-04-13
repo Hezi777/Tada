@@ -10,6 +10,7 @@ declare module "recharts" {
   export const CartesianGrid: RechartsComponent;
   export const Cell: RechartsComponent;
   export const Label: RechartsComponent;
+  export const Legend: RechartsComponent;
   export const Pie: RechartsComponent;
   export const PieChart: RechartsComponent;
   export const ResponsiveContainer: RechartsComponent;

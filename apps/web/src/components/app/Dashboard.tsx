@@ -1,25 +1,21 @@
 import {
-  memo,
   useCallback,
   useEffect,
   useMemo,
   useState,
-  type CSSProperties,
 } from "react";
 import {
+  CalendarDays,
   CalendarRange,
-  ChevronDown,
   Eye,
   EyeOff,
   Hash,
   LayoutPanelLeft,
-  MoreHorizontal,
   Pin,
   PinOff,
-  Plus,
-  Sigma,
   Tag,
   Trash2,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -35,47 +31,18 @@ import {
   arrayMove,
   rectSortingStrategy,
   sortableKeyboardCoordinates,
-  useSortable,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Label,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Scatter,
-  ScatterChart,
-  Sector,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import type { ChartConfig, KPIConfig, SerializedRow } from "@tada/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  Tooltip as ShadTooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  buildAreaSeries,
-  buildGroupedSeries,
-  buildScatterSeries,
   computeKpiValue,
   formatNumber as legacyFormatNumber,
   hasRenderableChartData,
   isChartVisible,
 } from "@/lib/dashboard-runtime";
-import { calculateLayout, type LayoutItem } from "@/lib/chart-layout";
+import { calculateLayout } from "@/lib/chart-layout";
 import {
   promoteHiddenChart,
   reorderCharts,
@@ -90,10 +57,16 @@ import {
   restoreCachedDashboard,
 } from "@/lib/dashboard-store";
 import { listDashboards, loadDashboard, createDashboard } from "@/lib/api";
-import { getIconComponent } from "@/components/app/CreateDashboardModal";
 import CreateDashboardModal from "@/components/app/CreateDashboardModal";
+import { DashboardSwitcher } from "@/components/app/DashboardSwitcher";
+import { DashboardChartCard } from "@/components/app/DashboardChartCard";
 import type { DashboardListItem } from "@tada/shared";
 import { BI_RULE_LIMITS } from "@tada/shared";
+import {
+  DASHBOARD_COLORS,
+  formatAggregationLabel,
+  resolveKpiIcon,
+} from "@/components/app/dashboard-design";
 import {
   Sheet,
   SheetContent,
@@ -101,14 +74,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-
-const donutPalette = [
-  "#3B82F6",
-  "#10B981",
-  "#F59E0B",
-  "#8B5CF6",
-  "#EC4899",
-] as const;
 
 function formatMetric(value: string | number): string | number {
   if (typeof value === "string") {
@@ -123,288 +88,12 @@ function formatMetric(value: string | number): string | number {
 }
 
 function getKpiIcon(kpi: KPIConfig) {
-  if (kpi.isPrimary) {
-    return Sigma;
-  }
-  if (kpi.aggregation === "mode") {
-    return Tag;
-  }
-  if (kpi.aggregation === "range") {
-    return CalendarRange;
-  }
-  return Hash;
+  return resolveKpiIcon(kpi);
 }
-
-function DashboardTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: Array<{
-    value?: number;
-    color?: string;
-    payload?: { label?: string };
-  }>;
-  label?: string;
-}) {
-  if (!active || !payload?.length) {
-    return null;
-  }
-
-  const point = payload[0];
-
-  return (
-    <div className="rounded-lg border border-[var(--color-border)] bg-white px-[14px] py-[10px] shadow-[0_8px_20px_rgba(0,0,0,0.10)]">
-      <p className="text-xs text-[var(--color-text-secondary)]">
-        {point.payload?.label ?? label ?? "Value"}
-      </p>
-      <div className="mt-1 flex items-center gap-2">
-        <span
-          className="h-2.5 w-2.5 rounded-full"
-          style={{ backgroundColor: point.color ?? "#3B82F6" }}
-        />
-        <span className="text-sm font-bold text-[var(--color-text-primary)]">
-          {formatMetric(point.value ?? 0)}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function ChartEmptyState() {
-  return (
-    <div className="flex h-[180px] items-center justify-center px-6 text-center">
-      <p className="text-sm text-[var(--color-text-muted)]">
-        This chart does not have enough data to render.
-      </p>
-    </div>
-  );
-}
-
-const ChartContent = memo(function ChartContent({
-  chart,
-  rows,
-}: {
-  chart: ChartConfig;
-  rows: SerializedRow[];
-}) {
-  const [activeSlice, setActiveSlice] = useState<number | undefined>(undefined);
-
-  if (chart.type === "area") {
-    const series = buildAreaSeries(chart, rows);
-    if (series.length === 0) {
-      return <ChartEmptyState />;
-    }
-
-    return (
-      <div className="h-[220px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={series}
-            margin={{ top: 8, right: 4, left: -18, bottom: 0 }}
-          >
-            <defs>
-              <linearGradient
-                id={`area-${chart.id}`}
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.08} />
-                <stop offset="100%" stopColor="#3B82F6" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid
-              vertical={false}
-              stroke="#F1F5F9"
-              strokeDasharray="3 3"
-            />
-            <XAxis
-              dataKey="label"
-              axisLine={false}
-              tickLine={false}
-              fontSize={11}
-              stroke="#94A3B8"
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              fontSize={11}
-              stroke="#94A3B8"
-            />
-            <Tooltip content={<DashboardTooltip />} cursor={false} />
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke="#3B82F6"
-              strokeWidth={2}
-              fill={`url(#area-${chart.id})`}
-              dot={false}
-              activeDot={{
-                r: 4,
-                fill: "#3B82F6",
-                stroke: "#ffffff",
-                strokeWidth: 2,
-              }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    );
-  }
-
-  if (chart.type === "scatter") {
-    const series = buildScatterSeries(chart, rows);
-    if (series.length === 0) {
-      return <ChartEmptyState />;
-    }
-
-    return (
-      <div className="h-[220px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
-            <CartesianGrid
-              vertical={false}
-              stroke="#F1F5F9"
-              strokeDasharray="3 3"
-            />
-            <XAxis
-              type="number"
-              dataKey="x"
-              name={chart.columns[0]}
-              axisLine={false}
-              tickLine={false}
-              fontSize={11}
-              stroke="#94A3B8"
-            />
-            <YAxis
-              type="number"
-              dataKey="y"
-              name={chart.columns[1]}
-              axisLine={false}
-              tickLine={false}
-              fontSize={11}
-              stroke="#94A3B8"
-            />
-            <Tooltip
-              content={<DashboardTooltip />}
-              cursor={{ stroke: "#DBEAFE", strokeDasharray: "3 3" }}
-            />
-            <Scatter data={series} fill="#3B82F6" />
-          </ScatterChart>
-        </ResponsiveContainer>
-      </div>
-    );
-  }
-
-  const series = buildGroupedSeries(chart, rows);
-  if (series.length === 0) {
-    return <ChartEmptyState />;
-  }
-
-  if (chart.type === "donut") {
-    const total = series.reduce((sum, entry) => sum + entry.value, 0);
-    return (
-      <div className="h-[220px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={series}
-              dataKey="value"
-              nameKey="label"
-              paddingAngle={3}
-              innerRadius="60%"
-              outerRadius="80%"
-              activeIndex={activeSlice}
-              onMouseEnter={(_, index) => setActiveSlice(index)}
-              onMouseLeave={() => setActiveSlice(undefined)}
-              activeShape={(props) => (
-                <Sector
-                  {...props}
-                  outerRadius={Number(props.outerRadius) + 4}
-                />
-              )}
-            >
-              {series.map((_entry, index) => (
-                <Cell
-                  key={`${chart.id}-slice-${index}`}
-                  fill={donutPalette[index % donutPalette.length]}
-                  stroke="#ffffff"
-                  strokeWidth={2}
-                />
-              ))}
-              <Label
-                position="center"
-                content={() => (
-                  <text
-                    x="50%"
-                    y="50%"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                  >
-                    <tspan
-                      x="50%"
-                      className="fill-[var(--color-text-primary)] text-[18px] font-bold"
-                    >
-                      {formatMetric(total)}
-                    </tspan>
-                  </text>
-                )}
-              />
-            </Pie>
-            <Tooltip content={<DashboardTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-[220px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={series}
-          margin={{ top: 8, right: 4, left: -18, bottom: 0 }}
-        >
-          <CartesianGrid
-            vertical={false}
-            stroke="#F1F5F9"
-            strokeDasharray="3 3"
-          />
-          <XAxis
-            dataKey="label"
-            axisLine={false}
-            tickLine={false}
-            fontSize={11}
-            stroke="#94A3B8"
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            fontSize={11}
-            stroke="#94A3B8"
-          />
-          <Tooltip
-            content={<DashboardTooltip />}
-            cursor={{ fill: "#EFF6FF" }}
-          />
-          <Bar
-            dataKey="value"
-            fill="#3B82F6"
-            fillOpacity={0.85}
-            radius={[4, 4, 0, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-});
 
 function deriveFallbackCards(rows: SerializedRow[]): Array<{
   id: string;
-  icon: typeof Hash;
+  icon: LucideIcon;
   value: string | number;
   label: string;
   description: string;
@@ -425,7 +114,7 @@ function deriveFallbackCards(rows: SerializedRow[]): Array<{
 
   const cards: Array<{
     id: string;
-    icon: typeof Hash;
+    icon: LucideIcon;
     value: string | number;
     label: string;
     description: string;
@@ -458,7 +147,7 @@ function deriveFallbackCards(rows: SerializedRow[]): Array<{
     if (topValue) {
       cards.push({
         id: "top_category_value",
-        icon: Sigma,
+        icon: TrendingUp,
         value: topValue[0],
         label: `Top ${categoricalColumn}`,
         description: "Most common value in your data",
@@ -506,29 +195,72 @@ function KpiCard({
   value,
   label,
   description,
+  eyebrow,
+  isPrimary = false,
 }: {
   icon: LucideIcon;
   value: string | number;
   label: string;
   description: string;
+  eyebrow: string;
+  isPrimary?: boolean;
 }) {
   return (
-    <Card className="dashboard-surface dashboard-hover shadow-none">
-      <CardContent className="flex items-start justify-between gap-3 px-4 py-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-medium tracking-wide text-[var(--color-text-secondary)]">
-            {label}
-          </p>
-          <div className="mt-1.5 text-[22px] font-extrabold leading-none tracking-tight text-[var(--color-text-primary)]">
+    <Card
+      className={`dashboard-hover relative overflow-hidden rounded-[2rem] border shadow-none ${
+        isPrimary
+          ? "border-transparent bg-[linear-gradient(135deg,#00327D_0%,#1A237E_100%)] text-white shadow-[0_36px_70px_-42px_rgba(0,50,125,0.78)]"
+          : "dashboard-surface"
+      }`}
+    >
+      <CardContent className="relative flex h-[160px] flex-col justify-between overflow-hidden px-6 py-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p
+              className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                isPrimary ? "text-white/72" : "text-[var(--color-text-secondary)]"
+              }`}
+            >
+              {label}
+            </p>
+          </div>
+        </div>
+
+        <div className="relative z-10 min-w-0">
+          <div
+            className={`text-[34px] font-extrabold leading-none tracking-[-0.04em] ${
+              isPrimary ? "text-white" : "text-[var(--color-text-primary)]"
+            }`}
+          >
             {formatMetric(value)}
           </div>
-          <p className="mt-1.5 truncate text-[11px] text-[var(--color-text-muted)]">
+
+          <div className="mt-3 flex items-center gap-2">
+            <span
+              className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                isPrimary
+                  ? "bg-white/14 text-white"
+                  : "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
+              }`}
+            >
+              {eyebrow}
+            </span>
+          </div>
+
+          <p
+            className={`mt-3 max-w-[16rem] text-[12px] leading-5 ${
+              isPrimary ? "text-white/74" : "text-[var(--color-text-secondary)]"
+            }`}
+          >
             {description}
           </p>
         </div>
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#3B82F6]">
-          <Icon className="h-4 w-4" />
-        </div>
+
+        <Icon
+          className={`pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 ${
+            isPrimary ? "text-white/10" : "text-[var(--color-accent)]/10"
+          }`}
+        />
       </CardContent>
     </Card>
   );
@@ -553,83 +285,6 @@ function DashboardSkeleton() {
         <Card className="dashboard-surface h-full" />
       </div>
     </div>
-  );
-}
-
-type ChartCardProps = {
-  chart: LayoutItem;
-  rows: SerializedRow[];
-};
-
-function ChartCard({ chart, rows }: ChartCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    setActivatorNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: chart.id,
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  } as CSSProperties;
-
-  return (
-    <TooltipProvider delayDuration={150}>
-      <Card
-        ref={setNodeRef}
-        style={style}
-        className={`dashboard-surface overflow-hidden p-0 shadow-none transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)] ${
-          chart.size === "large" ? "xl:col-span-2" : "xl:col-span-1"
-        } ${isDragging ? "opacity-75" : ""}`}
-      >
-        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-4 pb-0 pt-3">
-          <div className="min-w-0">
-            <h3 className="truncate text-[13px] font-semibold text-[var(--color-text-primary)]">
-              {chart.title}
-            </h3>
-            <p className="mt-1 line-clamp-1 text-[11px] text-[var(--color-text-muted)]">
-              {chart.insight}
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5">
-            {chart.pinned ? (
-              <Badge className="rounded-[4px] border-0 bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 hover:bg-amber-100">
-                pinned
-              </Badge>
-            ) : null}
-            <Badge className="rounded-[4px] border-0 bg-[var(--color-accent-light)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
-              {chart.type}
-            </Badge>
-            <ShadTooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  ref={setActivatorNodeRef}
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                  aria-label={`Reorder ${chart.title}`}
-                  className="h-7 w-7 rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
-                  {...attributes}
-                  {...listeners}
-                >
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reorder chart</TooltipContent>
-            </ShadTooltip>
-          </div>
-        </CardHeader>
-        <CardContent className="px-4 pb-3 pt-2">
-          <ChartContent chart={chart} rows={rows} />
-        </CardContent>
-      </Card>
-    </TooltipProvider>
   );
 }
 
@@ -701,7 +356,7 @@ function ManageViewsSection({
                       </Badge>
                     ) : null}
                     {chart.chatbotGenerated ? (
-                      <Badge className="rounded-full border-0 bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 hover:bg-blue-100">
+                      <Badge className="rounded-full border-0 bg-[var(--color-accent-light)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
                         suggested
                       </Badge>
                     ) : null}
@@ -828,7 +483,7 @@ function ManageViewsSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-[420px] border-l border-[var(--color-border)] bg-white p-0 sm:max-w-[420px]"
+        className="w-[420px] border-l border-[var(--color-border)] bg-[var(--color-bg)] p-0 sm:max-w-[420px]"
       >
         <SheetHeader className="border-b border-[var(--color-border)] px-6 py-5 text-left">
           <SheetTitle className="text-[var(--color-text-primary)]">
@@ -908,6 +563,10 @@ export function Dashboard() {
       value: computeKpiValue(kpi, rows),
       label: kpi.label,
       description: kpi.description,
+      eyebrow: kpi.isPrimary
+        ? "Primary KPI"
+        : formatAggregationLabel(kpi.aggregation),
+      isPrimary: kpi.isPrimary,
     }));
 
     // Only fill with fallback cards if backend returned fewer than 4
@@ -915,15 +574,20 @@ export function Dashboard() {
       const fallbackCards = deriveFallbackCards(rows).filter(
         (fallback) => !backendCards.some((card) => card.id === fallback.id),
       );
-      return [...backendCards, ...fallbackCards].slice(0, 4);
+      return [
+        ...backendCards,
+        ...fallbackCards.map((fallback, index) => ({
+          ...fallback,
+          eyebrow: index === 0 ? "Fallback KPI" : "Reference Metric",
+          isPrimary: false,
+        })),
+      ].slice(0, 4);
     }
 
     return backendCards;
   }, [kpiConfigs, rows]);
 
-  // ── Dashboard Header with switcher ──
-
-    function DashboardHeader({
+  function DashboardHeader({
     isManageViewsOpen: manageViewsOpen,
     setIsManageViewsOpen: setManageViewsOpen,
   }: {
@@ -937,8 +601,11 @@ export function Dashboard() {
       (s) => s.activeDashboardColor,
     );
     const allDashboards = useDashboardStore((s) => s.dashboardList);
+    const title = activeDashboardName ?? "Executive Insight Ledger";
+    const subtitle = fileName
+      ? `Real-time performance analytics generated from ${fileName}`
+      : "Real-time performance analytics for your active workspace";
 
-    const [dropdownOpen, setDropdownOpen] = useState(false);
     const [createOpen, setCreateOpen] = useState(false);
 
     const fetchDashboards = useCallback(async () => {
@@ -951,18 +618,15 @@ export function Dashboard() {
     }, []);
 
     useEffect(() => {
-      if (dropdownOpen) {
-        fetchDashboards();
-      }
-    }, [dropdownOpen, fetchDashboards]);
+      void fetchDashboards();
+    }, [fetchDashboards]);
 
     async function handleSwitch(dash: DashboardListItem) {
-      setDropdownOpen(false);
-
       // Try local cache first for instant switch
       const cached = getCachedDashboard(dash.id);
       if (cached) {
         restoreCachedDashboard(cached);
+        setActiveDashboard(dash);
         return;
       }
 
@@ -984,7 +648,6 @@ export function Dashboard() {
       color: string;
     }) {
       setCreateOpen(false);
-      setDropdownOpen(false);
       try {
         const created = await createDashboard(input);
         setActiveDashboard({
@@ -993,107 +656,64 @@ export function Dashboard() {
           icon: created.icon,
           color: created.color,
         });
+        setDashboardList([
+          created,
+          ...allDashboards.filter((dashboard) => dashboard.id !== created.id),
+        ]);
       } catch {
         // silent
       }
     }
 
-    const ActiveIcon = activeDashboardIcon
-      ? getIconComponent(activeDashboardIcon)
-      : null;
-
     return (
       <>
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5">
-          <div className="font-display text-[20px] text-[var(--color-text-primary)]">
-            Dashboard
+        <div className="flex shrink-0 flex-col gap-4 px-5 pb-4 pt-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="font-display text-[32px] font-extrabold tracking-[-0.04em] text-[var(--color-text-primary)]">
+              {title}
+            </div>
+            <p className="mt-1 max-w-[52rem] truncate text-sm text-[var(--color-text-secondary)]">
+              {subtitle}
+            </p>
           </div>
-          <div className="flex items-center gap-2.5">
-            {/* Dashboard switcher dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setDropdownOpen((o) => !o)}
-                className="flex items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-1 text-[12px] font-medium text-[var(--color-text-secondary)] transition-colors hover:border-[#3B82F6] hover:text-[#3B82F6]"
-              >
-                {ActiveIcon && activeDashboardColor && (
-                  <span
-                    className="flex h-4 w-4 items-center justify-center rounded"
-                    style={{ color: activeDashboardColor }}
-                  >
-                    <ActiveIcon className="h-3 w-3" />
-                  </span>
-                )}
-                <span className="max-w-[160px] truncate">
-                  {activeDashboardName ?? fileName ?? "No dashboard"}
-                </span>
-                <ChevronDown className="h-3 w-3 shrink-0" />
-              </button>
 
-              {dropdownOpen && (
-                <div className="absolute right-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white py-1 shadow-lg">
-                  {allDashboards.map((dash) => {
-                    const DI = getIconComponent(dash.icon);
-                    const isActive = dash.id === activeDashboardId;
-                    return (
-                      <button
-                        key={dash.id}
-                        type="button"
-                        onClick={() => handleSwitch(dash)}
-                        className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors ${
-                          isActive
-                            ? "bg-blue-50 font-medium text-[#3B82F6]"
-                            : "text-[var(--color-text-primary)] hover:bg-slate-50"
-                        }`}
-                      >
-                        <span
-                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
-                          style={{
-                            backgroundColor: dash.color + "18",
-                            color: dash.color,
-                          }}
-                        >
-                          <DI className="h-3.5 w-3.5" />
-                        </span>
-                        <span className="min-w-0 truncate">{dash.name}</span>
-                        {isActive && (
-                          <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-[#3B82F6]" />
-                        )}
-                      </button>
-                    );
-                  })}
-                  <div className="my-1 border-t border-[var(--color-border)]" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDropdownOpen(false);
-                      setCreateOpen(true);
-                    }}
-                    className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--color-text-muted)] transition-colors hover:bg-slate-50 hover:text-[#3B82F6]"
-                  >
-                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-50">
-                      <Plus className="h-3.5 w-3.5" />
-                    </span>
-                    New Dashboard
-                  </button>
-                </div>
-              )}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium text-[var(--color-text-secondary)] shadow-sm">
+              <CalendarDays className="h-4 w-4 text-[var(--color-accent)]" />
+              <span>Live Dataset</span>
             </div>
 
-            {/* Chart structure button */}
+            <DashboardSwitcher
+              dashboards={allDashboards}
+              activeDashboardId={activeDashboardId}
+              activeDashboardName={activeDashboardName}
+              activeDashboardIcon={activeDashboardIcon}
+              activeDashboardColor={activeDashboardColor}
+              fallbackLabel={fileName ?? "No dashboard"}
+              triggerClassName="h-11 rounded-full border-[var(--color-border)] bg-white px-4 text-[13px] text-[var(--color-text-primary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+              contentClassName="rounded-[1.5rem] border border-[var(--color-border)] bg-white shadow-[0_32px_64px_-42px_rgba(0,50,125,0.28)]"
+              onSwitchDashboard={(dashboard) => {
+                void handleSwitch(dashboard);
+              }}
+              onCreateDashboard={() => setCreateOpen(true)}
+            />
+
             <Button
               type="button"
-              variant="ghost"
-              size="icon"
               onClick={() => setManageViewsOpen((current) => !current)}
-              className={`h-8 w-8 rounded-lg border border-[var(--color-border)] bg-white text-[var(--color-text-secondary)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)] ${
+              className={`h-11 rounded-full px-5 text-sm font-semibold text-white shadow-[0_24px_48px_-28px_rgba(0,50,125,0.65)] transition ${
                 manageViewsOpen
-                  ? "border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]"
-                  : ""
+                  ? "bg-[var(--color-accent-secondary)]"
+                  : "bg-[var(--color-accent)] hover:bg-[var(--color-accent-secondary)]"
               }`}
+              style={{
+                boxShadow: `0 24px 48px -28px ${DASHBOARD_COLORS.primary}88`,
+              }}
+              variant="default"
               aria-label="Open manage views"
             >
-              <LayoutPanelLeft className="h-4 w-4" />
+              <LayoutPanelLeft className="mr-2 h-4 w-4" />
+              Manage Views
             </Button>
           </div>
         </div>
@@ -1131,7 +751,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex min-h-full flex-col">
       {isLoading ? (
         <DashboardSkeleton />
       ) : (
@@ -1146,7 +766,7 @@ export function Dashboard() {
             charts={orderedCharts}
           />
 
-          <div className="grid shrink-0 grid-cols-1 gap-3 px-5 py-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid shrink-0 grid-cols-1 gap-4 px-5 pb-4 md:grid-cols-2 xl:grid-cols-4">
             {kpiCards.map((card) => (
               <KpiCard
                 key={card.id}
@@ -1154,11 +774,13 @@ export function Dashboard() {
                 value={card.value}
                 label={card.label}
                 description={card.description}
+                eyebrow={card.eyebrow}
+                isPrimary={card.isPrimary}
               />
             ))}
           </div>
 
-          <div className="min-h-0 flex-1 overflow-hidden px-5 pb-4">
+          <div className="px-5 pb-6">
             {layoutItems.length === 0 ? (
               <Card className="dashboard-surface flex h-full items-center justify-center shadow-none">
                 <div className="text-center">
@@ -1204,9 +826,22 @@ export function Dashboard() {
                   items={layoutItems.map((chart) => chart.id)}
                   strategy={rectSortingStrategy}
                 >
-                  <div className="grid h-full grid-cols-1 gap-3 xl:grid-cols-2">
+                  <div className="grid h-full grid-cols-1 gap-4 xl:grid-cols-12">
                     {layoutItems.map((chart) => (
-                      <ChartCard key={chart.id} chart={chart} rows={rows} />
+                      <div
+                        key={chart.id}
+                        className={
+                          chart.colSpan >= 8
+                            ? "xl:col-span-8"
+                            : chart.colSpan === 6
+                              ? "xl:col-span-6"
+                              : chart.colSpan === 12
+                                ? "xl:col-span-12"
+                                : "xl:col-span-4"
+                        }
+                      >
+                        <DashboardChartCard chart={chart} rows={rows} />
+                      </div>
                     ))}
                   </div>
                 </SortableContext>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, Sparkles, WandSparkles, X } from "lucide-react";
 import {
   BI_RULE_LIMITS,
@@ -7,9 +7,17 @@ import {
 } from "@tada/shared";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { sendChat } from "@/lib/api";
 import { computeKpiValue } from "@/lib/dashboard-runtime";
 import {
@@ -43,9 +51,11 @@ export function FloatingChat() {
   const kpiConfigs = useDashboardStore((snapshot) => snapshot.kpis);
   const rows = useDashboardStore((snapshot) => snapshot.rows);
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canChat = Boolean(datasetId);
 
   const liveKpis: ChatKpiValue[] = kpiConfigs.map((kpi) => ({
@@ -62,6 +72,32 @@ export function FloatingChat() {
     setInput("");
     setIsSending(false);
   }, [datasetId]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+    const updateIsMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+
+    updateIsMobile();
+    mediaQuery.addEventListener("change", updateIsMobile);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateIsMobile);
+    };
+  }, []);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+
+    if (!textarea) {
+      return;
+    }
+
+    textarea.style.height = "0px";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 128)}px`;
+  }, [input, isOpen]);
 
   const handleSend = async () => {
     if (!input.trim() || !datasetId || isSending) {
@@ -189,6 +225,153 @@ export function FloatingChat() {
     );
   };
 
+  const composer = (
+    <div className="px-4 py-3">
+      <div className="flex items-end gap-2">
+        <Textarea
+          ref={textareaRef}
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              handleSend();
+            }
+          }}
+          placeholder="Ask TADA Wiz..."
+          className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border-[var(--color-border)] bg-white px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
+          aria-label="Type your message"
+          disabled={!canChat || isSending}
+          rows={1}
+        />
+        <Button
+          size="icon"
+          onClick={handleSend}
+          disabled={!canChat || isSending || !input.trim()}
+          className="h-11 w-11 rounded-full bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-secondary)]"
+          aria-label="Send message"
+        >
+          {isSending ? (
+            <MessageCircle className="h-4 w-4" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const chatBody = (
+    <>
+      <ScrollArea className="dashboard-scroll flex-1 bg-white">
+        <div className="space-y-4 px-4 py-4">
+          {!canChat ? (
+            <Card className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
+              Upload a file to start chatting with TADA Wiz.
+            </Card>
+          ) : null}
+
+          {canChat && messages.length === 0 ? (
+            <Card className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
+              Ask about your data, request a chart change, or get help
+              reading a view.
+            </Card>
+          ) : null}
+
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[88%] px-4 py-3 text-sm leading-6 ${
+                  message.role === "user"
+                    ? "rounded-[12px_12px_2px_12px] bg-[var(--color-accent)] text-white"
+                    : "rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-primary)]"
+                }`}
+              >
+                {message.content}
+                {message.role === "assistant" &&
+                message.proposal &&
+                message.proposalState === "pending" ? (
+                  <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-white p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                      Proposed change
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-[var(--color-text-primary)]">
+                      Add {message.proposal.incomingConfig.title}
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                      This will replace{" "}
+                      {message.proposal.targetChartTitle ?? "a chart"}.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-8 rounded-full bg-[var(--color-accent)] px-3 text-xs text-white hover:bg-[var(--color-accent-secondary)]"
+                        onClick={() =>
+                          handleProposalAction(message.id, "replace")
+                        }
+                      >
+                        Replace
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-full px-3 text-xs"
+                        onClick={() =>
+                          handleProposalAction(message.id, "hide_target")
+                        }
+                        disabled={
+                          chartConfigs.length >= BI_RULE_LIMITS.maxSavedCharts
+                        }
+                      >
+                        Hide current instead
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 rounded-full px-3 text-xs"
+                        onClick={() =>
+                          handleProposalAction(message.id, "cancel")
+                        }
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ))}
+
+          {isSending ? (
+            <div className="flex justify-start">
+              <div className="flex items-center gap-1 rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
+                {[0, 1, 2].map((index) => (
+                  <span
+                    key={index}
+                    className="h-2 w-2 rounded-full bg-[var(--color-text-muted)]"
+                    style={{
+                      animation: `wizDot 1s ease-in-out ${index * 0.12}s infinite`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </ScrollArea>
+
+      <Separator className="bg-[var(--color-border)]" />
+
+      {composer}
+    </>
+  );
+
   return (
     <>
       <style>{`
@@ -210,7 +393,7 @@ export function FloatingChat() {
         <Button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className="relative h-14 w-14 rounded-full border-0 bg-[#3B82F6] text-white shadow-[0_4px_20px_rgba(59,130,246,0.35)] transition-all duration-200 ease-in-out hover:scale-105 hover:bg-[#2563EB] hover:shadow-[0_6px_28px_rgba(59,130,246,0.45)]"
+          className="relative h-14 w-14 rounded-full border-0 bg-[var(--color-accent)] text-white shadow-[0_18px_36px_-18px_rgba(0,50,125,0.55)] transition-all duration-200 ease-in-out hover:scale-105 hover:bg-[var(--color-accent-secondary)] hover:shadow-[0_22px_40px_-18px_rgba(0,50,125,0.65)]"
           aria-label={isOpen ? "Close TADA Wiz" : "Open TADA Wiz"}
         >
           <Sparkles className="h-5 w-5" />
@@ -218,174 +401,77 @@ export function FloatingChat() {
       </div>
 
       {isOpen ? (
-        <div
-          className="fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14)]"
-          style={{ animation: "wizOpen 200ms ease" }}
-        >
-          <div className="flex h-full flex-col">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#3B82F6] to-[#2563EB] px-5 py-4 text-white">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
-                    <WandSparkles className="h-4.5 w-4.5" />
+        <>
+          {isMobile ? (
+            <Drawer open={isOpen} onOpenChange={setIsOpen}>
+              <DrawerContent className="mt-0 h-[85vh] overflow-hidden rounded-t-[24px] border border-b-0 border-[var(--color-border)] bg-white p-0 shadow-[0_-12px_40px_rgba(0,0,0,0.18)]">
+                <DrawerHeader className="border-b border-[var(--color-border)] bg-[linear-gradient(145deg,#00327D_0%,#0047AB_100%)] px-5 py-4 text-left text-white">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
+                        <WandSparkles className="h-4.5 w-4.5" />
+                      </div>
+                      <div>
+                        <DrawerTitle className="text-base font-bold text-white">
+                          TADA Wiz
+                        </DrawerTitle>
+                        <DrawerDescription className="mt-0.5 text-[13px] text-white/75">
+                          Ask anything about your data
+                        </DrawerDescription>
+                      </div>
+                    </div>
+                    <DrawerClose asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full text-white hover:bg-white/10 hover:text-white"
+                        aria-label="Close TADA Wiz"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </DrawerClose>
                   </div>
-                  <div>
-                    <div className="text-base font-bold">TADA Wiz</div>
-                    <p className="mt-0.5 text-[13px] text-white/75">
-                      Ask anything about your data
-                    </p>
+                </DrawerHeader>
+                <div className="flex min-h-0 flex-1 flex-col">{chatBody}</div>
+              </DrawerContent>
+            </Drawer>
+          ) : (
+            <div
+              className="fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14)]"
+              style={{ animation: "wizOpen 200ms ease" }}
+            >
+              <div className="flex h-full flex-col">
+                <div className="bg-[linear-gradient(145deg,#00327D_0%,#0047AB_100%)] px-5 py-4 text-white">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
+                        <WandSparkles className="h-4.5 w-4.5" />
+                      </div>
+                      <div>
+                        <div className="text-base font-bold">TADA Wiz</div>
+                        <p className="mt-0.5 text-[13px] text-white/75">
+                          Ask anything about your data
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsOpen(false)}
+                      className="h-8 w-8 rounded-full text-white hover:bg-white/10 hover:text-white"
+                      aria-label="Close TADA Wiz"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsOpen(false)}
-                  className="h-8 w-8 rounded-full text-white hover:bg-white/10 hover:text-white"
-                  aria-label="Close TADA Wiz"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex min-h-0 flex-1 flex-col">{chatBody}</div>
               </div>
             </div>
-
-            {/* Messages */}
-            <ScrollArea className="dashboard-scroll flex-1 bg-white">
-              <div className="space-y-4 px-4 py-4">
-                {!canChat ? (
-                  <Card className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
-                    Upload a file to start chatting with TADA Wiz.
-                  </Card>
-                ) : null}
-
-                {canChat && messages.length === 0 ? (
-                  <Card className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
-                    Ask about your data, request a chart change, or get help
-                    reading a view.
-                  </Card>
-                ) : null}
-
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[88%] px-4 py-3 text-sm leading-6 ${
-                        message.role === "user"
-                          ? "rounded-[12px_12px_2px_12px] bg-[#3B82F6] text-white"
-                          : "rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-primary)]"
-                      }`}
-                    >
-                      {message.content}
-                      {message.role === "assistant" &&
-                      message.proposal &&
-                      message.proposalState === "pending" ? (
-                        <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-white p-3">
-                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                            Proposed change
-                          </p>
-                          <p className="mt-2 text-sm font-semibold text-[var(--color-text-primary)]">
-                            Add {message.proposal.incomingConfig.title}
-                          </p>
-                          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-                            This will replace{" "}
-                            {message.proposal.targetChartTitle ?? "a chart"}.
-                          </p>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              className="h-8 rounded-full bg-[#3B82F6] px-3 text-xs text-white hover:bg-[#2563EB]"
-                              onClick={() =>
-                                handleProposalAction(message.id, "replace")
-                              }
-                            >
-                              Replace
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="h-8 rounded-full px-3 text-xs"
-                              onClick={() =>
-                                handleProposalAction(message.id, "hide_target")
-                              }
-                              disabled={
-                                chartConfigs.length >= BI_RULE_LIMITS.maxSavedCharts
-                              }
-                            >
-                              Hide current instead
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 rounded-full px-3 text-xs"
-                              onClick={() =>
-                                handleProposalAction(message.id, "cancel")
-                              }
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-
-                {isSending ? (
-                  <div className="flex justify-start">
-                    <div className="flex items-center gap-1 rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
-                      {[0, 1, 2].map((index) => (
-                        <span
-                          key={index}
-                          className="h-2 w-2 rounded-full bg-[var(--color-text-muted)]"
-                          style={{
-                            animation: `wizDot 1s ease-in-out ${index * 0.12}s infinite`,
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </ScrollArea>
-
-            <Separator className="bg-[var(--color-border)]" />
-
-            {/* Input */}
-            <div className="px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Input
-                  type="text"
-                  value={input}
-                  onChange={(event) => setInput(event.target.value)}
-                  onKeyDown={(event) => event.key === "Enter" && handleSend()}
-                  placeholder="Ask TADA Wiz..."
-                  className="h-11 flex-1 rounded-xl border-[var(--color-border)] bg-white px-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
-                  aria-label="Type your message"
-                  disabled={!canChat || isSending}
-                />
-                <Button
-                  size="icon"
-                  onClick={handleSend}
-                  disabled={!canChat || isSending || !input.trim()}
-                  className="h-9 w-9 rounded-full bg-[#3B82F6] text-white hover:bg-[#2563EB]"
-                  aria-label="Send message"
-                >
-                  {isSending ? (
-                    <MessageCircle className="h-4 w-4" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+          )}
+        </>
       ) : null}
     </>
   );

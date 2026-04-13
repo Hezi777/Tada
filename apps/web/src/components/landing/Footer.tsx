@@ -1,9 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import tadaLogo from '@/assets/tada-logo.png';
+import { TadaLogo } from '@/components/brand/TadaLogo';
 
 const NAV = [
   {
@@ -47,7 +46,7 @@ export function Footer() {
             href="/"
             className="flex items-center gap-3 transition-opacity hover:opacity-80"
           >
-            <Image src={tadaLogo} alt="Tada" className="h-10 w-10" />
+            <TadaLogo className="h-10 w-10 text-[var(--color-accent)]" />
             <span className="ml-2 font-sans text-xl font-bold text-slate-900">
               Tada
             </span>
