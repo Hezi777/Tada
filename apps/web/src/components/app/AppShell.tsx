@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Bell, CircleUserRound, LogOut, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,8 +7,7 @@ import { Dashboard } from "./Dashboard";
 import FileManager from "./FileManager";
 import { SettingsPanel } from "./SettingsPanel";
 import { FloatingChat } from "./FloatingChat";
-import { logout } from "@/app/actions";
-import { TadaLogo } from "@/components/brand/TadaLogo";
+import { logout } from "@/server/actions";
 
 interface AppShellProps {
   dashboardContent?: ReactNode;
@@ -106,17 +106,22 @@ export function AppShell({
 
   return (
     <div className="h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text-primary)]">
-      <header className="fixed inset-x-0 top-0 z-40 bg-[rgba(247,249,251,0.92)] backdrop-blur-xl">
+      <header className="fixed inset-x-0 top-0 z-40 bg-white">
         <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex items-center gap-6">
             <Link
               href="/"
-              className="flex items-center gap-3 transition-opacity hover:opacity-80"
+              aria-label="Tada home"
+              className="flex items-center transition-opacity hover:opacity-80"
             >
-              <TadaLogo className="h-8 w-8 shrink-0" priority />
-              <span className="font-display text-[1.375rem] font-bold tracking-[-0.04em] text-[var(--color-text-primary)]">
-                Tada
-              </span>
+              <Image
+                src="/tada-logo.svg"
+                alt="Tada"
+                width={48}
+                height={48}
+                priority
+                className="h-8 w-auto shrink-0"
+              />
             </Link>
 
             <nav className="hidden items-center gap-2 md:flex">

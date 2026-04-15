@@ -13,7 +13,7 @@ import { CTA } from "@/components/landing/CTA";
 import { Footer } from "@/components/landing/Footer";
 import { createClient } from "@/lib/supabase/client";
 
-export default function IndexClient() {
+export function LandingPageClient() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [user, setUser] = useState<User | null>(null);

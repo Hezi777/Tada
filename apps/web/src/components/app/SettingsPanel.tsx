@@ -7,7 +7,6 @@ import {
   Monitor,
   Moon,
   Paintbrush,
-  Shield,
   Sun,
   Trash2,
   UserRound,
@@ -28,7 +27,7 @@ import { createClient } from "@/lib/supabase/client";
 import { listDashboards } from "@/lib/api";
 
 type ThemeMode = "system" | "light" | "dark";
-type SettingsSection = "account" | "appearance" | "billing" | "privacy";
+type SettingsSection = "account" | "appearance" | "billing";
 
 type AccountStatus =
   | { tone: "success" | "error"; text: string }
@@ -46,7 +45,6 @@ const SETTINGS_NAV: Array<{
   { key: "account", label: "Account", icon: UserRound },
   { key: "appearance", label: "Appearance", icon: Paintbrush },
   { key: "billing", label: "Billing", icon: CreditCard },
-  { key: "privacy", label: "Privacy", icon: Shield },
 ];
 
 const LANGUAGE_OPTIONS = ["English (US)", "Hebrew (IL)", "Spanish (ES)"];
@@ -170,7 +168,7 @@ function ThemeOption({
     <button
       type="button"
       onClick={onClick}
-      className={`relative rounded-2xl border-2 p-3 text-left transition-all ${
+      className={`relative rounded-[20px] border-2 p-3 text-left transition-all ${
         active
           ? "border-[var(--color-accent)] bg-white shadow-[0_18px_40px_-30px_rgba(0,50,125,0.35)]"
           : "border-transparent bg-[var(--color-surface-muted)] hover:border-[rgba(25,28,30,0.12)]"
@@ -179,22 +177,22 @@ function ThemeOption({
       <div
         className={`mb-3 aspect-video overflow-hidden rounded-xl border ${
           mode === "dark"
-            ? "border-slate-800 bg-slate-900"
+            ? "border-[rgba(25,28,30,0.2)] bg-[#191c1e]"
             : mode === "system"
-              ? "border-[rgba(25,28,30,0.12)] bg-gradient-to-br from-white via-slate-300 to-slate-900"
+              ? "border-[rgba(25,28,30,0.12)] bg-gradient-to-br from-white via-[var(--color-surface-muted)] to-[#191c1e]"
               : "border-[rgba(25,28,30,0.12)] bg-white"
         }`}
       >
         <div className="space-y-1.5 p-3">
           <div
             className={`h-2 rounded-full ${
-              mode === "dark" ? "bg-slate-700" : "bg-slate-200"
+              mode === "dark" ? "bg-[rgba(255,255,255,0.16)]" : "bg-[var(--color-surface-muted)]"
             }`}
             style={{ width: "72%" }}
           />
           <div
             className={`h-2 rounded-full ${
-              mode === "dark" ? "bg-slate-800" : "bg-slate-100"
+              mode === "dark" ? "bg-[rgba(255,255,255,0.08)]" : "bg-[var(--color-surface-subtle)]"
             }`}
             style={{ width: "52%" }}
           />
@@ -246,7 +244,6 @@ export function SettingsPanel() {
   const accountRef = useRef<HTMLElement | null>(null);
   const appearanceRef = useRef<HTMLElement | null>(null);
   const billingRef = useRef<HTMLElement | null>(null);
-  const privacyRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -304,9 +301,7 @@ export function SettingsPanel() {
         ? accountRef
         : section === "appearance"
           ? appearanceRef
-          : section === "billing"
-            ? billingRef
-            : privacyRef;
+          : billingRef;
 
     targetRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -382,13 +377,13 @@ export function SettingsPanel() {
   }
 
   return (
-    <div className="dashboard-scroll flex h-full flex-col overflow-y-auto px-6 py-10 sm:px-8">
-      <h1 className="font-display text-[2rem] font-bold tracking-[-0.04em] text-[var(--color-accent)]">
+      <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-10 sm:px-8">
+      <h1 className="font-display text-[2rem] font-bold tracking-[-0.04em] text-[var(--color-text-primary)]">
         Settings
       </h1>
 
       <div className="mt-10 flex flex-col gap-10 md:flex-row">
-        <aside className="w-full md:w-[220px] md:flex-shrink-0">
+        <aside className="w-full md:w-[200px] md:flex-shrink-0">
           <div className="md:sticky md:top-8">
             <nav className="space-y-1">
               {SETTINGS_NAV.map(({ key, label, icon }) => (
@@ -407,7 +402,7 @@ export function SettingsPanel() {
         <div className="flex-1 space-y-8">
           <section
             ref={accountRef}
-            className="rounded-[20px] bg-white p-8 shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]"
+            className="rounded-[24px] bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
           >
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -433,7 +428,7 @@ export function SettingsPanel() {
                 <Input
                   value={firstName}
                   onChange={(event) => setFirstName(event.target.value)}
-                  className="h-11 rounded-xl border-[rgba(25,28,30,0.12)] bg-white px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
+                  className="h-11 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-white px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
                 />
               </div>
 
@@ -444,7 +439,7 @@ export function SettingsPanel() {
                 <Input
                   value={lastName}
                   onChange={(event) => setLastName(event.target.value)}
-                  className="h-11 rounded-xl border-[rgba(25,28,30,0.12)] bg-white px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
+                  className="h-11 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-white px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
                 />
               </div>
 
@@ -455,7 +450,7 @@ export function SettingsPanel() {
                 <Input
                   value={email ?? ""}
                   readOnly
-                  className="h-11 rounded-xl border-transparent bg-[var(--color-surface-subtle)] px-4 text-sm text-[var(--color-text-secondary)] shadow-none focus-visible:ring-0"
+                  className="h-11 rounded-[8px] border-transparent bg-[var(--color-surface-subtle)] px-4 text-sm text-[var(--color-text-secondary)] shadow-none focus-visible:ring-0"
                 />
               </div>
 
@@ -468,7 +463,7 @@ export function SettingsPanel() {
                   onChange={(event) =>
                     setLanguagePreference(event.target.value)
                   }
-                  className="h-11 w-full rounded-xl border border-[rgba(25,28,30,0.12)] bg-white px-4 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(0,50,125,0.12)]"
+                  className="h-11 w-full rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-white px-4 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(0,50,125,0.12)]"
                 >
                   {LANGUAGE_OPTIONS.map((option) => (
                     <option key={option} value={option}>
@@ -482,11 +477,7 @@ export function SettingsPanel() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
               {accountStatus ? (
                 <p
-                  className={`text-sm ${
-                    accountStatus.tone === "success"
-                      ? "text-emerald-600"
-                      : "text-red-600"
-                  }`}
+                  className="text-sm text-[var(--color-text-secondary)]"
                 >
                   {accountStatus.text}
                 </p>
@@ -497,16 +488,38 @@ export function SettingsPanel() {
                   void handleSaveAccount();
                 }}
                 disabled={isSavingAccount}
-                className="h-10 rounded-full bg-[linear-gradient(135deg,#00327d,#0047ab)] px-6 text-sm font-semibold text-white hover:opacity-95"
+                className="h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[#0047ab]"
               >
                 {isSavingAccount ? "Saving..." : "Save Changes"}
               </Button>
+            </div>
+            <div className="mt-8 rounded-[20px] bg-[var(--color-surface-muted)] p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                    Delete account
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                    Permanently remove your workspace access and stored data.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  disabled={isDeleting}
+                  className="h-10 rounded-full border border-transparent bg-white px-5 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete account
+                </Button>
+              </div>
             </div>
           </section>
 
           <section
             ref={appearanceRef}
-            className="rounded-[20px] bg-white p-8 shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]"
+            className="rounded-[24px] bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
           >
             <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
               <Paintbrush className="h-5 w-5 text-[var(--color-accent)]" />
@@ -555,7 +568,7 @@ export function SettingsPanel() {
 
           <section
             ref={billingRef}
-            className="rounded-[20px] bg-white p-8 shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]"
+            className="rounded-[24px] bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -590,7 +603,7 @@ export function SettingsPanel() {
               </div>
             </div>
 
-            <div className="mt-8 flex flex-col gap-6 rounded-[16px] bg-[rgba(0,50,125,0.06)] px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-8 flex flex-col gap-6 rounded-[20px] bg-[var(--color-surface-muted)] px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="font-display text-xl font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
                   Upgrade to Pro
@@ -605,7 +618,7 @@ export function SettingsPanel() {
                 onClick={() =>
                   setBillingMessage("Billing actions are not connected yet.")
                 }
-                className="h-10 rounded-full bg-[linear-gradient(135deg,#00327d,#0047ab)] px-6 text-sm font-semibold text-white hover:opacity-95"
+                className="h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[#0047ab]"
               >
                 Upgrade Now
               </Button>
@@ -618,48 +631,11 @@ export function SettingsPanel() {
             ) : null}
           </section>
 
-          <section
-            ref={privacyRef}
-            className="rounded-[20px] bg-white p-8 shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]"
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
-                  <Shield className="h-5 w-5 text-[var(--color-accent)]" />
-                  Privacy
-                </h2>
-                <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                  Permanently remove your account and the data linked to it.
-                </p>
-              </div>
+          {deleteErrorMessage ? (
+            <div className="rounded-[20px] bg-[var(--color-surface-muted)] px-6 py-4 text-sm text-[var(--color-text-secondary)]">
+              {deleteErrorMessage}
             </div>
-
-            <div className="mt-8 flex flex-col gap-4 rounded-[16px] bg-[rgba(220,38,38,0.06)] px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-                  Delete account
-                </p>
-                <p className="mt-1 text-sm leading-6 text-[var(--color-text-secondary)]">
-                  This removes your account, dashboards, and related data from
-                  Tada.
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDeleteDialogOpen(true)}
-                disabled={isDeleting}
-                className="h-10 rounded-full border-[rgba(220,38,38,0.28)] bg-white px-5 text-sm font-semibold text-red-600 hover:bg-red-50 hover:text-red-700"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete account
-              </Button>
-            </div>
-
-            {deleteErrorMessage ? (
-              <p className="mt-4 text-sm text-red-600">{deleteErrorMessage}</p>
-            ) : null}
-          </section>
+          ) : null}
         </div>
       </div>
 
@@ -675,7 +651,7 @@ export function SettingsPanel() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-[var(--color-accent)] text-white hover:bg-[#0047ab]"
               disabled={isDeleting}
               onClick={(event) => {
                 event.preventDefault();

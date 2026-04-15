@@ -20,9 +20,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "Satoshi", "sans-serif"],
-        display: ["Satoshi", "Manrope", "sans-serif"],
-        label: ["Inter", "Satoshi", "sans-serif"],
+        sans: ["var(--font-satoshi)", "sans-serif"],
+        display: ["var(--font-satoshi)", "sans-serif"],
+        label: ["var(--font-satoshi)", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

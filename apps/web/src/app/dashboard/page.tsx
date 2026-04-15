@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileSpreadsheet, Upload } from "lucide-react";
+import { FileSpreadsheet } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import { ProcessingView } from "@/components/app/ProcessingView";
 import { Button } from "@/components/ui/button";
@@ -35,9 +36,9 @@ function DashboardUploadEmptyState({
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <div className="flex h-full flex-col p-6">
-      <div className="dashboard-surface flex h-full flex-col overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-5">
+    <div className="flex h-full flex-col bg-[var(--color-bg)] p-6">
+      <div className="flex h-full flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
+        <div className="flex items-center justify-between px-6 py-5">
           <div>
             <h1 className="font-display text-2xl text-[var(--color-text-primary)]">
               Dashboard
@@ -49,10 +50,16 @@ function DashboardUploadEmptyState({
         </div>
 
         <div className="flex flex-1 items-center justify-center px-6 py-8">
-          <Card className="w-full max-w-2xl rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-none">
+          <Card className="w-full max-w-2xl rounded-[24px] border-0 bg-[var(--color-bg)] p-8 shadow-none">
             <div className="mx-auto flex max-w-xl flex-col items-center text-center">
-              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-[var(--color-accent-light)] text-[var(--color-accent)]">
-                <Upload className="h-8 w-8" />
+              <div className="mb-6 flex justify-center">
+                <Image
+                  src="/tada-logo.svg"
+                  alt="Tada"
+                  width={48}
+                  height={48}
+                  className="h-12 w-auto"
+                />
               </div>
               <h2 className="font-display text-3xl text-[var(--color-text-primary)]">
                 Upload your first dataset
@@ -63,7 +70,7 @@ function DashboardUploadEmptyState({
               </p>
 
               {errorMessage ? (
-                <div className="mt-6 w-full rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+                <div className="mt-6 w-full rounded-[20px] bg-[var(--color-surface-muted)] px-4 py-3 text-sm font-medium text-[var(--color-text-secondary)]">
                   {errorMessage}
                 </div>
               ) : null}
@@ -71,7 +78,7 @@ function DashboardUploadEmptyState({
               <Button
                 type="button"
                 size="lg"
-                className="mt-8 px-8"
+                className="mt-8 rounded-full bg-[var(--color-accent)] px-8 text-white hover:bg-[#0047ab]"
                 onClick={() => inputRef.current?.click()}
               >
                 <FileSpreadsheet className="mr-2 h-4 w-4" />
@@ -101,11 +108,20 @@ function DashboardUploadEmptyState({
 
 function DashboardLoadingState() {
   return (
-    <div className="flex h-full flex-col p-6">
-      <div className="dashboard-surface flex h-full items-center justify-center">
-        <p className="text-sm font-medium text-[var(--color-text-secondary)]">
-          Loading dashboard...
-        </p>
+    <div className="flex h-full flex-col bg-[var(--color-bg)] p-6">
+      <div className="flex h-full items-center justify-center rounded-[24px] bg-white shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
+        <div className="flex flex-col items-center text-center">
+          <Image
+            src="/tada-logo.svg"
+            alt="Tada"
+            width={48}
+            height={48}
+            className="h-12 w-auto"
+          />
+          <p className="mt-4 text-sm font-medium text-[var(--color-text-secondary)]">
+            Loading dashboard...
+          </p>
+        </div>
       </div>
     </div>
   );

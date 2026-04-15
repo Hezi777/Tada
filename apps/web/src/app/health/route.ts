@@ -1,7 +1,6 @@
-import { type HealthResponse } from "@tada/shared";
 import { NextResponse } from "next/server";
+import { getHealthPayload } from "@/server/health";
 
 export async function GET() {
-  const payload: HealthResponse = { ok: true };
-  return NextResponse.json(payload);
+  return NextResponse.json(getHealthPayload());
 }

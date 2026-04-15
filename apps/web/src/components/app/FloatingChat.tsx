@@ -239,7 +239,7 @@ export function FloatingChat() {
             }
           }}
           placeholder="Ask TADA Wiz..."
-          className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border-[var(--color-border)] bg-white px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
+          className="max-h-32 min-h-[44px] flex-1 resize-none rounded-[8px] border border-transparent bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
           aria-label="Type your message"
           disabled={!canChat || isSending}
           rows={1}
@@ -266,13 +266,13 @@ export function FloatingChat() {
       <ScrollArea className="dashboard-scroll flex-1 bg-white">
         <div className="space-y-4 px-4 py-4">
           {!canChat ? (
-            <Card className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
+            <Card className="rounded-[20px] border-0 bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
               Upload a file to start chatting with TADA Wiz.
             </Card>
           ) : null}
 
           {canChat && messages.length === 0 ? (
-            <Card className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
+            <Card className="rounded-[20px] border-0 bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
               Ask about your data, request a chart change, or get help
               reading a view.
             </Card>
@@ -294,7 +294,7 @@ export function FloatingChat() {
                 {message.role === "assistant" &&
                 message.proposal &&
                 message.proposalState === "pending" ? (
-                  <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-white p-3">
+                  <div className="mt-3 rounded-[20px] bg-[var(--color-surface-muted)] p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                       Proposed change
                     </p>
@@ -366,7 +366,7 @@ export function FloatingChat() {
         </div>
       </ScrollArea>
 
-      <Separator className="bg-[var(--color-border)]" />
+      <Separator className="bg-transparent" />
 
       {composer}
     </>
@@ -386,14 +386,14 @@ export function FloatingChat() {
       `}</style>
 
       {/* FAB with pulse ring */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-8 right-8 z-50">
         {!isOpen && (
           <span className="fab-pulse-ring absolute inset-0 rounded-full" />
         )}
         <Button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className="relative h-14 w-14 rounded-full border-0 bg-[var(--color-accent)] text-white shadow-[0_18px_36px_-18px_rgba(0,50,125,0.55)] transition-all duration-200 ease-in-out hover:scale-105 hover:bg-[var(--color-accent-secondary)] hover:shadow-[0_22px_40px_-18px_rgba(0,50,125,0.65)]"
+          className="relative h-[52px] w-[52px] rounded-full border-0 bg-[var(--color-accent)] text-white shadow-[0_18px_36px_-18px_rgba(0,50,125,0.55)] transition-all duration-200 ease-in-out hover:scale-105 hover:bg-[var(--color-accent-secondary)] hover:shadow-[0_22px_40px_-18px_rgba(0,50,125,0.65)]"
           aria-label={isOpen ? "Close TADA Wiz" : "Open TADA Wiz"}
         >
           <Sparkles className="h-5 w-5" />
@@ -404,8 +404,8 @@ export function FloatingChat() {
         <>
           {isMobile ? (
             <Drawer open={isOpen} onOpenChange={setIsOpen}>
-              <DrawerContent className="mt-0 h-[85vh] overflow-hidden rounded-t-[24px] border border-b-0 border-[var(--color-border)] bg-white p-0 shadow-[0_-12px_40px_rgba(0,0,0,0.18)]">
-                <DrawerHeader className="border-b border-[var(--color-border)] bg-[linear-gradient(145deg,#00327D_0%,#0047AB_100%)] px-5 py-4 text-left text-white">
+              <DrawerContent className="mt-0 h-[85vh] overflow-hidden rounded-t-[24px] border-0 bg-white p-0 shadow-[0_-12px_40px_rgba(0,0,0,0.18)]">
+                <DrawerHeader className="bg-[linear-gradient(145deg,#00327D_0%,#0047AB_100%)] px-5 py-4 text-left text-white">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
@@ -438,7 +438,7 @@ export function FloatingChat() {
             </Drawer>
           ) : (
             <div
-              className="fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14)]"
+              className="fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-[24px] border-0 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14)]"
               style={{ animation: "wizOpen 200ms ease" }}
             >
               <div className="flex h-full flex-col">

@@ -1,9 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { TadaLogo } from "@/components/brand/TadaLogo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -40,7 +40,14 @@ export default function LoginPage() {
         <div className="absolute -top-16 -left-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
 
         <div className="relative z-10 flex items-center gap-3">
-          <TadaLogo className="h-10 w-10 text-white" />
+          <Image
+            src="/tada-logo.svg"
+            alt="Tada"
+            width={40}
+            height={40}
+            priority
+            className="h-10 w-auto"
+          />
           <div>
             <div className="text-lg font-bold text-white">Tada</div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-white/65">
@@ -69,13 +76,28 @@ export default function LoginPage() {
       <div className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-[420px]">
           <div className="mb-10 flex items-center gap-3 lg:hidden">
-            <TadaLogo className="h-8 w-8 text-[var(--color-accent)]" />
+            <Image
+              src="/tada-logo.svg"
+              alt="Tada"
+              width={32}
+              height={32}
+              className="h-8 w-auto"
+            />
             <span className="text-lg font-bold text-[var(--color-text-primary)]">
               Tada
             </span>
           </div>
 
           <div className="dashboard-surface rounded-[2rem] p-8 shadow-none">
+            <div className="mb-6 flex justify-center">
+              <Image
+                src="/tada-logo.svg"
+                alt="Tada"
+                width={40}
+                height={40}
+                className="h-10 w-auto"
+              />
+            </div>
             <h1 className="font-display text-3xl text-[var(--color-text-primary)]">
               {isSignUp ? "Create your account" : "Welcome back"}
             </h1>

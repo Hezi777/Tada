@@ -1,5 +1,5 @@
-import IndexClient from "./index-client";
+import { LandingPageClient } from "@/components/landing/LandingPageClient";
 
 export default function Page() {
-  return <IndexClient />;
+  return <LandingPageClient />;
 }

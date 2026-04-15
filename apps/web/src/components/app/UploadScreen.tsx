@@ -1,9 +1,9 @@
+import Image from "next/image";
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { ArrowLeft, FileSpreadsheet, Lightbulb, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { TadaLogo } from "@/components/brand/TadaLogo";
 
 interface UploadScreenProps {
   onFileUpload: (file: File) => void;
@@ -54,9 +54,15 @@ export const UploadScreen = ({
 
       <header className="px-4 pt-4 sm:px-6">
         <div className="container">
-          <div className="glass flex items-center justify-between rounded-full border border-white/80 px-4 py-3 shadow-soft sm:px-6">
+          <div className="flex items-center justify-between rounded-full bg-white px-4 py-3 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:px-6">
             <div className="flex items-center gap-3">
-              <TadaLogo className="h-10 w-10 text-[var(--color-accent)]" />
+              <Image
+                src="/tada-logo.svg"
+                alt="Tada"
+                width={40}
+                height={40}
+                className="h-10 w-auto"
+              />
               <div>
                 <span className="font-display text-xl font-semibold text-foreground">
                   Tada
@@ -106,7 +112,7 @@ export const UploadScreen = ({
                 ].map((item) => (
                   <Card
                     key={item}
-                    className="flex items-center gap-3 rounded-full border border-white/80 bg-white/75 px-4 py-3 text-sm font-medium text-foreground shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
+                    className="flex items-center gap-3 rounded-full border border-transparent bg-white px-4 py-3 text-sm font-medium text-foreground shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
                   >
                     <span className="h-2.5 w-2.5 rounded-full bg-primary" />
                     {item}
@@ -119,12 +125,12 @@ export const UploadScreen = ({
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`section-shell p-4 sm:p-6 ${isDragging ? "shadow-glow" : ""}`}
+              className={`rounded-[24px] bg-white p-4 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-6 ${isDragging ? "shadow-glow" : ""}`}
             >
               <div
                 className={`
                   flex min-h-[30rem] flex-col items-center justify-center rounded-[1.8rem] border-2 border-dashed px-6 py-10 text-center transition-all duration-300
-                  ${isDragging ? "border-primary bg-primary/[0.08] scale-[1.01]" : "border-primary/20 bg-white/70 hover:border-primary/35"}
+                  ${isDragging ? "scale-[1.01] border-[var(--color-accent)] bg-[rgba(0,50,125,0.08)]" : "border-[rgba(0,50,125,0.24)] bg-[var(--color-surface-muted)] hover:border-[var(--color-accent)] hover:bg-white"}
                 `}
               >
                 {errorMessage ? (
@@ -135,7 +141,7 @@ export const UploadScreen = ({
 
                 <div
                   className={`
-                    mb-6 flex h-20 w-20 items-center justify-center rounded-[1.75rem] border border-white/80 shadow-card transition-all duration-300
+                    mb-6 flex h-20 w-20 items-center justify-center rounded-[20px] border border-transparent shadow-card transition-all duration-300
                     ${isDragging ? "gradient-primary text-primary-foreground" : "bg-white text-primary"}
                   `}
                 >
@@ -165,16 +171,16 @@ export const UploadScreen = ({
                   className="hidden"
                 />
 
-                <div className="mt-10 grid w-full max-w-xl gap-3 border-t border-border/80 pt-8 sm:grid-cols-3">
-                  <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
+                <div className="mt-10 grid w-full max-w-xl gap-3 sm:grid-cols-3">
+                  <Card className="rounded-[20px] border border-transparent bg-white px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-primary" />
                     <p className="text-sm font-semibold text-foreground">CSV</p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Fast ingestion for flat files
                     </p>
                   </Card>
-                  <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
-                    <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-sky-500" />
+                  <Card className="rounded-[20px] border border-transparent bg-white px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
+                    <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-primary" />
                     <p className="text-sm font-semibold text-foreground">
                       Excel (.xlsx)
                     </p>
@@ -182,8 +188,8 @@ export const UploadScreen = ({
                       Modern workbook support
                     </p>
                   </Card>
-                  <Card className="rounded-[1.2rem] border border-white/80 bg-white/85 px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
-                    <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-indigo-500" />
+                  <Card className="rounded-[20px] border border-transparent bg-white px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
+                    <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-primary" />
                     <p className="text-sm font-semibold text-foreground">
                       Excel (.xls)
                     </p>
