@@ -66,7 +66,7 @@ import {
   DASHBOARD_COLORS,
   formatAggregationLabel,
   resolveKpiIcon,
-} from "@/components/app/dashboard-design";
+} from "@/lib/dashboard-design";
 import {
   Sheet,
   SheetContent,
@@ -207,13 +207,13 @@ function KpiCard({
 }) {
   return (
     <Card
-      className={`dashboard-hover relative overflow-hidden rounded-[2rem] border shadow-none ${
+      className={`dashboard-hover relative overflow-hidden rounded-[24px] border-0 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] ${
         isPrimary
-          ? "border-transparent bg-[linear-gradient(135deg,#00327D_0%,#1A237E_100%)] text-white shadow-[0_36px_70px_-42px_rgba(0,50,125,0.78)]"
-          : "dashboard-surface"
+          ? "bg-[var(--color-accent)] text-white"
+          : "bg-white"
       }`}
     >
-      <CardContent className="relative flex h-[160px] flex-col justify-between overflow-hidden px-6 py-5">
+      <CardContent className="relative flex h-[160px] flex-col justify-between overflow-hidden px-8 py-8">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p
@@ -228,7 +228,7 @@ function KpiCard({
 
         <div className="relative z-10 min-w-0">
           <div
-            className={`text-[34px] font-extrabold leading-none tracking-[-0.04em] ${
+            className={`font-display text-[34px] font-extrabold leading-none tracking-[-0.04em] tabular-nums ${
               isPrimary ? "text-white" : "text-[var(--color-text-primary)]"
             }`}
           >
@@ -240,7 +240,7 @@ function KpiCard({
               className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
                 isPrimary
                   ? "bg-white/14 text-white"
-                  : "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
+                  : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
               }`}
             >
               {eyebrow}
@@ -269,20 +269,20 @@ function KpiCard({
 function DashboardSkeleton() {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-12 items-center border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5" />
-      <div className="grid grid-cols-1 gap-3 px-5 py-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="flex h-12 items-center bg-white px-5" />
+      <div className="grid grid-cols-1 gap-8 px-5 py-3 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="dashboard-surface">
-            <CardContent className="px-4 py-3">
-              <div className="h-3 w-20 animate-shimmer rounded bg-slate-100" />
-              <div className="mt-3 h-6 w-24 animate-shimmer rounded bg-slate-100" />
-              <div className="mt-2 h-3 w-28 animate-shimmer rounded bg-slate-100" />
+          <Card key={index} className="overflow-hidden rounded-[24px] border-0 bg-white shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
+            <CardContent className="px-8 py-8">
+              <div className="h-3 w-20 animate-shimmer rounded-full bg-[#e6e8ea]" />
+              <div className="mt-3 h-6 w-24 animate-shimmer rounded-full bg-[#e6e8ea]" />
+              <div className="mt-2 h-3 w-28 animate-shimmer rounded-full bg-[#e6e8ea]" />
             </CardContent>
           </Card>
         ))}
       </div>
       <div className="flex-1 px-5 pb-4">
-        <Card className="dashboard-surface h-full" />
+        <Card className="h-full rounded-[24px] border-0 bg-white shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]" />
       </div>
     </div>
   );
@@ -330,7 +330,7 @@ function ManageViewsSection({
           return (
             <div
               key={chart.id}
-              className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+              className="rounded-[20px] bg-[var(--color-surface-muted)] p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -338,30 +338,30 @@ function ManageViewsSection({
                     <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                       {String(index + 1).padStart(2, "0")}
                     </span>
-                    <Badge className="rounded-full border-0 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-100">
+                    <Badge className="rounded-full border-0 bg-[#e6e8ea] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text-secondary)] hover:bg-[#e6e8ea]">
                       {chart.type}
                     </Badge>
                     <Badge
                       className={`rounded-full border-0 px-2 py-0.5 text-[10px] font-semibold ${
                         visible
-                          ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-100"
+                          ? "bg-[rgba(0,50,125,0.12)] text-[var(--color-accent)] hover:bg-[rgba(0,50,125,0.12)]"
+                          : "bg-[#e6e8ea] text-[var(--color-text-secondary)] hover:bg-[#e6e8ea]"
                       }`}
                     >
                       {visible ? "visible" : "hidden"}
                     </Badge>
                     {chart.pinned ? (
-                      <Badge className="rounded-full border-0 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 hover:bg-amber-100">
+                      <Badge className="rounded-full border-0 bg-[#e6e8ea] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text-secondary)] hover:bg-[#e6e8ea]">
                         pinned
                       </Badge>
                     ) : null}
                     {chart.chatbotGenerated ? (
-                      <Badge className="rounded-full border-0 bg-[var(--color-accent-light)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
+                      <Badge className="rounded-full border-0 bg-[rgba(0,50,125,0.12)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[rgba(0,50,125,0.12)]">
                         suggested
                       </Badge>
                     ) : null}
                   </div>
-                  <p className="mt-2 truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                  <p className="mt-2 truncate font-display text-sm font-semibold text-[var(--color-text-primary)]">
                     {chart.title}
                   </p>
                   <p className="mt-1 line-clamp-1 text-xs text-[var(--color-text-secondary)]">
@@ -374,7 +374,7 @@ function ManageViewsSection({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+                    className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-white hover:text-[var(--color-text-primary)]"
                     onClick={() => toggleChartPinned(chart.id)}
                     aria-label={
                       chart.pinned ? `Unpin ${chart.title}` : `Pin ${chart.title}`
@@ -392,7 +392,7 @@ function ManageViewsSection({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+                      className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
                       onClick={() => setChartVisibility(chart.id, false)}
                       disabled={!canHide}
                       aria-label={`Hide ${chart.title}`}
@@ -404,12 +404,13 @@ function ManageViewsSection({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+                      className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-white hover:text-[var(--color-text-primary)]"
                       onClick={() => {
                         if (visibleCount < BI_RULE_LIMITS.maxCharts) {
                           promoteHiddenChart(chart.id);
                           return;
                         }
+
                         setReplaceTargetFor((current) =>
                           current === chart.id ? null : chart.id,
                         );
@@ -424,7 +425,7 @@ function ManageViewsSection({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-md text-[var(--color-text-muted)] hover:bg-red-50 hover:text-red-600"
+                    className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-white hover:text-[var(--color-text-primary)]"
                     onClick={() => removeChart(chart.id)}
                     disabled={!canDelete}
                     aria-label={`Remove ${chart.title}`}
@@ -435,7 +436,7 @@ function ManageViewsSection({
               </div>
 
               {!visible && replaceTargetFor === chart.id ? (
-                <div className="mt-3 rounded-lg border border-dashed border-[var(--color-border)] bg-white p-3">
+                <div className="mt-3 rounded-[16px] bg-white p-3">
                   <p className="text-xs font-medium text-[var(--color-text-secondary)]">
                     Replace one visible chart to show this view:
                   </p>
@@ -446,7 +447,7 @@ function ManageViewsSection({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="h-8 rounded-full px-3 text-xs"
+                        className="h-8 rounded-full border border-transparent bg-[var(--color-surface-muted)] px-3 text-xs text-[var(--color-text-primary)] hover:bg-white"
                         onClick={() => {
                           promoteHiddenChart(chart.id, candidate.id);
                           setReplaceTargetFor(null);
@@ -483,10 +484,10 @@ function ManageViewsSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-[420px] border-l border-[var(--color-border)] bg-[var(--color-bg)] p-0 sm:max-w-[420px]"
+        className="w-[420px] border-0 bg-[var(--color-bg)] p-0 sm:max-w-[420px]"
       >
-        <SheetHeader className="border-b border-[var(--color-border)] px-6 py-5 text-left">
-          <SheetTitle className="text-[var(--color-text-primary)]">
+        <SheetHeader className="px-6 py-5 text-left">
+          <SheetTitle className="font-display text-[var(--color-text-primary)]">
             Manage Views
           </SheetTitle>
           <SheetDescription>
@@ -597,9 +598,6 @@ export function Dashboard() {
     const activeDashboardId = useDashboardStore((s) => s.activeDashboardId);
     const activeDashboardName = useDashboardStore((s) => s.activeDashboardName);
     const activeDashboardIcon = useDashboardStore((s) => s.activeDashboardIcon);
-    const activeDashboardColor = useDashboardStore(
-      (s) => s.activeDashboardColor,
-    );
     const allDashboards = useDashboardStore((s) => s.dashboardList);
     const title = activeDashboardName ?? "Executive Insight Ledger";
     const subtitle = fileName
@@ -678,7 +676,7 @@ export function Dashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="inline-flex h-11 items-center gap-2 rounded-full border border-[var(--color-border)] bg-white px-4 text-sm font-medium text-[var(--color-text-secondary)] shadow-sm">
+            <div className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-surface-muted)] px-4 text-sm font-medium text-[var(--color-text-secondary)] shadow-none">
               <CalendarDays className="h-4 w-4 text-[var(--color-accent)]" />
               <span>Live Dataset</span>
             </div>
@@ -688,10 +686,9 @@ export function Dashboard() {
               activeDashboardId={activeDashboardId}
               activeDashboardName={activeDashboardName}
               activeDashboardIcon={activeDashboardIcon}
-              activeDashboardColor={activeDashboardColor}
               fallbackLabel={fileName ?? "No dashboard"}
-              triggerClassName="h-11 rounded-full border-[var(--color-border)] bg-white px-4 text-[13px] text-[var(--color-text-primary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-              contentClassName="rounded-[1.5rem] border border-[var(--color-border)] bg-white shadow-[0_32px_64px_-42px_rgba(0,50,125,0.28)]"
+              triggerClassName="h-11 rounded-full border border-transparent bg-[var(--color-surface-muted)] px-4 text-[13px] text-[var(--color-text-primary)] hover:bg-white hover:text-[var(--color-text-primary)]"
+              contentClassName="rounded-[20px] border border-transparent bg-white shadow-[0_32px_64px_-42px_rgba(25,28,30,0.18)]"
               onSwitchDashboard={(dashboard) => {
                 void handleSwitch(dashboard);
               }}
@@ -703,8 +700,8 @@ export function Dashboard() {
               onClick={() => setManageViewsOpen((current) => !current)}
               className={`h-11 rounded-full px-5 text-sm font-semibold text-white shadow-[0_24px_48px_-28px_rgba(0,50,125,0.65)] transition ${
                 manageViewsOpen
-                  ? "bg-[var(--color-accent-secondary)]"
-                  : "bg-[var(--color-accent)] hover:bg-[var(--color-accent-secondary)]"
+                  ? "bg-[#191c1e]"
+                  : "bg-[var(--color-accent)] hover:bg-[#0047ab]"
               }`}
               style={{
                 boxShadow: `0 24px 48px -28px ${DASHBOARD_COLORS.primary}88`,
@@ -729,8 +726,8 @@ export function Dashboard() {
   if (!datasetId) {
     return (
       <div className="flex h-full items-center justify-center bg-[var(--color-bg)] p-8">
-        <Card className="dashboard-surface px-10 py-12 text-center shadow-none">
-          <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">
+        <Card className="rounded-[24px] border-0 bg-white px-10 py-12 text-center shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
+          <h1 className="font-display text-3xl font-bold text-[var(--color-text-primary)]">
             Upload a dataset to begin
           </h1>
           <p className="mt-3 text-base text-[var(--color-text-secondary)]">
@@ -738,7 +735,7 @@ export function Dashboard() {
             state.
           </p>
           <Button
-            className="mt-8 rounded-lg bg-[var(--color-accent)] px-5 hover:bg-[#1D4ED8]"
+            className="mt-8 rounded-full bg-[var(--color-accent)] px-5 hover:bg-[#0047ab]"
             onClick={() => {
               window.location.href = "/";
             }}
@@ -766,7 +763,7 @@ export function Dashboard() {
             charts={orderedCharts}
           />
 
-          <div className="grid shrink-0 grid-cols-1 gap-4 px-5 pb-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid shrink-0 grid-cols-1 gap-8 px-5 pb-4 md:grid-cols-2 xl:grid-cols-4">
             {kpiCards.map((card) => (
               <KpiCard
                 key={card.id}
@@ -782,9 +779,9 @@ export function Dashboard() {
 
           <div className="px-5 pb-6">
             {layoutItems.length === 0 ? (
-              <Card className="dashboard-surface flex h-full items-center justify-center shadow-none">
+              <Card className="flex h-full items-center justify-center rounded-[24px] border-0 bg-white shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
                 <div className="text-center">
-                  <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">
+                  <h2 className="font-display text-2xl font-bold text-[var(--color-text-primary)]">
                     No visible charts
                   </h2>
                   <p className="mt-2 text-sm text-[var(--color-text-secondary)]">

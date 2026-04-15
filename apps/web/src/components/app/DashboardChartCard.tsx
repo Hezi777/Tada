@@ -44,13 +44,20 @@ import {
   formatNumber as legacyFormatNumber,
 } from "@/lib/dashboard-runtime";
 import type { LayoutItem } from "@/lib/chart-layout";
-import { DASHBOARD_COLORS } from "@/components/app/dashboard-design";
+import { DASHBOARD_COLORS } from "@/lib/dashboard-design";
 
 const CHART_COLOR = DASHBOARD_COLORS.primary;
 const CHART_GRID_COLOR = DASHBOARD_COLORS.chartGrid;
 const CHART_AXIS_COLOR = DASHBOARD_COLORS.chartAxis;
 
-const donutPalette = DASHBOARD_COLORS.chartPalette;
+const donutPalette = [
+  "#00327D",
+  "#1C4D9E",
+  "#2F65B5",
+  "#4A7ACC",
+  "#7395D9",
+  "#9FB4E3",
+];
 
 type DashboardChartCardProps = {
   chart: LayoutItem;
@@ -133,8 +140,8 @@ function buildDonutChartConfig(series: Array<{ label: string; value: number }>):
 
 function ChartEmptyState() {
   return (
-    <div className="flex h-[180px] items-center justify-center rounded-[1.5rem] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)]/70 px-6 text-center">
-      <p className="text-sm text-[var(--color-text-muted)]">
+    <div className="flex h-[180px] items-center justify-center rounded-[20px] bg-[var(--color-surface-muted)] px-6 text-center">
+      <p className="text-sm text-[var(--color-text-secondary)]">
         This chart does not have enough data to render.
       </p>
     </div>
@@ -161,17 +168,17 @@ function ScatterTooltip({
   const yValue = point.payload?.y;
 
   return (
-    <div className="grid min-w-[10rem] gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
-      <div className="font-medium text-foreground">Scatter point</div>
+    <div className="grid min-w-[10rem] gap-1.5 rounded-[16px] bg-white px-3 py-2 text-xs shadow-[0_18px_40px_-28px_rgba(25,28,30,0.25)]">
+      <div className="font-medium text-[var(--color-text-primary)]">Scatter point</div>
       <div className="flex items-center justify-between gap-4">
-        <span className="text-muted-foreground">{xLabel}</span>
-        <span className="font-mono font-medium tabular-nums text-foreground">
+        <span className="text-[var(--color-text-secondary)]">{xLabel}</span>
+        <span className="font-display font-semibold tabular-nums text-[var(--color-text-primary)]">
           {formatMetric(xValue ?? 0)}
         </span>
       </div>
       <div className="flex items-center justify-between gap-4">
-        <span className="text-muted-foreground">{yLabel}</span>
-        <span className="font-mono font-medium tabular-nums text-foreground">
+        <span className="text-[var(--color-text-secondary)]">{yLabel}</span>
+        <span className="font-display font-semibold tabular-nums text-[var(--color-text-primary)]">
           {formatMetric(yValue ?? 0)}
         </span>
       </div>
@@ -201,7 +208,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
     return (
       <ChartContainer
         config={chartConfig}
-        className={`${chartHeightClass} w-full aspect-auto`}
+        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-white`}
       >
         <AreaChart
           data={series}
@@ -276,7 +283,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
     return (
       <ChartContainer
         config={chartConfig}
-        className={`${chartHeightClass} w-full aspect-auto`}
+        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-white`}
       >
         <ScatterChart margin={{ top: 12, right: 12, left: 0, bottom: 4 }}>
           <CartesianGrid
@@ -312,7 +319,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             cursor={{ stroke: "#C6D5EE", strokeDasharray: "4 8" }}
             content={<ScatterTooltip xLabel={xLabel} yLabel={yLabel} />}
           />
-          <Scatter data={series} fill={DASHBOARD_COLORS.secondary} fillOpacity={0.82} />
+          <Scatter data={series} fill={CHART_COLOR} fillOpacity={0.84} />
         </ScatterChart>
       </ChartContainer>
     );
@@ -330,7 +337,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
     return (
       <ChartContainer
         config={chartConfig}
-        className={`${chartHeightClass} w-full aspect-auto`}
+        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-white`}
       >
         <PieChart>
           <Pie
@@ -398,9 +405,9 @@ const DashboardChartContent = memo(function DashboardChartContent({
   const maxValue = Math.max(...series.map((entry) => entry.value));
 
   return (
-    <ChartContainer
+      <ChartContainer
       config={chartConfig}
-      className={`${chartHeightClass} w-full aspect-auto`}
+      className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-white`}
     >
       <BarChart
         data={series}
@@ -431,17 +438,14 @@ const DashboardChartContent = memo(function DashboardChartContent({
           stroke={CHART_AXIS_COLOR}
         />
         <ChartTooltip
-          cursor={{ fill: "#EEF3FA" }}
+          cursor={{ fill: "#E6E8EA" }}
           content={<ChartTooltipContent />}
         />
-        <Bar
-          dataKey="value"
-          radius={[10, 10, 0, 0]}
-        >
+        <Bar dataKey="value" radius={[10, 10, 0, 0]}>
           {series.map((entry, index) => (
             <Cell
               key={`${chart.id}-bar-${entry.label}`}
-              fill={entry.value === maxValue ? CHART_COLOR : donutPalette[index % donutPalette.length]}
+              fill={CHART_COLOR}
               fillOpacity={entry.value === maxValue ? 1 : 0.28}
             />
           ))}
@@ -477,14 +481,14 @@ const DashboardChartCard = memo(function DashboardChartCard({
       <Card
         ref={setNodeRef}
         style={style}
-        className={`dashboard-surface overflow-hidden p-0 shadow-none transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_20px_48px_-28px_rgba(0,50,125,0.22)] ${
+        className={`overflow-hidden rounded-[24px] border-0 bg-white p-0 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_28px_60px_-34px_rgba(25,28,30,0.2)] ${
           chart.colSpan >= 8 ? "min-h-[390px]" : "min-h-[300px]"
         } ${isDragging ? "opacity-75" : ""}`}
         data-chart-card={chart.id}
       >
-        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-6 pb-0 pt-5">
+        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-8 pb-0 pt-8">
           <div className="min-w-0">
-            <h3 className="truncate text-[18px] font-bold tracking-[-0.02em] text-[var(--color-text-primary)]">
+            <h3 className="truncate font-display text-[18px] font-bold tracking-[-0.02em] text-[var(--color-text-primary)]">
               {chart.title}
             </h3>
             <p className="mt-1 line-clamp-1 text-[12px] text-[var(--color-text-secondary)]">
@@ -493,11 +497,11 @@ const DashboardChartCard = memo(function DashboardChartCard({
           </div>
           <div className="flex items-center gap-1.5">
             {chart.pinned ? (
-              <Badge className="rounded-full border-0 bg-amber-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700 hover:bg-amber-100">
+              <Badge className="rounded-full border-0 bg-[var(--color-surface-muted)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]">
                 pinned
               </Badge>
             ) : null}
-            <Badge className="rounded-full border-0 bg-[var(--color-accent-light)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
+            <Badge className="rounded-full border-0 bg-[#e6e8ea] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-secondary)] hover:bg-[#e6e8ea]">
               {chart.type}
             </Badge>
             <ShadTooltip>
@@ -508,7 +512,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
                   size="icon"
                   type="button"
                   aria-label={`Reorder ${chart.title}`}
-                  className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-accent-light)] hover:text-[var(--color-accent)]"
+                  className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
                   {...attributes}
                   {...listeners}
                 >
@@ -519,7 +523,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
             </ShadTooltip>
           </div>
         </CardHeader>
-        <CardContent className="px-6 pb-5 pt-3">
+        <CardContent className="px-8 pb-8 pt-4">
           <DashboardChartContent chart={chart} rows={rows} />
         </CardContent>
       </Card>

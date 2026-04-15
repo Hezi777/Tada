@@ -9,7 +9,6 @@ import {
   ChevronRight,
   FileText,
   LayoutGrid,
-  List,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -43,15 +42,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table as UITable,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Tooltip,
   TooltipContent,
@@ -84,7 +74,6 @@ import {
 } from "@tada/shared";
 
 type View = "dashboards" | "files";
-type FileView = "card" | "list";
 type SortMode = "updated" | "name" | "files";
 
 type ScopedFile = {
@@ -275,7 +264,6 @@ export default function FileManager() {
 
   const [activeDash, setActiveDash] = useState<DashboardListItem | null>(null);
   const [scopedFiles, setScopedFiles] = useState<ScopedFile[]>([]);
-  const [fileView, setFileView] = useState<FileView>("card");
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -598,42 +586,55 @@ export default function FileManager() {
 
   if (view === "dashboards") {
     return (
-      <div className="dashboard-scroll flex h-full flex-col overflow-y-auto px-6 py-10 sm:px-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="font-display text-[2.25rem] font-bold tracking-[-0.05em] text-[var(--color-accent)]">
-              My Dashboards
-            </h1>
-            <p className="mt-2 text-sm font-medium text-[var(--color-text-secondary)]">
-              Manage and monitor your visual intelligence assets.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => dashboardUploadInputRef.current?.click()}
-              disabled={isQuickUploading}
-              className="h-10 rounded-full px-4 text-[var(--color-accent)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
-            >
-              {isQuickUploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="h-4 w-4" />
-              )}
-              Upload CSV
-            </Button>
+      <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-10 sm:px-8">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h1 className="font-display text-[2.25rem] font-bold tracking-[-0.05em] text-[var(--color-text-primary)]">
+                My Dashboards
+              </h1>
+              <p className="mt-2 text-sm font-medium text-[var(--color-text-secondary)]">
+                Manage and monitor your visual intelligence assets.
+              </p>
+            </div>
 
             <Button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="h-10 rounded-full bg-[linear-gradient(135deg,#00327d,#0047ab)] px-5 text-white shadow-[0_18px_40px_-24px_rgba(0,50,125,0.5)] hover:opacity-95"
+              className="h-10 rounded-full bg-[var(--color-accent)] px-5 text-white hover:bg-[#0047ab]"
             >
               <Plus className="h-4 w-4" />
               New Dashboard
             </Button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => dashboardUploadInputRef.current?.click()}
+            disabled={isQuickUploading}
+            className="flex w-full items-center justify-between rounded-[20px] border-2 border-dashed border-[var(--color-accent)] bg-white px-6 py-5 text-left transition-colors hover:bg-[var(--color-surface-muted)] disabled:cursor-not-allowed"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
+                {isQuickUploading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Upload className="h-5 w-5" />
+                )}
+              </div>
+              <div>
+                <p className="font-display text-lg font-semibold text-[var(--color-text-primary)]">
+                  Drop a CSV or Excel file here
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                  Uploading starts a new dashboard automatically.
+                </p>
+              </div>
+            </div>
+            <span className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white">
+              Browse files
+            </span>
+          </button>
         </div>
 
         <input
@@ -651,7 +652,7 @@ export default function FileManager() {
         />
 
         {quickUploadError ? (
-          <div className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+          <div className="mt-5 rounded-[20px] bg-[var(--color-surface-muted)] px-4 py-3 text-sm font-medium text-[var(--color-text-secondary)]">
             {quickUploadError}
           </div>
         ) : null}
@@ -662,7 +663,7 @@ export default function FileManager() {
               <Button
                 type="button"
                 variant="ghost"
-                className="h-10 rounded-full px-4 text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-white"
+                className="h-10 rounded-full bg-[var(--color-surface-muted)] px-4 text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-white hover:text-[var(--color-text-primary)]"
               >
                 Sort by:{" "}
                 {sortMode === "updated"
@@ -673,7 +674,7 @@ export default function FileManager() {
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 rounded-2xl p-2">
+            <DropdownMenuContent align="end" className="w-48 rounded-[16px] p-2">
               <DropdownMenuItem onSelect={() => setSortMode("updated")}>
                 <span className="flex-1">Last Modified</span>
                 {sortMode === "updated" ? <Check className="h-4 w-4" /> : null}
@@ -760,7 +761,7 @@ export default function FileManager() {
                                       className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${
                                         iconName === dashboard.icon
                                           ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
-                                          : "text-[var(--color-text-muted)] hover:bg-slate-50"
+                                          : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)]"
                                       }`}
                                     >
                                       <OptionIcon className="h-4 w-4" />
@@ -805,7 +806,7 @@ export default function FileManager() {
                                     }
                                     className={`h-7 w-7 rounded-full border border-white/70 transition-all ${
                                       color === dashboard.color
-                                        ? "ring-2 ring-slate-900 ring-offset-1"
+                                        ? "ring-2 ring-[#00327d] ring-offset-1"
                                         : "hover:scale-110"
                                     }`}
                                     style={{ backgroundColor: color }}
@@ -841,7 +842,7 @@ export default function FileManager() {
                                   setDeleteConfirmId(dashboard.id);
                                   setDeleteConfirmName(dashboard.name);
                                 }}
-                                className="text-red-600 focus:text-red-600"
+                                className="text-[var(--color-text-secondary)] focus:text-[var(--color-text-primary)]"
                               >
                                 <Trash2 className="mr-2 h-3.5 w-3.5" />
                                 Delete
@@ -860,7 +861,7 @@ export default function FileManager() {
                       </div>
                     </div>
 
-                    <div className="flex flex-1 flex-col justify-center px-5 pb-5 pt-4">
+                    <div className="flex flex-1 flex-col justify-center bg-white px-5 pb-5 pt-4">
                       {renamingId === dashboard.id ? (
                         <form
                           onSubmit={(event) => {
@@ -873,7 +874,7 @@ export default function FileManager() {
                           <Input
                             value={renameValue}
                             onChange={(event) => setRenameValue(event.target.value)}
-                            className="h-9 rounded-xl border-[rgba(25,28,30,0.12)] bg-white text-sm font-semibold"
+                            className="h-9 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-white text-sm font-semibold"
                             onBlur={() => void handleRename(dashboard.id)}
                             autoFocus
                           />
@@ -884,7 +885,7 @@ export default function FileManager() {
                         </h3>
                       )}
 
-                      <p className="mt-2 text-sm font-medium text-[var(--color-text-secondary)]">
+                      <p className="mt-2 text-sm font-medium tabular-nums text-[var(--color-text-secondary)]">
                         {dashboard.fileCount}{" "}
                         {dashboard.fileCount === 1 ? "file" : "files"} ·{" "}
                         {formatDate(dashboard.updatedAt)}
@@ -897,7 +898,7 @@ export default function FileManager() {
               <button
                 type="button"
                 onClick={() => setCreateOpen(true)}
-                className="group flex aspect-[3/2] flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-[rgba(25,28,30,0.18)] bg-[rgba(255,255,255,0.62)] transition-all duration-300 hover:border-[var(--color-accent)] hover:bg-white"
+                className="group flex aspect-[3/2] flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-[rgba(0,50,125,0.24)] bg-white transition-all duration-300 hover:border-[var(--color-accent)] hover:bg-[var(--color-surface-muted)]"
               >
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-muted)] transition-colors group-hover:text-[var(--color-accent)]">
                   <Plus className="h-7 w-7" />
@@ -910,7 +911,7 @@ export default function FileManager() {
           )}
         </div>
 
-        <footer className="mt-14 flex flex-col gap-4 border-t border-[rgba(25,28,30,0.08)] pt-8 sm:flex-row sm:items-center sm:justify-between">
+        <footer className="mt-14 flex flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm font-medium text-[var(--color-text-secondary)]">
             Showing {pagedDashboards.length} of {sortedDashboards.length} dashboards
           </span>
@@ -981,7 +982,7 @@ export default function FileManager() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => void handleDeleteDashboard()}
-                className="bg-red-600 text-white hover:bg-red-700"
+                className="bg-[var(--color-accent)] text-white hover:bg-[#0047ab]"
               >
                 Delete
               </AlertDialogAction>
@@ -993,7 +994,7 @@ export default function FileManager() {
   }
 
   return (
-    <div className="dashboard-scroll flex h-full flex-col overflow-y-auto px-6 py-8 sm:px-8">
+    <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-8 sm:px-8">
       <div className="flex flex-col gap-5 rounded-[24px] bg-white px-6 py-6 shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
         <div className="flex flex-wrap items-center gap-3">
           <TooltipProvider delayDuration={100}>
@@ -1004,7 +1005,7 @@ export default function FileManager() {
                   variant="ghost"
                   size="icon"
                   onClick={handleBack}
-                  className="h-10 w-10 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
+                  className="h-10 w-10 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
@@ -1015,13 +1016,7 @@ export default function FileManager() {
 
           {activeDash ? (
             <div className="flex items-center gap-3">
-              <div
-                className="flex h-11 w-11 items-center justify-center rounded-2xl"
-                style={{
-                  backgroundColor: `${activeDash.color}18`,
-                  color: activeDash.color,
-                }}
-              >
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
                 {(() => {
                   const ActiveIcon = getIconComponent(activeDash.icon);
                   return <ActiveIcon className="h-5 w-5" />;
@@ -1045,43 +1040,15 @@ export default function FileManager() {
                 placeholder="Search files..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="h-10 w-56 rounded-full border-[rgba(25,28,30,0.12)] bg-[var(--color-surface-muted)] pl-10 text-sm"
+                className="h-10 w-56 rounded-full border border-transparent bg-[var(--color-surface-muted)] pl-10 text-sm"
               />
             </div>
-
-            <Tabs
-              value={fileView}
-              onValueChange={(value) => {
-                if (value === "card" || value === "list") {
-                  setFileView(value);
-                }
-              }}
-            >
-              <TabsList className="h-10 rounded-full border border-[rgba(25,28,30,0.08)] bg-[var(--color-surface-muted)] p-1">
-                <TabsTrigger
-                  value="card"
-                  aria-label="Card view"
-                  className="h-8 w-8 rounded-full px-0 text-[var(--color-text-muted)] data-[state=active]:bg-[var(--color-accent)] data-[state=active]:text-white"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </TabsTrigger>
-                <TabsTrigger
-                  value="list"
-                  aria-label="List view"
-                  className="h-8 w-8 rounded-full px-0 text-[var(--color-text-muted)] data-[state=active]:bg-[var(--color-accent)] data-[state=active]:text-white"
-                >
-                  <List className="h-4 w-4" />
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
 
             <Button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className={`relative h-10 overflow-hidden rounded-full bg-[linear-gradient(135deg,#00327d,#0047ab)] px-0 text-sm font-semibold text-white transition-[width] duration-300 ${
-                isUploading ? "w-[200px]" : "w-[132px]"
-              }`}
+              className="relative h-10 rounded-full bg-[var(--color-accent)] px-0 text-sm font-semibold text-white hover:bg-[#0047ab] disabled:w-[200px]"
             >
               <AnimatePresence mode="popLayout" initial={false}>
                 {isUploading ? (
@@ -1091,7 +1058,7 @@ export default function FileManager() {
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: -20, opacity: 0 }}
                     transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-                    className="absolute inset-0 flex items-center justify-center gap-2"
+                    className="absolute inset-0 flex items-center justify-center gap-2 px-5"
                   >
                     <Loader2 className="h-4 w-4 animate-spin" />
                     <AnimatedLoadingText />
@@ -1103,7 +1070,7 @@ export default function FileManager() {
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: -20, opacity: 0 }}
                     transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-                    className="absolute inset-0 flex items-center justify-center gap-2"
+                    className="absolute inset-0 flex items-center justify-center gap-2 px-5"
                   >
                     <Upload className="h-4 w-4" />
                     <span>Upload File</span>
@@ -1128,7 +1095,7 @@ export default function FileManager() {
         </div>
 
         {uploadError ? (
-          <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+          <div className="rounded-[20px] bg-[var(--color-surface-muted)] px-4 py-3 text-sm font-medium text-[var(--color-text-secondary)]">
             {uploadError}
           </div>
         ) : null}
@@ -1137,7 +1104,7 @@ export default function FileManager() {
       <div className="mt-8 flex-1">
         {filteredFiles.length === 0 ? (
           <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[24px] bg-white px-6 py-10 text-center shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
-            <div className="flex h-20 w-20 items-center justify-center rounded-[28px] bg-[var(--color-accent-light)] text-[var(--color-accent)]">
+            <div className="flex h-20 w-20 items-center justify-center rounded-[28px] bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
               <UploadCloud className="h-8 w-8" />
             </div>
             <h2 className="mt-6 font-display text-[1.875rem] font-bold tracking-[-0.04em] text-[var(--color-text-primary)]">
@@ -1151,114 +1118,61 @@ export default function FileManager() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="mt-6 h-10 rounded-full bg-[linear-gradient(135deg,#00327d,#0047ab)] px-6 text-sm font-semibold text-white hover:opacity-95"
+              className="mt-6 h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[#0047ab]"
             >
               <Upload className="h-4 w-4" />
               Upload File
             </Button>
           </div>
-        ) : fileView === "card" ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        ) : (
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3">
             {filteredFiles.map((file) => (
               <Card
                 key={file.id}
-                className="group relative overflow-hidden rounded-[20px] border-0 bg-white p-5 shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_54px_-30px_rgba(25,28,30,0.24)]"
+                className="group relative overflow-hidden rounded-[20px] border-0 bg-white shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_54px_-30px_rgba(25,28,30,0.24)]"
               >
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-accent-light)] text-[var(--color-accent)]">
-                    {file.fileName.endsWith(".csv") ? (
-                      <Table className="h-5 w-5" />
-                    ) : (
-                      <FileText className="h-5 w-5" />
-                    )}
-                  </div>
+                <div className="flex min-h-[180px] flex-col justify-between">
+                  <div className="flex items-start gap-4 p-5 pb-0">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
+                      {file.fileName.endsWith(".csv") ? (
+                        <Table className="h-5 w-5" />
+                      ) : (
+                        <FileText className="h-5 w-5" />
+                      )}
+                    </div>
 
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
-                      {file.fileName}
-                    </p>
-                    <div className="mt-2 flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-                      <span>{file.rowCount.toLocaleString()} rows</span>
-                      {file.isPrimary ? (
-                        <Badge className="rounded-full border-0 bg-[var(--color-accent-light)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
-                          Primary
-                        </Badge>
-                      ) : null}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                        {file.fileName}
+                      </p>
+                      <div className="mt-2 flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
+                        <span className="tabular-nums">
+                          {file.rowCount.toLocaleString()}
+                        </span>
+                        <span>rows</span>
+                        {file.isPrimary ? (
+                          <Badge className="rounded-full border-0 bg-[rgba(0,50,125,0.08)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[rgba(0,50,125,0.08)]">
+                            Primary
+                          </Badge>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDeleteFileConfirm(file)}
-                    className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-red-50 hover:text-red-600"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center justify-end p-5 pt-4">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteFileConfirm(file)}
+                      className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ))}
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-[24px] bg-white shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
-            <UITable>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>File</TableHead>
-                  <TableHead className="w-40">Rows</TableHead>
-                  <TableHead className="w-32">Status</TableHead>
-                  <TableHead className="w-20 text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredFiles.map((file) => (
-                  <TableRow key={file.id} className="group">
-                    <TableCell>
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent-light)] text-[var(--color-accent)]">
-                          {file.fileName.endsWith(".csv") ? (
-                            <Table className="h-4 w-4" />
-                          ) : (
-                            <FileText className="h-4 w-4" />
-                          )}
-                        </div>
-                        <span className="min-w-0 truncate text-sm font-medium text-[var(--color-text-primary)]">
-                          {file.fileName}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-sm text-[var(--color-text-secondary)]">
-                      {file.rowCount.toLocaleString()} rows
-                    </TableCell>
-                    <TableCell>
-                      {file.isPrimary ? (
-                        <Badge className="rounded-full border-0 bg-[var(--color-accent-light)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
-                          Primary
-                        </Badge>
-                      ) : (
-                        <span className="text-sm text-[var(--color-text-muted)]">
-                          -
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeleteFileConfirm(file)}
-                        className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </UITable>
           </div>
         )}
       </div>
@@ -1279,7 +1193,7 @@ export default function FileManager() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void handleRemoveFile()}
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-[var(--color-accent)] text-white hover:bg-[#0047ab]"
             >
               Remove
             </AlertDialogAction>

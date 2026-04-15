@@ -50,84 +50,77 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
   }, [stepsDone, isReady, onComplete]);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-10 sm:px-6">
-      <div className="pointer-events-none absolute inset-0 gradient-glow" />
-      <div className="pointer-events-none absolute inset-x-8 top-12 bottom-12 editorial-grid opacity-60" />
-
-      <div className="container relative">
-        <div className="mx-auto max-w-5xl section-shell p-5 sm:p-7">
-          <div className="grid items-center gap-8 lg:grid-cols-[0.8fr_1fr]">
-            <Card className="rounded-[2rem] border border-white/80 bg-white/80 p-8 shadow-card">
-              <div className="eyebrow mb-6">Generating Dashboard</div>
-              <h2 className="text-4xl text-foreground sm:text-5xl">
-                Analyzing your data
-              </h2>
-              <p className="mt-5 text-lg leading-8 text-muted-foreground">
-                Tada is learning your dataset&apos;s structure, surfacing useful
-                metrics, and assembling a dashboard that&apos;s ready to
-                explore.
-              </p>
-
-              <Card className="mt-8 rounded-[1.6rem] border border-primary/15 bg-primary/[0.07] p-5 shadow-card">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] gradient-primary shadow-glow">
-                    <Lightbulb className="h-6 w-6 text-primary-foreground animate-pulse-soft motion-reduce:animate-none" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">
-                      AI insight pass in progress
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      This keeps visual setup fast without manual dashboard
-                      configuration.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </Card>
-
-            <Card className="surface-panel rounded-[2rem] border border-white/80 p-6 shadow-soft sm:p-8">
-              <div className="mb-8 flex items-center justify-center">
-                <div className="relative inline-flex h-28 w-28 items-center justify-center">
-                  <div className="absolute inset-0 rounded-full border border-primary/15 bg-primary/[0.08] animate-ping motion-reduce:animate-none" />
-                  <div className="absolute inset-3 rounded-full border border-primary/20 bg-white/80" />
-                  <div className="relative flex h-20 w-20 items-center justify-center rounded-full gradient-primary shadow-glow">
-                    <Lightbulb className="h-10 w-10 text-primary-foreground" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3 text-left">
-                {processingSteps.map((step, index) => (
-                  <Card
-                    key={step}
-                    className={`
-                      flex items-center gap-4 rounded-[1.25rem] border px-4 py-4 transition-all duration-300
-                      ${index === currentStep ? "border-primary/25 bg-primary/[0.08] shadow-card" : "border-white/80 bg-white/80"}
-                      ${completedSteps.includes(index) ? "opacity-70" : ""}
-                      ${index > currentStep ? "opacity-45" : ""}
-                    `}
-                  >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/80">
-                      {completedSteps.includes(index) ? (
-                        <Check className="h-4 w-4 text-primary" />
-                      ) : index === currentStep ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-primary motion-reduce:animate-none" />
-                      ) : (
-                        <div className="h-2.5 w-2.5 rounded-full bg-muted-foreground/40" />
-                      )}
-                    </div>
-                    <span
-                      className={`text-sm ${index === currentStep ? "font-semibold text-foreground" : "text-muted-foreground"}`}
-                    >
-                      {step}
-                    </span>
-                  </Card>
-                ))}
-              </div>
-            </Card>
+    <div className="relative flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-4 py-10 sm:px-6">
+      <div className="mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+        <Card className="rounded-[24px] border-0 bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
+          <div className="inline-flex rounded-full bg-[rgba(0,50,125,0.08)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+            Generating Dashboard
           </div>
-        </div>
+          <h2 className="mt-6 font-display text-4xl text-[var(--color-text-primary)] sm:text-5xl">
+            Analyzing your data
+          </h2>
+          <p className="mt-5 max-w-xl text-lg leading-8 text-[var(--color-text-secondary)]">
+            Tada is learning your dataset&apos;s structure, surfacing useful
+            metrics, and assembling a dashboard that&apos;s ready to explore.
+          </p>
+
+          <Card className="mt-8 rounded-[20px] border-0 bg-[var(--color-surface-muted)] p-5 shadow-none">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-accent)] text-white">
+                <Lightbulb className="h-6 w-6 motion-reduce:animate-none" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  AI insight pass in progress
+                </p>
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  This keeps visual setup fast without manual dashboard
+                  configuration.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </Card>
+
+        <Card className="rounded-[24px] border-0 bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
+          <div className="mb-8 flex items-center justify-center">
+            <div className="relative inline-flex h-28 w-28 items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-[rgba(0,50,125,0.08)]" />
+              <div className="absolute inset-3 rounded-full bg-[var(--color-surface-muted)]" />
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-[var(--color-accent)] text-white">
+                <Lightbulb className="h-10 w-10" />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 text-left">
+            {processingSteps.map((step, index) => (
+              <Card
+                key={step}
+                className={`flex items-center gap-4 rounded-[20px] border-0 px-4 py-4 transition-all duration-300 ${
+                  index === currentStep
+                    ? "bg-[rgba(0,50,125,0.08)]"
+                    : "bg-[var(--color-surface-muted)]"
+                } ${completedSteps.includes(index) ? "opacity-75" : ""} ${index > currentStep ? "opacity-50" : ""}`}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
+                  {completedSteps.includes(index) ? (
+                    <Check className="h-4 w-4 text-[var(--color-accent)]" />
+                  ) : index === currentStep ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-[var(--color-accent)] motion-reduce:animate-none" />
+                  ) : (
+                    <div className="h-2.5 w-2.5 rounded-full bg-[var(--color-text-muted)]" />
+                  )}
+                </div>
+                <span
+                  className={`text-sm ${index === currentStep ? "font-semibold text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"}`}
+                >
+                  {step}
+                </span>
+              </Card>
+            ))}
+          </div>
+        </Card>
       </div>
     </div>
   );

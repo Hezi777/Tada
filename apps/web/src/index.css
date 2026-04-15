@@ -1,49 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@font-face {
-  font-family: "Satoshi";
-  src: url("/assets/fonts/satoshi/Satoshi-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Satoshi";
-  src: url("/assets/fonts/satoshi/Satoshi-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Satoshi";
-  src: url("/assets/fonts/satoshi/Satoshi-Bold.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
 
 @layer base {
   :root {
     --color-bg: #f7f9fb;
     --color-surface: #ffffff;
-    --color-surface-muted: #f2f4f8;
+    --color-surface-muted: #f2f4f6;
     --color-surface-subtle: #eceef0;
-    --color-border: #d8e0eb;
+    --color-border: rgba(25, 28, 30, 0.12);
     --color-accent: #00327d;
     --color-accent-secondary: #0047ab;
-    --color-accent-tertiary: #1a237e;
     --color-accent-light: #e7eef8;
-    --color-text-primary: #111827;
-    --color-text-secondary: #66758c;
-    --color-text-muted: #8b96a8;
-    --color-chart-grid: #e6ecf4;
-    --color-chart-axis: #90a0b8;
+    --color-text-primary: #191c1e;
+    --color-text-secondary: #434653;
+    --color-text-muted: #9ba3b2;
+    --color-chart-grid: #eceef0;
+    --color-chart-axis: #6b7280;
 
     --background: 210 43% 98%;
     --foreground: 217 30% 13%;
@@ -57,14 +30,14 @@
     --secondary-foreground: 217 28% 24%;
     --muted: 213 40% 95%;
     --muted-foreground: 215 14% 48%;
-    --accent: 213 57% 93%;
-    --accent-foreground: 216 88% 28%;
+    --accent: 212 21% 91%;
+    --accent-foreground: 217 12% 18%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 214 34% 88%;
     --input: 214 34% 88%;
     --ring: 216 100% 24%;
-    --radius: 1.1rem;
+    --radius: 1.25rem;
     --glow: 216 96% 42%;
     --surface: 210 43% 98%;
     --surface-elevated: 0 0% 100%;
@@ -81,10 +54,10 @@
     --sidebar-border: 214 34% 88%;
     --sidebar-ring: 216 100% 24%;
     --chart-1: 216 100% 24%;
-    --chart-2: 215 100% 34%;
-    --chart-3: 232 65% 30%;
-    --chart-4: 218 96% 71%;
-    --chart-5: 213 45% 84%;
+    --chart-2: 216 88% 36%;
+    --chart-3: 216 75% 44%;
+    --chart-4: 216 52% 68%;
+    --chart-5: 216 34% 84%;
   }
 
   .dark {
@@ -140,17 +113,8 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', 'Satoshi', sans-serif;
-    background-image:
-      radial-gradient(circle at top left,
-        hsl(var(--glow) / 0.08),
-        transparent 30%),
-      radial-gradient(circle at top right,
-        hsl(var(--primary) / 0.05),
-        transparent 26%),
-      linear-gradient(180deg,
-        hsl(var(--background)) 0%,
-        hsl(var(--hero-tint)) 100%);
+    font-family: var(--font-satoshi), sans-serif;
+    background-color: #f7f9fb;
     color: hsl(var(--foreground));
     min-height: 100vh;
     overflow-x: hidden;
@@ -169,11 +133,11 @@
   h4,
   h5,
   h6 {
-    font-family: 'Satoshi', 'Manrope', sans-serif;
+    font-family: inherit;
   }
 
   ::selection {
-    background: rgba(37, 99, 235, 0.14);
+    background: rgba(0, 50, 125, 0.14);
     color: var(--color-text-primary);
   }
 }
@@ -424,15 +388,11 @@
   }
 
   .dashboard-surface {
-    background:
-      linear-gradient(180deg,
-        rgba(255, 255, 255, 0.98) 0%,
-        rgba(247, 249, 251, 0.96) 100%);
-    border: 1px solid rgba(216, 224, 235, 0.9);
-    border-radius: 2rem;
+    background: #ffffff;
+    border-radius: 20px;
     box-shadow:
-      0 26px 60px -44px rgba(0, 50, 125, 0.24),
-      0 2px 10px rgba(17, 24, 39, 0.03);
+      0 22px 52px -38px rgba(25, 28, 30, 0.14),
+      0 2px 10px rgba(25, 28, 30, 0.03);
   }
 
   .dashboard-hover {
@@ -443,11 +403,10 @@
   }
 
   .dashboard-hover:hover {
-    border-color: rgba(0, 71, 171, 0.28);
     transform: translateY(-2px);
     box-shadow:
-      0 32px 70px -42px rgba(0, 50, 125, 0.28),
-      0 8px 24px rgba(17, 24, 39, 0.05);
+      0 32px 70px -42px rgba(25, 28, 30, 0.18),
+      0 8px 24px rgba(25, 28, 30, 0.05);
   }
 
   @keyframes fab-ring-pulse {
@@ -472,7 +431,7 @@
     position: absolute;
     inset: 0;
     border-radius: 9999px;
-    border: 2px solid #3b82f6;
+    border: 2px solid #00327d;
     animation: fab-ring-pulse 2.5s ease-in-out infinite;
     pointer-events: none;
   }

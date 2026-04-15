@@ -14,7 +14,7 @@ export function TadaLogo({
 }: TadaLogoProps) {
   return (
     <Image
-      src="/assets/brand/tada-logo-final.svg"
+      src="/tada-logo.svg"
       alt={alt}
       priority={priority}
       width={40}
