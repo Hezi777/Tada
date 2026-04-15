@@ -6,12 +6,12 @@ Audited: 2026-03-01
 
 Live runtime paths:
 
-- `apps/web/src/app/*`
-- `apps/web/src/server/*`
-- `apps/web/src/lib/*`
-- `apps/web/src/components/*`
-- `apps/web/src/proxy.ts`
-- `packages/shared/src/index.ts`
+- `src/app/*`
+- `src/server/*`
+- `src/lib/*`
+- `src/components/*`
+- `src/proxy.ts`
+- `src/shared/contracts/index.ts`
 
 Dead or non-runtime paths:
 
@@ -23,30 +23,30 @@ Dead or non-runtime paths:
 
 ### App Router
 
-- `apps/web/src/app/page.tsx`: landing page
-- `apps/web/src/app/dashboard/page.tsx`: authenticated dashboard shell
-- `apps/web/src/app/login/page.tsx`: login page
-- `apps/web/src/app/api/**/route.ts`: route handlers
-- `apps/web/src/proxy.ts`: session proxy entrypoint
+- `src/app/page.tsx`: landing page
+- `src/app/dashboard/page.tsx`: authenticated dashboard shell
+- `src/app/login/page.tsx`: login page
+- `src/app/api/**/route.ts`: route handlers
+- `src/proxy.ts`: session proxy entrypoint
 
 ### Server Logic
 
-- `apps/web/src/server/upload.ts`: upload parsing, chaining, merged dataset snapshots
-- `apps/web/src/server/dashboard-config.ts`: chart and KPI generation plus validation helpers
-- `apps/web/src/server/chat.ts`: chat orchestration, prompt construction, patch validation
-- `apps/web/src/server/infer.ts`: column inference
-- `apps/web/src/server/state.ts`: in-memory dataset/session state
-- `apps/web/src/server/types.ts`: server-local type aliases
+- `src/features/dashboard/server/upload.ts`: upload parsing, chaining, merged dataset snapshots
+- `src/features/dashboard/server/config.ts`: chart and KPI generation plus validation helpers
+- `src/features/dashboard/server/chat.ts`: chat orchestration, prompt construction, patch validation
+- `src/features/dashboard/server/infer.ts`: column inference
+- `src/features/dashboard/server/state.ts`: in-memory dataset/session state
+- `src/features/dashboard/server/types.ts`: server-local type aliases
 
 ### Client/Shared Runtime
 
-- `apps/web/src/lib/api.ts`: browser API client for upload, dashboards, chat
-- `apps/web/src/lib/dashboard-store.ts`: client source of truth for dashboard state
-- `apps/web/src/lib/dashboard-runtime.ts`: runtime chart and KPI validation/helpers
-- `apps/web/src/lib/chart-layout.ts`: grid sizing/layout logic
-- `apps/web/src/lib/env.ts`: env contract and fallbacks
-- `apps/web/src/lib/supabase/*`: auth and server/client Supabase helpers
-- `packages/shared/src/index.ts`: Zod contracts, BI rules, shared types
+- `src/shared/lib/api.ts`: browser API client for upload, dashboards, chat
+- `src/features/dashboard/client/store.ts`: client source of truth for dashboard state
+- `src/features/dashboard/client/runtime.ts`: runtime chart and KPI validation/helpers
+- `src/features/dashboard/client/layout.ts`: grid sizing/layout logic
+- `src/shared/lib/env.ts`: env contract and fallbacks
+- `src/shared/lib/supabase/*`: auth and server/client Supabase helpers
+- `src/shared/contracts/index.ts`: Zod contracts, BI rules, shared types
 
 ## Data Flow
 

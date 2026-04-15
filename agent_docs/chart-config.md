@@ -6,15 +6,15 @@ Audited: 2026-03-01
 
 Client chart state lives in:
 
-- `apps/web/src/lib/dashboard-store.ts`
+- `src/features/dashboard/client/store.ts`
 
 Upload-time generation lives in:
 
-- `apps/web/src/server/dashboard-config.ts`
+- `src/features/dashboard/server/config.ts`
 
 Shared contract lives in:
 
-- `packages/shared/src/index.ts`
+- `src/shared/contracts/index.ts`
 
 ## Lifecycle
 
@@ -26,9 +26,9 @@ Shared contract lives in:
 
 ## Validation Layers
 
-- Shared structural contract: `packages/shared`
-- Client semantic/runtime validation: `apps/web/src/lib/dashboard-runtime.ts`
-- Server semantic/runtime validation: `apps/web/src/server/dashboard-config.ts`
+- Shared structural contract: `src/shared/contracts`
+- Client semantic/runtime validation: `src/features/dashboard/client/runtime.ts`
+- Server semantic/runtime validation: `src/features/dashboard/server/config.ts`
 
 The validation logic is still duplicated across client and server, but both sides now enforce current chart semantics.
 

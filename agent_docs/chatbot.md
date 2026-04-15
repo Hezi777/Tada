@@ -6,7 +6,7 @@ Audited: 2026-03-01
 
 Primary UI:
 
-- `apps/web/src/components/app/FloatingChat.tsx`
+- `src/features/dashboard/components/FloatingChat.tsx`
 
 Client responsibilities:
 
@@ -19,11 +19,11 @@ Client responsibilities:
 
 Route:
 
-- `apps/web/src/app/api/chat/route.ts`
+- `src/app/api/chat/route.ts`
 
 Server logic:
 
-- `apps/web/src/server/chat.ts`
+- `src/features/dashboard/server/chat.ts`
 
 Execution order:
 
