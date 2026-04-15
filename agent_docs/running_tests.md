@@ -14,7 +14,7 @@ These commands are defined in `package.json:11`.
 ## Test Command
 
 - `npm run test` runs the web app Vitest suite through the root workspace script in `package.json:13`.
-- The app-level test command is `vitest run` in `apps/web/package.json:1`.
+- The app-level test command is `vitest run` in `package.json:1`.
 
 ## Practical Expectations
 

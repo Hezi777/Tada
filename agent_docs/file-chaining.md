@@ -14,8 +14,8 @@ Server endpoints:
 
 Server implementation:
 
-- `apps/web/src/server/upload.ts`
-- `apps/web/src/server/state.ts`
+- `src/features/dashboard/server/upload.ts`
+- `src/features/dashboard/server/state.ts`
 
 ## Behavior
 
@@ -35,7 +35,7 @@ Chained uploads are rejected when:
 - column kinds do not match
 - unexpected columns appear
 
-Compatibility is checked in `apps/web/src/server/upload.ts`.
+Compatibility is checked in `src/features/dashboard/server/upload.ts`.
 
 ## Client Integration
 

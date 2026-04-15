@@ -4,23 +4,23 @@ Use this doc for repo-specific implementation rules. Do not treat it as a style 
 
 ## Architecture Boundaries
 
-- Keep live app code in `apps/web/src/app`, `apps/web/src/server`, `apps/web/src/lib`, and `apps/web/src/components`; see `agent_docs/architecture.md:7`.
+- Keep live app code in `src/app`, `src/server`, `src/lib`, and `src/components`; see `agent_docs/architecture.md:7`.
 - Do not modify `_legacy`; the repo-level rule is in `AGENTS.md:88`.
 - Do not reintroduce `src/pages`, Express, or a separate API runtime; see `AGENTS.md:31`.
 
 ## API And Server Rules
 
-- Frontend code should call relative Next routes through `apps/web/src/lib/api.ts:1`.
-- Route handlers live under `apps/web/src/app/api/**/route.ts`; see `AGENTS.md:33`.
-- Server-only business logic belongs in `apps/web/src/server/*`; see `AGENTS.md:35`.
+- Frontend code should call relative Next routes through `src/shared/lib/api.ts:1`.
+- Route handlers live under `src/app/api/**/route.ts`; see `AGENTS.md:33`.
+- Server-only business logic belongs in `src/server/*`; see `AGENTS.md:35`.
 
 ## Validation Rules
 
-- Shared runtime contracts and BI rules live in `packages/shared/src/index.ts:1`.
-- Env access is centralized in `apps/web/src/lib/env.ts:1`.
-- Dashboard state is centralized in `apps/web/src/lib/dashboard-store.ts:1`.
-- Initial chart generation and chart collection validation live in `apps/web/src/server/dashboard-config.ts:1`.
-- Chat validation and proposal handling live in `apps/web/src/server/chat.ts:1`.
+- Shared runtime contracts and BI rules live in `src/shared/contracts/index.ts:1`.
+- Env access is centralized in `src/shared/lib/env.ts:1`.
+- Dashboard state is centralized in `src/features/dashboard/client/store.ts:1`.
+- Initial chart generation and chart collection validation live in `src/features/dashboard/server/config.ts:1`.
+- Chat validation and proposal handling live in `src/features/dashboard/server/chat.ts:1`.
 
 ## Product-Specific Rules
 
@@ -31,4 +31,4 @@ Use this doc for repo-specific implementation rules. Do not treat it as a style 
 
 ## Landing Page Work
 
-If the task is limited to the landing page, also read the landing-specific constraints in `AGENTS.md:94` before editing anything under `apps/web/src/components/landing`.
+If the task is limited to the landing page, also read the landing-specific constraints in `AGENTS.md:94` before editing anything under `src/components/landing`.

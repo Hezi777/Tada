@@ -10,7 +10,7 @@ Audited: 2026-03-01
 - Dashboard generation model env: `GROQ_DASHBOARD_MODEL`
 - Chat model env: `GROQ_CHAT_MODEL`
 
-Defaults from `apps/web/src/lib/env.ts`:
+Defaults from `src/shared/lib/env.ts`:
 
 - dashboard model: `openai/gpt-oss-120b`
 - chat model: `moonshotai/kimi-k2-instruct-0905`
@@ -25,15 +25,15 @@ If `GROQ_API_KEY` is absent, AI-specific paths degrade safely instead of blockin
 Entry:
 
 - `POST /api/upload`
-- server path: `apps/web/src/server/upload.ts`
-- chart generation path: `apps/web/src/server/dashboard-config.ts`
+- server path: `src/features/dashboard/server/upload.ts`
+- chart generation path: `src/features/dashboard/server/config.ts`
 
 The model receives:
 
 - inferred columns and kinds
 - sample rows
 - server-built column stats
-- BI generation rules from `packages/shared`
+- BI generation rules from `src/shared/contracts`
 
 The response is validated before chart configs are returned to the client.
 If the model fails or returns unusable output, server logic falls back to deterministic chart generation.
@@ -43,8 +43,8 @@ If the model fails or returns unusable output, server logic falls back to determ
 Entry:
 
 - `POST /api/chat`
-- route: `apps/web/src/app/api/chat/route.ts`
-- server path: `apps/web/src/server/chat.ts`
+- route: `src/app/api/chat/route.ts`
+- server path: `src/features/dashboard/server/chat.ts`
 
 The model receives grounded context:
 
@@ -64,7 +64,7 @@ The model returns:
 
 ## Validation Chain
 
-- Structural validation uses shared Zod contracts from `packages/shared`
+- Structural validation uses shared Zod contracts from `src/shared/contracts`
 - Semantic validation rejects:
   - unsupported chart shapes
   - unknown dataset columns
