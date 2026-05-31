@@ -1,4 +1,8 @@
-<h1 align="center"><b>Tada</b></h1>
+<h1 align="center">
+  <img width="120" height="120" alt="Tada Logo" src="public/tada-logo.svg" />
+  <br />
+  <b>Tada</b>
+</h1>
 
 <p align="center">
   Upload a spreadsheet, get a production-quality analytics dashboard with AI-powered charts, KPIs, and a conversational copilot — in seconds.
@@ -10,7 +14,7 @@
   <a href="https://supabase.com"><img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" /></a>
   <a href="https://groq.com"><img src="https://img.shields.io/badge/Groq-F55036?style=for-the-badge&logo=groq&logoColor=white" alt="Groq" /></a>
   <a href="https://tailwindcss.com"><img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" /></a>
-  <a href="https://github.com/Hezi777/tada-instant-insights/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Hezi777/tada-instant-insights?style=for-the-badge" alt="License" /></a>
+  <a href="https://github.com/Hezi777/tada-instant-insights/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Hezi777/Tada?style=for-the-badge" alt="License" /></a>
 </p>
 
 <p align="center">
@@ -90,8 +94,8 @@ Tada is a full-stack web application that transforms raw CSV and Excel files int
 1. Clone the repository.
 
    ```bash
-   git clone https://github.com/Hezi777/tada-instant-insights.git
-   cd tada-instant-insights
+   git clone https://github.com/Hezi777/Tada.git
+   cd Tada
    ```
 
 2. Install dependencies.
