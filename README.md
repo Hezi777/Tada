@@ -142,9 +142,3 @@ Open [http://localhost:3000](http://localhost:3000).
 5. Push your branch and open a pull request against `main`.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-## License
-
-MIT - see the [LICENSE](LICENSE) file for details.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
