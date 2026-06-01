@@ -1,3 +1,5 @@
+<a id="readme-top"></a>
+
 <h1 align="center">
   <img width="120" height="120" alt="Tada Logo" src="public/tada-logo.svg" />
   <br />
@@ -17,20 +19,26 @@
   <a href="https://github.com/Hezi777/Tada/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Hezi777/Tada?style=for-the-badge" alt="License" /></a>
 </p>
 
-<p align="center">
-  <a href="#about">About</a> |
-  <a href="#features">Features</a> |
-  <a href="#screenshots">Screenshots</a> |
-  <a href="#tech-stack">Tech Stack</a> |
-  <a href="#getting-started">Getting Started</a> |
-  <a href="#contributing">Contributing</a>
-</p>
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#about">About</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#screenshots">Screenshots</a></li>
+    <li><a href="#tech-stack">Tech Stack</a></li>
+    <li><a href="#getting-started">Getting Started</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+  </ol>
+</details>
 
 ---
 
 ## About
 
 Tada turns CSV and Excel files into interactive dashboards without any manual configuration. Upload a file and a Groq-powered pipeline infers the schema, picks chart types, and streams a finished dashboard in seconds. A floating copilot chat lets you add or refine charts in plain English. Dashboards persist per-user in Supabase, so workspaces survive refreshes and can be switched between instantly.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Features
 
@@ -46,6 +54,8 @@ Tada turns CSV and Excel files into interactive dashboards without any manual co
 | Authentication | Supabase email/password auth with server-side session validation on all API routes |
 | Persistence | Dashboards, datasets, and chart configs stored in Supabase Postgres with checked-in migrations |
 | Landing page | Scroll-driven feature cards, animated chart mockup, and a "How it works" timeline built with Framer Motion |
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Screenshots
 
@@ -65,6 +75,8 @@ Tada turns CSV and Excel files into interactive dashboards without any manual co
 
 ![Split-screen login page: deep-blue brand panel on the left, clean sign-in form on the right](docs/screenshots/04-login.png)
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -80,6 +92,8 @@ Tada turns CSV and Excel files into interactive dashboards without any manual co
 | Auth + Database | Supabase (Auth, Postgres, Row-Level Security) |
 | AI inference | Groq (dashboard generation + copilot chat) |
 | Testing | Vitest + Testing Library |
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Getting Started
 
@@ -117,6 +131,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## Contributing
 
 1. Fork the repository on GitHub.
@@ -125,6 +141,10 @@ Open [http://localhost:3000](http://localhost:3000).
 4. Commit with a descriptive message.
 5. Push your branch and open a pull request against `main`.
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 ## License
 
 MIT - see the [LICENSE](LICENSE) file for details.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
