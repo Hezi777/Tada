@@ -348,9 +348,9 @@ const DashboardChartContent = memo(function DashboardChartContent({
             innerRadius="62%"
             outerRadius="82%"
             activeIndex={activeSlice}
-            onMouseEnter={(_, index) => setActiveSlice(index)}
+            onMouseEnter={(_: unknown, index: number) => setActiveSlice(index)}
             onMouseLeave={() => setActiveSlice(undefined)}
-            activeShape={(props) => (
+            activeShape={(props: { outerRadius?: number | string }) => (
               <Sector
                 {...props}
                 outerRadius={Number(props.outerRadius) + 4}
