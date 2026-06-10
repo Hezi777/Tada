@@ -9,7 +9,7 @@ interface HeroProps {
   onGetStarted: () => void;
 }
 
-const easeOut = { ease: 'easeOut' };
+const easeOut = { ease: 'easeOut' } as const;
 
 export function Hero({ onGetStarted }: HeroProps) {
   return (

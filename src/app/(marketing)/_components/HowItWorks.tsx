@@ -30,9 +30,9 @@ const steps = [
 const easeOut = { ease: 'easeOut' as const };
 
 function AnimatedConnector() {
-  const ref = useRef<SVGSVGElement>(null);
+  const ref = useRef<SVGSVGElement | null>(null);
   const { scrollYProgress } = useScroll({
-    target: ref,
+    target: ref as React.RefObject<HTMLElement | null>,
     offset: ['start 0.85', 'start 0.35'],
   });
   const pathLength = useTransform(scrollYProgress, [0, 1], [0, 1]);
