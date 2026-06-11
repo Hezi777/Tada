@@ -8,6 +8,7 @@ import {
   type SerializedRow,
   type SerializedValue,
 } from "@/shared/contracts";
+import { formatDateIL } from "@/shared/lib/format";
 
 export type DashboardRuntimeContext = {
   columns: DashboardColumn[];
@@ -475,9 +476,9 @@ export function computeKpiValue(
     if (dates.length === 0) {
       return "-";
     }
-    const start = dates[0].toISOString().slice(0, 10);
-    const end = dates[dates.length - 1].toISOString().slice(0, 10);
-    return start === end ? start : `${start} -> ${end}`;
+    const start = formatDateIL(dates[0]);
+    const end = formatDateIL(dates[dates.length - 1]);
+    return start === end ? start : `${start} – ${end}`;
   }
 
   const values = rows

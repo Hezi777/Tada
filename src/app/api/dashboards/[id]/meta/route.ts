@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/shared/lib/supabase/admin";
 import { createClient } from "@/shared/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -10,7 +9,6 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: dashboardId } = await params;
-  const supabaseAdmin = createAdminClient();
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,7 +20,7 @@ export async function GET(
   }
 
   // Verify dashboard ownership
-  const { data: dashboard, error: dashError } = await supabaseAdmin
+  const { data: dashboard, error: dashError } = await supabase
     .from("dashboards")
     .select("id, name, icon, color, user_id")
     .eq("id", dashboardId)
@@ -33,7 +31,7 @@ export async function GET(
   }
 
   // Get attached datasets
-  const { data: junctions } = await supabaseAdmin
+  const { data: junctions } = await supabase
     .from("dashboard_datasets")
     .select("dataset_id")
     .eq("dashboard_id", dashboardId);
@@ -52,7 +50,7 @@ export async function GET(
 
   // Load the most recent dataset (primary) from the attached ones, excluding `rows`
   const datasetIds = junctions.map((j) => j.dataset_id);
-  const { data: dataset, error: datasetError } = await supabaseAdmin
+  const { data: dataset, error: datasetError } = await supabase
     .from("datasets")
     .select("id, name, created_at")
     .in("id", datasetIds)
@@ -75,7 +73,7 @@ export async function GET(
   const datasetId = String(dataset.id);
 
   const [{ data: fileRows }] = await Promise.all([
-    supabaseAdmin
+    supabase
       .from("dataset_files")
       .select("id, file_name, is_primary, row_count")
       .eq("dataset_id", datasetId)

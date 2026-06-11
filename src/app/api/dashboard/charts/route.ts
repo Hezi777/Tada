@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/shared/lib/supabase/admin";
 import { z } from "zod";
 import { createClient } from "@/shared/lib/supabase/server";
 import { ChartConfigSchema } from "@/shared/contracts";
@@ -12,7 +11,6 @@ const PersistChartsRequestSchema = z.object({
 });
 
 export async function PATCH(request: Request) {
-  const supabaseAdmin = createAdminClient();
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,7 +27,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin
+  const { error } = await supabase
     .from("charts")
     .update({ configs: parsed.data.charts })
     .eq("dataset_id", parsed.data.datasetId)

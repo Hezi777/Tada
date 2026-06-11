@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/shared/lib/supabase/admin";
 import { createClient } from "@/shared/lib/supabase/server";
 import { CreateDashboardRequestSchema } from "@/shared/contracts";
 
@@ -7,7 +6,6 @@ export const runtime = "nodejs";
 
 /** GET /api/dashboards — list all dashboards for the current user */
 export async function GET() {
-  const supabaseAdmin = createAdminClient();
   const supabase = await createClient();
   const {
     data: { user },
@@ -18,7 +16,7 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const { data: dashboards, error } = await supabaseAdmin
+  const { data: dashboards, error } = await supabase
     .from("dashboards")
     .select("id, name, icon, color, created_at, updated_at")
     .eq("user_id", user.id)
@@ -36,7 +34,7 @@ export async function GET() {
   const fileCounts: Record<string, number> = {};
 
   if (dashboardIds.length > 0) {
-    const { data: junctions } = await supabaseAdmin
+    const { data: junctions } = await supabase
       .from("dashboard_datasets")
       .select("dashboard_id")
       .in("dashboard_id", dashboardIds);
@@ -63,7 +61,6 @@ export async function GET() {
 
 /** POST /api/dashboards — create a new dashboard */
 export async function POST(request: Request) {
-  const supabaseAdmin = createAdminClient();
   const supabase = await createClient();
   const {
     data: { user },
@@ -82,7 +79,7 @@ export async function POST(request: Request) {
 
   const { name, icon, color, datasetIds } = parsed.data;
 
-  const { data: dashboard, error } = await supabaseAdmin
+  const { data: dashboard, error } = await supabase
     .from("dashboards")
     .insert({ user_id: user.id, name, icon, color })
     .select("id, name, icon, color, created_at, updated_at")
@@ -101,7 +98,7 @@ export async function POST(request: Request) {
       dashboard_id: dashboard.id,
       dataset_id: datasetId,
     }));
-    await supabaseAdmin.from("dashboard_datasets").insert(junctionRows);
+    await supabase.from("dashboard_datasets").insert(junctionRows);
   }
 
   return NextResponse.json({

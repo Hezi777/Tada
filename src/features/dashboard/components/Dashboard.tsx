@@ -224,7 +224,7 @@ function KpiCard({
           : "bg-white"
       }`}
     >
-      <CardContent className="relative flex h-[160px] flex-col justify-between overflow-hidden px-8 py-8">
+      <CardContent className="relative flex min-h-[176px] flex-col justify-between overflow-hidden px-8 py-7">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p
@@ -239,9 +239,13 @@ function KpiCard({
 
         <div className="relative z-10 min-w-0">
           <div
-            className={`font-display text-[34px] font-extrabold leading-none tracking-[-0.04em] tabular-nums ${
-              isPrimary ? "text-white" : "text-[var(--color-text-primary)]"
-            }`}
+            className={`font-display font-extrabold leading-tight tracking-[-0.04em] tabular-nums ${
+              String(value).length > 14
+                ? "text-[19px]"
+                : String(value).length > 9
+                  ? "text-[26px]"
+                  : "text-[34px]"
+            } ${isPrimary ? "text-white" : "text-[var(--color-text-primary)]"}`}
           >
             {formatMetric(value)}
           </div>
@@ -259,7 +263,7 @@ function KpiCard({
           </div>
 
           <p
-            className={`mt-3 max-w-[16rem] text-[12px] leading-5 ${
+            className={`mt-3 line-clamp-2 max-w-[16rem] text-[12px] leading-5 ${
               isPrimary ? "text-white/74" : "text-[var(--color-text-secondary)]"
             }`}
           >
@@ -268,8 +272,9 @@ function KpiCard({
         </div>
 
         <Icon
-          className={`pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 ${
-            isPrimary ? "text-white/10" : "text-[var(--color-accent)]/10"
+          strokeWidth={1.5}
+          className={`pointer-events-none absolute -bottom-5 -right-5 h-24 w-24 ${
+            isPrimary ? "text-white/10" : "text-[rgba(0,50,125,0.07)]"
           }`}
         />
       </CardContent>

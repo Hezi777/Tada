@@ -1127,7 +1127,10 @@ function buildPrimaryKpi(rows: Row[], column: Column): KPIConfig | null {
     aggregation,
     label:
       aggregation === "avg" ? `Average ${column.name}` : `Total ${column.name}`,
-    description: `Primary KPI selected from the highest-variance metric column: ${column.name}.`,
+    description:
+      aggregation === "avg"
+        ? `Average ${column.name} across all uploaded rows.`
+        : `Sum of ${column.name} across all uploaded rows.`,
     isPrimary: true,
   };
 }
@@ -1191,12 +1194,17 @@ function buildDateRangeKpi(rows: Row[], column: Column): KPIConfig | null {
   if (dates.length === 0) {
     return null;
   }
+  const formatDay = (date: Date) => {
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    return `${day}/${month}/${date.getUTCFullYear()}`;
+  };
   return {
     id: "kpi_time_span",
     column: column.name,
     aggregation: "range",
     label: `${column.name} span`,
-    description: `Coverage runs from ${dates[0].toISOString().slice(0, 10)} to ${dates[dates.length - 1].toISOString().slice(0, 10)}.`,
+    description: `Data covers ${formatDay(dates[0])} to ${formatDay(dates[dates.length - 1])}.`,
     isPrimary: false,
   };
 }
