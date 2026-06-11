@@ -58,8 +58,9 @@ export async function retrieveBiRules(
     if (!error && Array.isArray(data) && data.length > 0) {
       return data
         .map((row) => MatchRowSchema.safeParse(row))
-        .filter((parsed): parsed is { success: true; data: RetrievedBiRule } =>
-          parsed.success,
+        .filter(
+          (parsed): parsed is { success: true; data: RetrievedBiRule } =>
+            parsed.success,
         )
         .map((parsed) => parsed.data);
     }

@@ -122,8 +122,8 @@ export default function LoginPage() {
             from your data.
           </h2>
           <p className="mt-4 text-[15px] leading-7 text-white/70">
-            Upload any CSV, Excel, or PDF file and get an AI-generated
-            dashboard with charts, KPIs, and a conversational AI in seconds.
+            Upload any CSV, Excel, or PDF file and get an AI-generated dashboard
+            with charts, KPIs, and a conversational AI in seconds.
           </p>
         </div>
 

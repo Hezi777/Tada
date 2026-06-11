@@ -98,7 +98,7 @@ export async function GET(
     files:
       files.length > 0
         ? files
-          : [
+        : [
             {
               id: crypto.randomUUID(),
               fileName: String(dataset.name ?? "dataset"),

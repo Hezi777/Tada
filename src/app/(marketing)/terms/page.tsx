@@ -92,9 +92,7 @@ const sections: Section[] = [
   },
   {
     heading: "11. Contact",
-    paragraphs: [
-      "Questions about these terms? Email us at hello@tada.app.",
-    ],
+    paragraphs: ["Questions about these terms? Email us at hello@tada.app."],
   },
 ];
 

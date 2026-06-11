@@ -69,7 +69,7 @@ export async function ensureDatasetContext(
 
   const rows = Array.isArray(data.rows)
     ? (data.rows as Row[])
-    : cachedRows ?? [];
+    : (cachedRows ?? []);
   if (rows.length === 0) {
     return null;
   }

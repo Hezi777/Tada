@@ -21,9 +21,7 @@ export const runtime = "nodejs";
  */
 export async function POST(request: Request) {
   try {
-    const body = GenerateDashboardRequestSchema.safeParse(
-      await request.json(),
-    );
+    const body = GenerateDashboardRequestSchema.safeParse(await request.json());
     if (!body.success) {
       return NextResponse.json({ error: "invalid_request" }, { status: 400 });
     }

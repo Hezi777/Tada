@@ -125,7 +125,10 @@ function metricLabel(chart: LayoutItem): string {
     chart.columns.find(
       (column) => column !== chart.groupBy && column !== chart.timeColumn,
     ) ?? null;
-  if (chart.aggregation === "count" || (!measure && chart.aggregation === null)) {
+  if (
+    chart.aggregation === "count" ||
+    (!measure && chart.aggregation === null)
+  ) {
     return "Count";
   }
   return measure ?? "Value";
@@ -144,7 +147,9 @@ function buildScatterChartConfig(chart: LayoutItem): ChartPrimitiveConfig {
   };
 }
 
-function buildDonutChartConfig(series: Array<{ label: string; value: number }>): ChartPrimitiveConfig {
+function buildDonutChartConfig(
+  series: Array<{ label: string; value: number }>,
+): ChartPrimitiveConfig {
   const config: ChartPrimitiveConfig = {};
 
   series.forEach((entry, index) => {
@@ -188,7 +193,9 @@ function ScatterTooltip({
 
   return (
     <div className="grid min-w-[10rem] gap-1.5 rounded-[16px] bg-white px-3 py-2 text-xs shadow-[0_18px_40px_-28px_rgba(25,28,30,0.25)]">
-      <div className="font-medium text-[var(--color-text-primary)]">Scatter point</div>
+      <div className="font-medium text-[var(--color-text-primary)]">
+        Scatter point
+      </div>
       <div className="flex items-center justify-between gap-4">
         <span className="text-[var(--color-text-secondary)]">{xLabel}</span>
         <span className="font-display font-semibold tabular-nums text-[var(--color-text-primary)]">
@@ -214,7 +221,11 @@ const DashboardChartContent = memo(function DashboardChartContent({
 }) {
   const [activeSlice, setActiveSlice] = useState<number | undefined>(undefined);
   const chartHeightClass =
-    chart.colSpan >= 8 ? "h-[300px]" : chart.type === "donut" ? "h-[210px]" : "h-[190px]";
+    chart.colSpan >= 8
+      ? "h-[300px]"
+      : chart.type === "donut"
+        ? "h-[210px]"
+        : "h-[190px]";
 
   if (chart.type === "area") {
     const series = buildAreaSeries(chart, rows);
@@ -234,13 +245,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
           margin={{ top: 12, right: 12, left: 0, bottom: 4 }}
         >
           <defs>
-            <linearGradient
-              id={`area-${chart.id}`}
-              x1="0"
-              y1="0"
-              x2="0"
-              y2="1"
-            >
+            <linearGradient id={`area-${chart.id}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={CHART_COLOR} stopOpacity={0.18} />
               <stop offset="100%" stopColor={CHART_COLOR} stopOpacity={0} />
             </linearGradient>
@@ -370,10 +375,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             onMouseEnter={(_: unknown, index: number) => setActiveSlice(index)}
             onMouseLeave={() => setActiveSlice(undefined)}
             activeShape={(props: { outerRadius?: number | string }) => (
-              <Sector
-                {...props}
-                outerRadius={Number(props.outerRadius) + 4}
-              />
+              <Sector {...props} outerRadius={Number(props.outerRadius) + 4} />
             )}
           >
             {series.map((_entry, index) => (
@@ -403,9 +405,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
               )}
             />
           </Pie>
-          <ChartTooltip
-            content={<ChartTooltipContent labelKey="label" />}
-          />
+          <ChartTooltip content={<ChartTooltipContent labelKey="label" />} />
           <ChartLegend
             content={
               <ChartLegendContent
@@ -481,7 +481,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
   }
 
   return (
-      <ChartContainer
+    <ChartContainer
       config={chartConfig}
       className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-white`}
     >

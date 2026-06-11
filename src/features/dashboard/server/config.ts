@@ -1018,7 +1018,10 @@ async function suggestChartsWithLLM(
       ? groundingRules.map((rule) => `- [${rule.severity}] ${rule.content}`)
       : BI_GENERATION_RULES.map((rule) => `- ${rule}`);
   const targetCount = chartCount
-    ? Math.min(BI_RULE_LIMITS.maxCharts, Math.max(BI_RULE_LIMITS.minCharts, chartCount))
+    ? Math.min(
+        BI_RULE_LIMITS.maxCharts,
+        Math.max(BI_RULE_LIMITS.minCharts, chartCount),
+      )
     : null;
 
   const prompt = [

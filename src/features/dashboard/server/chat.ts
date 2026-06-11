@@ -15,10 +15,7 @@ import { env, getGroqApiKey } from "@/shared/lib/env";
 import { jsonCompletion } from "@/shared/lib/ai/groq";
 import { retrieveDatasetContext } from "@/features/rag/server/user-data";
 import type { Column, DashboardState } from "./types";
-import {
-  buildColumnPromptStats,
-  validateChartCollection,
-} from "./config";
+import { buildColumnPromptStats, validateChartCollection } from "./config";
 import { ensureDatasetContext } from "./context";
 
 type Row = Record<string, unknown>;
@@ -473,7 +470,7 @@ function pickReplacementChart(
 function buildReplacementProposal(
   incomingConfig: ChartConfig,
   currentCharts: ChartConfig[],
-) : ChatChartProposal | null {
+): ChatChartProposal | null {
   const replacementChart = pickReplacementChart(
     currentCharts,
     incomingConfig.type,
@@ -544,7 +541,10 @@ function validateChatPatch(
       currentCharts.filter(isChartVisible).length >= BI_RULE_LIMITS.maxCharts ||
       currentCharts.length >= BI_RULE_LIMITS.maxSavedCharts
     ) {
-      const proposal = buildReplacementProposal(nextPatch.config, currentCharts);
+      const proposal = buildReplacementProposal(
+        nextPatch.config,
+        currentCharts,
+      );
       if (proposal) {
         return { patch: null, error: null, proposal };
       }

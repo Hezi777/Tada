@@ -96,13 +96,7 @@ const LOADING_PHRASES = [
   "Polishing pixels...",
 ];
 
-const DASHBOARD_TINTS = [
-  "#f0fff4",
-  "#fff0f0",
-  "#f0f4ff",
-  "#f5f0ff",
-  "#fffbf0",
-];
+const DASHBOARD_TINTS = ["#f0fff4", "#fff0f0", "#f0f4ff", "#f5f0ff", "#fffbf0"];
 
 const PAGE_SIZE = 6;
 
@@ -317,7 +311,10 @@ export default function FileManager() {
     return items;
   }, [dashboards, sortMode]);
 
-  const totalPages = Math.max(1, Math.ceil(sortedDashboards.length / PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(sortedDashboards.length / PAGE_SIZE),
+  );
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
@@ -389,7 +386,9 @@ export default function FileManager() {
       setView("files");
     } catch (error) {
       setQuickUploadError(
-        error instanceof Error ? formatApiMessage(error.message) : "Upload failed",
+        error instanceof Error
+          ? formatApiMessage(error.message)
+          : "Upload failed",
       );
     } finally {
       setIsQuickUploading(false);
@@ -455,7 +454,9 @@ export default function FileManager() {
     try {
       const deletingActiveDashboard = activeDash?.id === deleteConfirmId;
       await deleteDashboard(deleteConfirmId);
-      setDashboards((prev) => prev.filter((item) => item.id !== deleteConfirmId));
+      setDashboards((prev) =>
+        prev.filter((item) => item.id !== deleteConfirmId),
+      );
 
       if (deletingActiveDashboard) {
         setView("dashboards");
@@ -552,7 +553,9 @@ export default function FileManager() {
       );
     } catch (error) {
       setUploadError(
-        error instanceof Error ? formatApiMessage(error.message) : "Upload failed",
+        error instanceof Error
+          ? formatApiMessage(error.message)
+          : "Upload failed",
       );
     } finally {
       setIsUploading(false);
@@ -676,7 +679,10 @@ export default function FileManager() {
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 rounded-[16px] p-2">
+            <DropdownMenuContent
+              align="end"
+              className="w-48 rounded-[16px] p-2"
+            >
               <DropdownMenuItem onSelect={() => setSortMode("updated")}>
                 <span className="flex-1">Last Modified</span>
                 {sortMode === "updated" ? <Check className="h-4 w-4" /> : null}
@@ -804,7 +810,10 @@ export default function FileManager() {
                                     key={color}
                                     type="button"
                                     onClick={() =>
-                                      void handleChangeColor(dashboard.id, color)
+                                      void handleChangeColor(
+                                        dashboard.id,
+                                        color,
+                                      )
                                     }
                                     className={`h-7 w-7 rounded-full border border-white/70 transition-all ${
                                       color === dashboard.color
@@ -875,7 +884,9 @@ export default function FileManager() {
                         >
                           <Input
                             value={renameValue}
-                            onChange={(event) => setRenameValue(event.target.value)}
+                            onChange={(event) =>
+                              setRenameValue(event.target.value)
+                            }
                             className="h-9 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-white text-sm font-semibold"
                             onBlur={() => void handleRename(dashboard.id)}
                             autoFocus
@@ -915,7 +926,8 @@ export default function FileManager() {
 
         <footer className="mt-14 flex flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm font-medium text-[var(--color-text-secondary)]">
-            Showing {pagedDashboards.length} of {sortedDashboards.length} dashboards
+            Showing {pagedDashboards.length} of {sortedDashboards.length}{" "}
+            dashboards
           </span>
           <div className="flex items-center gap-2">
             <Button

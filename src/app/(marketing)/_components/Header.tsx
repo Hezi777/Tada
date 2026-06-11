@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Button } from '@/shared/ui/button';
-import { TadaLogo } from '@/shared/brand/TadaLogo';
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Button } from "@/shared/ui/button";
+import { TadaLogo } from "@/shared/brand/TadaLogo";
 
 interface HeaderProps {
   isAuthenticated?: boolean;
@@ -17,9 +17,9 @@ interface HeaderProps {
 
 function getDisplayInitial(email: string | null): string {
   if (!email) {
-    return 'T';
+    return "T";
   }
-  return email.trim().charAt(0).toUpperCase() || 'T';
+  return email.trim().charAt(0).toUpperCase() || "T";
 }
 
 export function Header({
@@ -32,16 +32,17 @@ export function Header({
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
 
-  const handleLogin = onLogin ?? (() => router.push('/login'));
-  const handleGetStarted = onGetStarted ?? (() => router.push('/login'));
-  const handleOpenWorkspace = onOpenWorkspace ?? (() => router.push('/dashboard'));
+  const handleLogin = onLogin ?? (() => router.push("/login"));
+  const handleGetStarted = onGetStarted ?? (() => router.push("/login"));
+  const handleOpenWorkspace =
+    onOpenWorkspace ?? (() => router.push("/dashboard"));
 
   useEffect(() => {
     function onScroll() {
       setScrolled(window.scrollY > 80);
     }
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
@@ -53,21 +54,21 @@ export function Header({
       animate={
         scrolled
           ? {
-            y: 0,
-            opacity: 1,
-            backgroundColor: 'rgba(255,255,255,0.9)',
-            borderColor: 'rgba(148,163,184,0.5)',
-            backdropFilter: 'blur(12px)',
-          }
+              y: 0,
+              opacity: 1,
+              backgroundColor: "rgba(255,255,255,0.9)",
+              borderColor: "rgba(148,163,184,0.5)",
+              backdropFilter: "blur(12px)",
+            }
           : {
-            y: 0,
-            opacity: 1,
-            backgroundColor: 'rgba(255,255,255,0)',
-            borderColor: 'rgba(148,163,184,0)',
-            backdropFilter: 'blur(0px)',
-          }
+              y: 0,
+              opacity: 1,
+              backgroundColor: "rgba(255,255,255,0)",
+              borderColor: "rgba(148,163,184,0)",
+              backdropFilter: "blur(0px)",
+            }
       }
-      transition={{ duration: 0.4, ease: 'easeInOut' }}
+      transition={{ duration: 0.4, ease: "easeInOut" }}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Logo */}

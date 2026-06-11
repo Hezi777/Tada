@@ -140,7 +140,9 @@ export type ProfiledUpload = {
 };
 
 /** Phase 1: parse + profile + suggest a topic. No LLM, no chart generation. */
-export async function profileUpload(file: UploadedFile): Promise<ProfiledUpload> {
+export async function profileUpload(
+  file: UploadedFile,
+): Promise<ProfiledUpload> {
   const rows = await parseUploadedFile(file);
   const columns = inferColumns(rows);
   const profile = profileDataset(rows, columns);

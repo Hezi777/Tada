@@ -38,7 +38,8 @@ async function main() {
   loadDotEnvLocal();
 
   const sqlFlagIndex = process.argv.indexOf("--sql");
-  const sqlOutPath = sqlFlagIndex !== -1 ? process.argv[sqlFlagIndex + 1] : null;
+  const sqlOutPath =
+    sqlFlagIndex !== -1 ? process.argv[sqlFlagIndex + 1] : null;
 
   const rules = JSON.parse(
     readFileSync(resolve(root, "data/bi-rules.json"), "utf8"),

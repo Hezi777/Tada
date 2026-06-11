@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { Button } from '@/shared/ui/button';
-import { AnimatedDashboardMockup } from './AnimatedDashboardMockup';
+import { ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { Button } from "@/shared/ui/button";
+import { AnimatedDashboardMockup } from "./AnimatedDashboardMockup";
 
 interface HeroProps {
   onGetStarted: () => void;
 }
 
-const easeOut = { ease: 'easeOut' } as const;
+const easeOut = { ease: "easeOut" } as const;
 
 export function Hero({ onGetStarted }: HeroProps) {
   return (
@@ -19,7 +19,7 @@ export function Hero({ onGetStarted }: HeroProps) {
       <div className="absolute left-[10%] top-28 h-40 w-40 rounded-full bg-primary/10 blur-3xl animate-float" />
       <div
         className="absolute bottom-16 right-[8%] h-56 w-56 rounded-full bg-primary/12 blur-3xl animate-float"
-        style={{ animationDelay: '-3s' }}
+        style={{ animationDelay: "-3s" }}
       />
 
       <div className="container relative z-10">
@@ -62,7 +62,6 @@ export function Hero({ onGetStarted }: HeroProps) {
                 Try with sample data
               </Button>
             </motion.div>
-
           </div>
 
           {/* right-side mockup */}
@@ -77,7 +76,6 @@ export function Hero({ onGetStarted }: HeroProps) {
           </motion.div>
         </div>
       </div>
-
     </section>
   );
 }

@@ -161,7 +161,7 @@ async function parsePdf(buffer: Buffer): Promise<Row[]> {
     [
       "Extract the tabular data from this document text as JSON.",
       'Schema: {"rows":[{"column name":"value", ...}]}. Use the document\'s own column headers as keys (keep Hebrew headers in Hebrew). Use null for missing cells. Numbers as numbers.',
-      "If there is no tabular data at all, return {\"rows\":[]}.",
+      'If there is no tabular data at all, return {"rows":[]}.',
       "Document text:",
       text.slice(0, 8000),
     ].join("\n"),
@@ -182,7 +182,9 @@ function extractDelimitedTable(text: string): Row[] | null {
     .filter(Boolean);
 
   for (const delimiter of [/\t+/, / {2,}/, /,/]) {
-    const split = lines.map((line) => line.split(delimiter).map((c) => c.trim()));
+    const split = lines.map((line) =>
+      line.split(delimiter).map((c) => c.trim()),
+    );
     const widths = split.map((cells) => cells.length);
     const headerIndex = widths.findIndex((width) => width >= 2);
     if (headerIndex === -1) {
@@ -193,7 +195,11 @@ function extractDelimitedTable(text: string): Row[] | null {
       .slice(headerIndex + 1)
       .filter((cells) => cells.length === width);
     // Require most subsequent lines to align with the header width.
-    if (width < 2 || body.length < 2 || body.length < (lines.length - headerIndex - 1) * 0.6) {
+    if (
+      width < 2 ||
+      body.length < 2 ||
+      body.length < (lines.length - headerIndex - 1) * 0.6
+    ) {
       continue;
     }
     const headers = split[headerIndex];
@@ -201,7 +207,8 @@ function extractDelimitedTable(text: string): Row[] | null {
       const row: Row = {};
       headers.forEach((header, index) => {
         const cell = cells[index] ?? null;
-        const numeric = cell !== null && cell !== "" ? Number(cell.replace(/,/g, "")) : NaN;
+        const numeric =
+          cell !== null && cell !== "" ? Number(cell.replace(/,/g, "")) : NaN;
         row[header] = Number.isFinite(numeric) && cell !== "" ? numeric : cell;
       });
       return row;
