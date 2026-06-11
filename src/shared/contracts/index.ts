@@ -104,6 +104,9 @@ export const ChartConfigSchema = z.object({
   priority: z.number().int().nonnegative().default(0),
   lastTouchedBy: ChartLastTouchedBySchema.default("user"),
   visibilityState: ChartVisibilityStateSchema.default("visible"),
+  // Render hints set by the BI rules engine.
+  orientation: z.enum(["vertical", "horizontal"]).optional(),
+  categoryLimit: z.number().int().positive().optional(),
 });
 export type ChartConfig = z.infer<typeof ChartConfigSchema>;
 
@@ -239,6 +242,71 @@ export const ChatDashboardResponseSchema = z.object({
   proposal: ChatChartProposalSchema.nullable(),
 });
 export type ChatDashboardResponse = z.infer<typeof ChatDashboardResponseSchema>;
+
+// ── BI Rules RAG ──
+
+export const BiRuleCategorySchema = z.enum([
+  "chart_selection",
+  "formatting",
+  "aggregation",
+  "readability",
+  "israeli_data",
+]);
+export type BiRuleCategory = z.infer<typeof BiRuleCategorySchema>;
+
+export const BiRuleSeveritySchema = z.enum(["error", "warning", "info"]);
+export type BiRuleSeverity = z.infer<typeof BiRuleSeveritySchema>;
+
+export const BiRuleSchema = z.object({
+  rule_id: z.string().min(1),
+  category: BiRuleCategorySchema,
+  content: z.string().min(1),
+  action_if_fail: z.string().min(1),
+  severity: BiRuleSeveritySchema,
+});
+export type BiRule = z.infer<typeof BiRuleSchema>;
+
+export const RuleViolationSchema = z.object({
+  ruleId: z.string().min(1),
+  chartId: z.string().min(1),
+  action: z.string().min(1),
+  severity: BiRuleSeveritySchema,
+  applied: z.boolean(),
+  detail: z.string(),
+});
+export type RuleViolation = z.infer<typeof RuleViolationSchema>;
+
+// ── Dataset topics ──
+
+export const DATASET_TOPICS = [
+  "cash_flow",
+  "sales",
+  "expenses",
+  "student_grades",
+  "customer_feedback",
+  "hr",
+  "inventory",
+  "marketing",
+  "unknown",
+] as const;
+
+export const DatasetTopicSchema = z.enum(DATASET_TOPICS);
+export type DatasetTopic = z.infer<typeof DatasetTopicSchema>;
+
+export const DATASET_TOPIC_LABELS: Record<
+  DatasetTopic,
+  { en: string; he: string }
+> = {
+  cash_flow: { en: "Cash flow", he: "תזרים מזומנים" },
+  sales: { en: "Sales", he: "מכירות" },
+  expenses: { en: "Expenses", he: "הוצאות" },
+  student_grades: { en: "Student grades", he: "ציוני תלמידים" },
+  customer_feedback: { en: "Customer feedback", he: "משוב לקוחות" },
+  hr: { en: "HR / People", he: "משאבי אנוש" },
+  inventory: { en: "Inventory", he: "מלאי" },
+  marketing: { en: "Marketing", he: "שיווק" },
+  unknown: { en: "Not sure / Other", he: "לא בטוח / אחר" },
+};
 
 export const BI_RULE_LIMITS = {
   minCharts: 2,

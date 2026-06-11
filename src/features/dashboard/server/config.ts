@@ -10,7 +10,15 @@ import {
   type KPIConfig,
 } from "@/shared/contracts";
 import Groq from "groq-sdk";
+import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { env, getGroqApiKey } from "@/shared/lib/env";
+import { jsonCompletion } from "@/shared/lib/ai/groq";
+import {
+  retrieveBiRules,
+  type RetrievedBiRule,
+} from "@/features/rag/server/bi-rules";
+import { applyBiRules } from "./rules";
 import type { Column } from "./types";
 
 type Row = Record<string, unknown>;
@@ -913,36 +921,6 @@ function buildFallbackCharts(rows: Row[], columns: Column[]): ChartConfig[] {
   );
 }
 
-function extractText(payload: unknown): string | null {
-  if (typeof payload === "string") {
-    return payload;
-  }
-  return null;
-}
-
-function parseSuggestionPayload(text: string): IncomingChartConfig[] | null {
-  const trimmed = text.trim();
-  const start = trimmed.indexOf("{");
-  const end = trimmed.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(trimmed.slice(start, end + 1)) as {
-      charts?: Array<Record<string, unknown>>;
-    };
-    if (!Array.isArray(parsed.charts)) {
-      return null;
-    }
-    return parsed.charts
-      .map((chart) => normalizeSuggestedChart(chart))
-      .filter((chart): chart is IncomingChartConfig => Boolean(chart));
-  } catch {
-    return null;
-  }
-}
-
 function normalizeSuggestedChart(
   chart: Record<string, unknown>,
 ): IncomingChartConfig | null {
@@ -984,22 +962,74 @@ function normalizeSuggestedChart(
   };
 }
 
+export type GenerationContext = {
+  /** Authenticated client used to query the bi_rules_chunks vector index. */
+  supabase?: SupabaseClient;
+  topic?: string;
+  /** User-confirmed number of charts to aim for (clamped to BI limits). */
+  chartCount?: number;
+};
+
+function buildRuleRetrievalQuery(columns: Column[], topic?: string): string {
+  const byKind = (kind: Column["kind"]) =>
+    columns
+      .filter((column) => column.kind === kind)
+      .map((column) => column.name)
+      .join(", ");
+  return [
+    `Choosing dashboard charts for a ${topic && topic !== "unknown" ? topic.replace(/_/g, " ") : "general business"} dataset.`,
+    `Numeric columns: ${byKind("numeric") || "none"}.`,
+    `Categorical columns: ${byKind("categorical") || "none"}.`,
+    `Date columns: ${byKind("date") || "none"}.`,
+    "Which chart selection, aggregation, formatting, readability and Israeli data rules apply?",
+  ].join(" ");
+}
+
+async function fetchGroundingRules(
+  columns: Column[],
+  context?: GenerationContext,
+): Promise<RetrievedBiRule[]> {
+  if (!context?.supabase) {
+    return [];
+  }
+  return retrieveBiRules(
+    context.supabase,
+    buildRuleRetrievalQuery(columns, context.topic),
+    { topK: 12 },
+  );
+}
+
+const ChartsSuggestionSchema = z.object({
+  charts: z.array(z.record(z.unknown())),
+});
+
 async function suggestChartsWithLLM(
   rows: Row[],
   columns: Column[],
+  groundingRules: RetrievedBiRule[],
+  chartCount?: number,
 ): Promise<ChartConfig[] | null> {
-  const apiKey = getGroqApiKey();
-  if (!apiKey) {
+  if (!getGroqApiKey()) {
     return null;
   }
 
-  const client = new Groq({ apiKey });
-  const model = env.GROQ_DASHBOARD_MODEL;
+  const ruleLines =
+    groundingRules.length > 0
+      ? groundingRules.map((rule) => `- [${rule.severity}] ${rule.content}`)
+      : BI_GENERATION_RULES.map((rule) => `- ${rule}`);
+  const targetCount = chartCount
+    ? Math.min(BI_RULE_LIMITS.maxCharts, Math.max(BI_RULE_LIMITS.minCharts, chartCount))
+    : null;
+
   const prompt = [
-    "Return strict JSON only. No prose.",
-    `Follow these rules exactly: ${BI_GENERATION_RULES.join(" ")}`,
+    "You design dashboard charts. Return strict JSON only.",
+    "Follow these data-visualization rules exactly:",
+    ...ruleLines,
     'Schema: {"charts":[{"type":"area|bar|donut|scatter","title":"string","insight":"string","columns":["col"],"aggregation":"sum|avg|count|min|max|null","groupBy":"string|null","timeColumn":"string|null","size":"small|medium|large"}]}',
-    "Return 2 to 6 charts. Use only provided column names.",
+    targetCount
+      ? `Return exactly ${targetCount} charts. Use only provided column names.`
+      : "Return 2 to 6 charts. Use only provided column names.",
+    "If column names are Hebrew, keep titles and insights in Hebrew; otherwise use English.",
     JSON.stringify({
       rowCount: rows.length,
       columns: columns.map((column) => ({
@@ -1011,50 +1041,65 @@ async function suggestChartsWithLLM(
     }),
   ].join("\n");
 
-  try {
-    const completion = await client.chat.completions.create({
-      model,
-      temperature: 0.2,
-      max_completion_tokens: 420,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    });
-    const payload = completion.choices[0]?.message?.content ?? null;
-    const text = extractText(payload);
-    if (!text) {
-      return null;
-    }
-    const parsed = parseSuggestionPayload(text);
-    if (!parsed || parsed.length === 0) {
-      return null;
-    }
-
-    const normalized = normalizeCharts(
-      parsed.slice(0, BI_RULE_LIMITS.maxCharts),
-      "ai_initial",
-      false,
-    );
-    return validateChartCollection(normalized, columns, rows)
-      ? null
-      : normalized;
-  } catch {
+  const parsed = await jsonCompletion(prompt, ChartsSuggestionSchema, {
+    model: env.GROQ_DASHBOARD_MODEL,
+    temperature: 0.2,
+    maxTokens: 900,
+  });
+  if (!parsed) {
     return null;
   }
+
+  const incoming = parsed.charts
+    .map((chart) => normalizeSuggestedChart(chart))
+    .filter((chart): chart is IncomingChartConfig => Boolean(chart));
+  if (incoming.length === 0) {
+    return null;
+  }
+
+  const normalized = normalizeCharts(
+    incoming.slice(0, BI_RULE_LIMITS.maxCharts),
+    "ai_initial",
+    false,
+  );
+  return validateChartCollection(normalized, columns, rows) ? null : normalized;
 }
 
 export async function buildInitialChartConfigs(
   rows: Row[],
   columns: Column[],
+  context?: GenerationContext,
 ): Promise<ChartConfig[]> {
-  const suggested = await suggestChartsWithLLM(rows, columns);
-  if (suggested) {
-    return suggested;
+  const groundingRules = await fetchGroundingRules(columns, context);
+  const suggested = await suggestChartsWithLLM(
+    rows,
+    columns,
+    groundingRules,
+    context?.chartCount,
+  );
+  const base = suggested ?? buildFallbackCharts(rows, columns);
+
+  // The retrieved rules guided the prompt; the engine enforces them.
+  const { charts: corrected, violations } = applyBiRules(base, columns, rows);
+  if (violations.length > 0) {
+    console.log(
+      "[bi-rules] applied:",
+      violations
+        .map(
+          (violation) =>
+            `${violation.ruleId} -> ${violation.chartId}${violation.applied ? "" : " (logged)"}`,
+        )
+        .join(", "),
+    );
   }
-  return buildFallbackCharts(rows, columns);
+
+  if (!validateChartCollection(corrected, columns, rows)) {
+    return corrected;
+  }
+  // Rule corrections can collide with collection-level constraints (e.g. a
+  // donut converted to bar duplicating an existing bar); fall back rather
+  // than ship an invalid collection.
+  return suggested ? buildFallbackCharts(rows, columns) : base;
 }
 
 // ── KPI generation: LLM-first, heuristic fallback ──
