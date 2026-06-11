@@ -54,6 +54,16 @@ export async function ensureDatasetContext(
     .eq("id", datasetId)
     .single();
   if (error || !data) {
+    // The DB row may be unreachable (e.g. transient failure) while the
+    // process cache still holds the dataset; keep chat working from memory.
+    if (cachedState && cachedRows) {
+      return {
+        state: cachedState,
+        rows: cachedRows,
+        profile: cachedMeta?.profile ?? null,
+        topic: cachedMeta?.topic ?? "unknown",
+      };
+    }
     return null;
   }
 
