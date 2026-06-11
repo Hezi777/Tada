@@ -68,6 +68,7 @@ import {
   formatAggregationLabel,
   resolveKpiIcon,
 } from "@/features/dashboard/client/design";
+import { formatILS, looksLikeCurrencyColumn } from "@/shared/lib/format";
 import {
   Sheet,
   SheetContent,
@@ -76,13 +77,21 @@ import {
   SheetTitle,
 } from "@/shared/ui/sheet";
 
-function formatMetric(value: string | number): string | number {
+function formatMetric(
+  value: string | number,
+  columnName?: string,
+): string | number {
   if (typeof value === "string") {
     return value.trim() ? value : "-";
   }
 
   if (!Number.isFinite(value)) {
     return "-";
+  }
+
+  // Shekel formatting for money-like KPI columns (₪ before the number).
+  if (columnName && looksLikeCurrencyColumn(columnName)) {
+    return formatILS(value, Math.abs(value) >= 100_000);
   }
 
   return legacyFormatNumber(value) ?? value;
@@ -563,7 +572,7 @@ export function Dashboard() {
     const backendCards = kpiConfigs.slice(0, 4).map((kpi) => ({
       id: kpi.id,
       icon: getKpiIcon(kpi),
-      value: computeKpiValue(kpi, rows),
+      value: formatMetric(computeKpiValue(kpi, rows), kpi.column),
       label: kpi.label,
       description: kpi.description,
       eyebrow: kpi.isPrimary
