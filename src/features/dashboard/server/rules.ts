@@ -53,8 +53,25 @@ function looksLikeIdentifier(rows: Row[], column: Column): boolean {
   if (column.kind !== "numeric" || rows.length < 5) {
     return false;
   }
+  // Measures like revenue are also near-unique, so high uniqueness alone is
+  // not enough: identifiers are whole numbers with a fixed digit length
+  // (phone numbers, national IDs, account numbers).
+  const values = rows
+    .map((row) => row[column.name])
+    .filter((value) => value !== null && value !== undefined && value !== "");
+  if (values.length === 0) {
+    return false;
+  }
+  const lengths = new Set<number>();
+  for (const value of values) {
+    const text = String(value);
+    if (!/^\d+$/.test(text) || text.length < 5) {
+      return false;
+    }
+    lengths.add(text.length);
+  }
   const distinct = distinctValues(rows, column.name);
-  return distinct.size / rows.length > 0.95;
+  return lengths.size === 1 && distinct.size / values.length > 0.95;
 }
 
 export function applyBiRules(
