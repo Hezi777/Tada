@@ -694,7 +694,9 @@ export function Dashboard() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-surface-muted)] px-4 text-sm font-medium text-[var(--color-text-secondary)] shadow-none">
               <CalendarDays className="h-4 w-4 text-[var(--color-accent)]" />
-              <span>Live Dataset</span>
+              <span className="tabular-nums">
+                {rows.length.toLocaleString()} rows
+              </span>
             </div>
 
             <DashboardSwitcher

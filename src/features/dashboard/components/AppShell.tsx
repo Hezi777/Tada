@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, CircleUserRound, LogOut, Search } from "lucide-react";
+import { CircleUserRound, LogOut } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Dashboard } from "./Dashboard";
 import FileManager from "./FileManager";
@@ -161,26 +161,6 @@ export function AppShell({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative hidden lg:block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
-              <input
-                type="search"
-                aria-label="Search workspace"
-                placeholder="Search workspace..."
-                className="h-10 w-56 rounded-full border border-transparent bg-[var(--color-surface-muted)] pl-10 pr-4 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[rgba(0,50,125,0.14)] focus:bg-white"
-              />
-            </div>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
-              aria-label="Notifications"
-            >
-              <Bell className="h-4 w-4" />
-            </Button>
-
             <button
               type="button"
               onClick={() => setActiveTab("settings")}

@@ -136,11 +136,13 @@ function AnimatedLoadingText() {
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  if (Number.isNaN(date.getTime())) {
+    return dateStr;
+  }
+  // Israeli display convention.
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${day}/${month}/${date.getFullYear()}`;
 }
 
 function formatApiMessage(message: string): string {
@@ -712,7 +714,7 @@ export default function FileManager() {
                     onClick={() => void handleDrillIn(dashboard)}
                   >
                     <div
-                      className="relative flex-[1.7] p-6"
+                      className="relative min-h-0 flex-[1.3] p-6"
                       style={{ backgroundColor: tint }}
                     >
                       <div className="mb-4 flex items-start justify-between">
