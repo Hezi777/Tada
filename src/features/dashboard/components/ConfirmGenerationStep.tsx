@@ -66,17 +66,20 @@ export function ConfirmGenerationStep({
           <div className="mt-5 flex flex-wrap gap-2">
             {kindCounts.numeric ? (
               <span className="rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)]">
-                {kindCounts.numeric} numeric
+                {kindCounts.numeric} numeric{" "}
+                {kindCounts.numeric === 1 ? "column" : "columns"}
               </span>
             ) : null}
             {kindCounts.categorical ? (
               <span className="rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)]">
-                {kindCounts.categorical} categories
+                {kindCounts.categorical}{" "}
+                {kindCounts.categorical === 1 ? "category" : "categories"}
               </span>
             ) : null}
             {kindCounts.date ? (
               <span className="rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)]">
-                {kindCounts.date} dates
+                {kindCounts.date} date{" "}
+                {kindCounts.date === 1 ? "column" : "columns"}
               </span>
             ) : null}
           </div>

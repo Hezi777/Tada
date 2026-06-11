@@ -110,13 +110,25 @@ function formatAxisValue(value: string | number): string {
   return truncateLabel(value, 13);
 }
 
-function buildValueChartConfig(): ChartPrimitiveConfig {
+function buildValueChartConfig(label: string): ChartPrimitiveConfig {
   return {
     value: {
-      label: "Value",
+      label,
       color: CHART_COLOR,
     },
   };
+}
+
+/** The measure a chart aggregates, for tooltip labels. */
+function metricLabel(chart: LayoutItem): string {
+  const measure =
+    chart.columns.find(
+      (column) => column !== chart.groupBy && column !== chart.timeColumn,
+    ) ?? null;
+  if (chart.aggregation === "count" || (!measure && chart.aggregation === null)) {
+    return "Count";
+  }
+  return measure ?? "Value";
 }
 
 function buildScatterChartConfig(chart: LayoutItem): ChartPrimitiveConfig {
@@ -210,7 +222,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
       return <ChartEmptyState />;
     }
 
-    const chartConfig = buildValueChartConfig();
+    const chartConfig = buildValueChartConfig(metricLabel(chart));
 
     return (
       <ChartContainer
@@ -408,7 +420,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
     );
   }
 
-  const chartConfig = buildValueChartConfig();
+  const chartConfig = buildValueChartConfig(metricLabel(chart));
   const maxValue = Math.max(...series.map((entry) => entry.value));
   const isHorizontal = chart.orientation === "horizontal";
 

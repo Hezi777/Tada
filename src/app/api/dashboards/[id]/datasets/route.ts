@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/shared/lib/supabase/admin";
 import { createClient } from "@/shared/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -10,7 +9,6 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: dashboardId } = await params;
-  const supabaseAdmin = createAdminClient();
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,7 +20,7 @@ export async function POST(
   }
 
   // Verify dashboard ownership
-  const { data: dashboard } = await supabaseAdmin
+  const { data: dashboard } = await supabase
     .from("dashboards")
     .select("id")
     .eq("id", dashboardId)
@@ -39,7 +37,7 @@ export async function POST(
     return NextResponse.json({ error: "dataset_id_required" }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin.from("dashboard_datasets").insert({
+  const { error } = await supabase.from("dashboard_datasets").insert({
     dashboard_id: dashboardId,
     dataset_id: datasetId,
   });
@@ -52,7 +50,7 @@ export async function POST(
   }
 
   // Touch dashboard updated_at
-  await supabaseAdmin
+  await supabase
     .from("dashboards")
     .update({ name: dashboard.id ? undefined : undefined })
     .eq("id", dashboardId);
@@ -66,7 +64,6 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: dashboardId } = await params;
-  const supabaseAdmin = createAdminClient();
   const supabase = await createClient();
   const {
     data: { user },
@@ -83,7 +80,7 @@ export async function DELETE(
     return NextResponse.json({ error: "dataset_id_required" }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin
+  const { error } = await supabase
     .from("dashboard_datasets")
     .delete()
     .eq("dashboard_id", dashboardId)
