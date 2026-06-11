@@ -1,32 +1,32 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { TadaLogo } from '@/shared/brand/TadaLogo';
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { TadaLogo } from "@/shared/brand/TadaLogo";
 
 const NAV = [
   {
-    header: 'Product',
+    header: "Product",
     links: [
-      { label: 'Home', href: '/' },
-      { label: 'Features', href: '/#features' },
-      { label: 'How it works', href: '/#how-it-works' },
-      { label: 'Pricing', href: '/pricing' },
+      { label: "Home", href: "/" },
+      { label: "Features", href: "/#features" },
+      { label: "How it works", href: "/#how-it-works" },
+      { label: "Pricing", href: "/pricing" },
     ],
   },
   {
-    header: 'Company',
+    header: "Company",
     links: [
-      { label: 'About', href: '/about' },
-      { label: 'Privacy', href: '/privacy' },
-      { label: 'Terms', href: '/terms' },
+      { label: "About", href: "/about" },
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
     ],
   },
   {
-    header: 'Contact',
+    header: "Contact",
     links: [
-      { label: 'Schedule a call', href: '#' },
-      { label: 'Contact us', href: '#' },
+      { label: "Schedule a call", href: "#" },
+      { label: "Contact us", href: "#" },
     ],
   },
 ];
@@ -38,7 +38,7 @@ export function Footer() {
       initial={{ y: 20, opacity: 0 }}
       whileInView={{ y: 0, opacity: 1 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
     >
       {/* 4-column grid */}
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 md:grid-cols-4">
@@ -91,7 +91,9 @@ export function Footer() {
 
       {/* Bottom row */}
       <div className="mx-auto flex max-w-7xl items-center justify-between">
-        <p className="text-sm text-slate-400">© 2025 Tada. All rights reserved.</p>
+        <p className="text-sm text-slate-400">
+          © 2025 Tada. All rights reserved.
+        </p>
         <div className="flex items-center gap-3 text-sm text-slate-400">
           <a href="/terms" className="transition-colors hover:text-slate-600">
             Terms

@@ -141,7 +141,10 @@ export function applyBiRules(
 
       // long_labels_use_horizontal_bar: long category names need the
       // horizontal layout to stay readable without rotation.
-      if (averageLabelLength(distinct) > 12 && next.orientation !== "horizontal") {
+      if (
+        averageLabelLength(distinct) > 12 &&
+        next.orientation !== "horizontal"
+      ) {
         violations.push({
           ruleId: "long_labels_use_horizontal_bar",
           chartId: next.id,

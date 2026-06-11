@@ -75,18 +75,17 @@ export default function AboutPage() {
             <p>
               Big companies solve this with analysts and BI teams. Small
               businesses get told to learn a dashboard tool, hire a consultant,
-              or just keep squinting at Excel. We thought that was unfair, so
-              we built the tool we wished existed: upload a CSV, Excel, or PDF
+              or just keep squinting at Excel. We thought that was unfair, so we
+              built the tool we wished existed: upload a CSV, Excel, or PDF
               file, and get a real dashboard — with charts chosen by
               best-practice rules, not vibes — in seconds. Then ask follow-up
-              questions in plain Hebrew or English and watch the answers
-              appear.
+              questions in plain Hebrew or English and watch the answers appear.
             </p>
             <p>
               We are a small team based in Israel, and we build Tada for the
-              businesses around us first: the ones invoicing in shekels,
-              writing dates as DD/MM/YYYY, and keeping their books in Hebrew,
-              English, or both at once.
+              businesses around us first: the ones invoicing in shekels, writing
+              dates as DD/MM/YYYY, and keeping their books in Hebrew, English,
+              or both at once.
             </p>
           </div>
         </div>

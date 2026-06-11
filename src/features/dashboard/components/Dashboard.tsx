@@ -1,10 +1,4 @@
-import {
-  type Key,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { type Key, useCallback, useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   CalendarRange,
@@ -57,7 +51,11 @@ import {
   setDashboardList,
   restoreCachedDashboard,
 } from "@/features/dashboard/client/store";
-import { listDashboards, loadDashboard, createDashboard } from "@/shared/lib/api";
+import {
+  listDashboards,
+  loadDashboard,
+  createDashboard,
+} from "@/shared/lib/api";
 import CreateDashboardModal from "@/features/dashboard/components/CreateDashboardModal";
 import { DashboardSwitcher } from "@/features/dashboard/components/DashboardSwitcher";
 import { DashboardChartCard } from "@/features/dashboard/components/DashboardChartCard";
@@ -219,9 +217,7 @@ function KpiCard({
   return (
     <Card
       className={`dashboard-hover relative overflow-hidden rounded-[24px] border-0 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] ${
-        isPrimary
-          ? "bg-[var(--color-accent)] text-white"
-          : "bg-white"
+        isPrimary ? "bg-[var(--color-accent)] text-white" : "bg-white"
       }`}
     >
       <CardContent className="relative flex min-h-[176px] flex-col justify-between overflow-hidden px-8 py-7">
@@ -229,7 +225,9 @@ function KpiCard({
           <div className="min-w-0">
             <p
               className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
-                isPrimary ? "text-white/72" : "text-[var(--color-text-secondary)]"
+                isPrimary
+                  ? "text-white/72"
+                  : "text-[var(--color-text-secondary)]"
               }`}
             >
               {label}
@@ -288,7 +286,10 @@ function DashboardSkeleton() {
       <div className="flex h-12 items-center bg-white px-5" />
       <div className="grid grid-cols-1 gap-8 px-5 py-3 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="overflow-hidden rounded-[24px] border-0 bg-white shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
+          <Card
+            key={index}
+            className="overflow-hidden rounded-[24px] border-0 bg-white shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+          >
             <CardContent className="px-8 py-8">
               <div className="h-3 w-20 animate-shimmer rounded-full bg-[#e6e8ea]" />
               <div className="mt-3 h-6 w-24 animate-shimmer rounded-full bg-[#e6e8ea]" />
@@ -393,7 +394,9 @@ function ManageViewsSection({
                     className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-white hover:text-[var(--color-text-primary)]"
                     onClick={() => toggleChartPinned(chart.id)}
                     aria-label={
-                      chart.pinned ? `Unpin ${chart.title}` : `Pin ${chart.title}`
+                      chart.pinned
+                        ? `Unpin ${chart.title}`
+                        : `Pin ${chart.title}`
                     }
                   >
                     {chart.pinned ? (

@@ -17,9 +17,7 @@ type Section = {
 const sections: Section[] = [
   {
     heading: "What we collect",
-    paragraphs: [
-      "We collect only what we need to run Tada for you:",
-    ],
+    paragraphs: ["We collect only what we need to run Tada for you:"],
     list: [
       "Account information — the email address you sign up with, and your authentication details.",
       "Uploaded datasets — the CSV, Excel, and PDF files you upload, and the dashboards generated from them.",
@@ -90,8 +88,8 @@ export default function PrivacyPage() {
             <p className="text-base leading-8 text-muted-foreground">
               Tada turns the files you upload into dashboards and answers. That
               only works if you can trust us with your data, so this policy is
-              written to be read — it explains what we collect, where it
-              lives, what the AI sees, and how to make us delete all of it.
+              written to be read — it explains what we collect, where it lives,
+              what the AI sees, and how to make us delete all of it.
             </p>
 
             {sections.map((section) => (

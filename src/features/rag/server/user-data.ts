@@ -6,7 +6,10 @@ import {
   embedTexts,
   toVectorLiteral,
 } from "@/shared/lib/ai/embeddings";
-import { redactPiiColumns, summarizeProfile } from "@/features/dashboard/server/profile";
+import {
+  redactPiiColumns,
+  summarizeProfile,
+} from "@/features/dashboard/server/profile";
 
 type Row = Record<string, unknown>;
 
@@ -123,9 +126,7 @@ function timeChunks(profile: DatasetProfile, rows: Row[]): string[] {
     .slice(0, 2);
 
   const chunks: string[] = [];
-  for (const numeric of numericColumns.length > 0
-    ? numericColumns
-    : [null]) {
+  for (const numeric of numericColumns.length > 0 ? numericColumns : [null]) {
     const buckets = new Map<string, { sum: number; count: number }>();
     for (const row of rows) {
       const raw = row[dateColumn.name];
@@ -167,9 +168,7 @@ function sampleChunks(profile: DatasetProfile, rows: Row[]): string[] {
   if (redacted.length === 0) {
     return [];
   }
-  return [
-    `Sample rows (PII columns removed): ${JSON.stringify(redacted)}`,
-  ];
+  return [`Sample rows (PII columns removed): ${JSON.stringify(redacted)}`];
 }
 
 export function buildDatasetChunks(

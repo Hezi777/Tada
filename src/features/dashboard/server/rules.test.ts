@@ -78,7 +78,11 @@ describe("applyBiRules", () => {
   });
 
   it("keeps valid area charts untouched", () => {
-    const chart = makeChart({ type: "area", timeColumn: "date", groupBy: null });
+    const chart = makeChart({
+      type: "area",
+      timeColumn: "date",
+      groupBy: null,
+    });
     const { charts } = applyBiRules([chart], columns, rowsWithCategories(3));
     expect(charts[0].type).toBe("area");
   });

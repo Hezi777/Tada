@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  profileDataset,
-  redactPiiColumns,
-  summarizeProfile,
-} from "./profile";
+import { profileDataset, redactPiiColumns, summarizeProfile } from "./profile";
 import type { Column } from "./types";
 
 const columns: Column[] = [
@@ -14,8 +10,18 @@ const columns: Column[] = [
 ];
 
 const rows = [
-  { amount: 100, category: "A", email: "dana@example.com", phone: "052-1234567" },
-  { amount: 200, category: "B", email: "yossi@test.co.il", phone: "054-7654321" },
+  {
+    amount: 100,
+    category: "A",
+    email: "dana@example.com",
+    phone: "052-1234567",
+  },
+  {
+    amount: 200,
+    category: "B",
+    email: "yossi@test.co.il",
+    phone: "054-7654321",
+  },
   { amount: 300, category: "A", email: "noa@mail.com", phone: "03-1234567" },
   { amount: null, category: "A", email: null, phone: null },
 ];

@@ -53,14 +53,12 @@ export async function POST(request: Request) {
         (entry) => entry.fileName === file.originalname && !entry.isPrimary,
       );
 
-    const { error: insertError } = await supabase
-      .from("dataset_files")
-      .insert({
-        dataset_id: datasetId,
-        file_name: file.originalname,
-        is_primary: false,
-        row_count: addedFile?.rowCount ?? 0,
-      });
+    const { error: insertError } = await supabase.from("dataset_files").insert({
+      dataset_id: datasetId,
+      file_name: file.originalname,
+      is_primary: false,
+      row_count: addedFile?.rowCount ?? 0,
+    });
 
     if (insertError) {
       throw new Error(insertError.message || "upload_chain_persist_failed");

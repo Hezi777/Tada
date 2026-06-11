@@ -1,39 +1,39 @@
-'use client';
+"use client";
 
-import { useRef } from 'react';
-import { Upload, Cpu, LayoutDashboard } from 'lucide-react';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { Card } from '@/shared/ui/card';
+import { useRef } from "react";
+import { Upload, Cpu, LayoutDashboard } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { Card } from "@/shared/ui/card";
 
 const steps = [
   {
     icon: Upload,
-    step: '01',
-    title: 'Upload your data',
-    description: 'Drag and drop any CSV or Excel file. No formatting required.',
+    step: "01",
+    title: "Upload your data",
+    description: "Drag and drop any CSV or Excel file. No formatting required.",
   },
   {
     icon: Cpu,
-    step: '02',
-    title: 'AI does the work',
+    step: "02",
+    title: "AI does the work",
     description:
-      'Our AI instantly understands your data structure and relationships.',
+      "Our AI instantly understands your data structure and relationships.",
   },
   {
     icon: LayoutDashboard,
-    step: '03',
-    title: 'Explore insights',
-    description: 'Get a complete dashboard. Ask questions. Discover patterns.',
+    step: "03",
+    title: "Explore insights",
+    description: "Get a complete dashboard. Ask questions. Discover patterns.",
   },
 ];
 
-const easeOut = { ease: 'easeOut' as const };
+const easeOut = { ease: "easeOut" as const };
 
 function AnimatedConnector() {
   const ref = useRef<SVGSVGElement | null>(null);
   const { scrollYProgress } = useScroll({
     target: ref as React.RefObject<HTMLElement | null>,
-    offset: ['start 0.85', 'start 0.35'],
+    offset: ["start 0.85", "start 0.35"],
   });
   const pathLength = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
@@ -41,7 +41,7 @@ function AnimatedConnector() {
     <svg
       ref={ref}
       className="absolute left-[16%] right-[16%] top-6 hidden w-[68%] md:block"
-      style={{ height: '2px', overflow: 'visible' }}
+      style={{ height: "2px", overflow: "visible" }}
       aria-hidden="true"
     >
       {/* track */}
@@ -108,9 +108,9 @@ export function HowItWorks() {
                     className="relative z-10 mb-8 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-bold text-white shadow-glow ring-8 ring-white"
                     initial={{ scale: 0 }}
                     whileInView={{ scale: 1 }}
-                    viewport={{ once: true, margin: '-100px' }}
+                    viewport={{ once: true, margin: "-100px" }}
                     transition={{
-                      type: 'spring',
+                      type: "spring",
                       stiffness: 200,
                       delay: index * 0.15,
                     }}
@@ -123,7 +123,7 @@ export function HowItWorks() {
                     className="w-full flex-1"
                     initial={{ y: 40, opacity: 0 }}
                     whileInView={{ y: 0, opacity: 1 }}
-                    viewport={{ once: true, margin: '-100px' }}
+                    viewport={{ once: true, margin: "-100px" }}
                     transition={{
                       duration: 0.6,
                       delay: index * 0.15,

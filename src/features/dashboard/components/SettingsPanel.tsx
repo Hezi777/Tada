@@ -30,9 +30,7 @@ import { listDashboards } from "@/shared/lib/api";
 type ThemeMode = "system" | "light" | "dark";
 type SettingsSection = "account" | "appearance" | "billing";
 
-type AccountStatus =
-  | { tone: "success" | "error"; text: string }
-  | null;
+type AccountStatus = { tone: "success" | "error"; text: string } | null;
 
 const THEME_STORAGE_KEY = "tada-theme";
 const THEME_EVENT = "tada-theme-change";
@@ -72,7 +70,10 @@ function applyThemeMode(mode: ThemeMode) {
   root.classList.toggle("dark", isDark);
 }
 
-function deriveNameParts(email: string | null, metadata: Record<string, unknown>) {
+function deriveNameParts(
+  email: string | null,
+  metadata: Record<string, unknown>,
+) {
   const firstName =
     typeof metadata.first_name === "string"
       ? metadata.first_name
@@ -112,7 +113,11 @@ function deriveNameParts(email: string | null, metadata: Record<string, unknown>
     return { firstName: "", lastName: "" };
   }
 
-  const cleaned = email.split("@")[0]?.replace(/[._-]+/g, " ").trim() ?? "";
+  const cleaned =
+    email
+      .split("@")[0]
+      ?.replace(/[._-]+/g, " ")
+      .trim() ?? "";
   const [first = "", ...rest] = cleaned.split(/\s+/);
 
   return {
@@ -149,7 +154,9 @@ function SectionNavItem({
           : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
       }`}
     >
-      <Icon className={`h-4 w-4 ${active ? "text-[var(--color-accent)]" : ""}`} />
+      <Icon
+        className={`h-4 w-4 ${active ? "text-[var(--color-accent)]" : ""}`}
+      />
       <span>{label}</span>
     </button>
   );
@@ -188,13 +195,17 @@ function ThemeOption({
         <div className="space-y-1.5 p-3">
           <div
             className={`h-2 rounded-full ${
-              mode === "dark" ? "bg-[rgba(255,255,255,0.16)]" : "bg-[var(--color-surface-muted)]"
+              mode === "dark"
+                ? "bg-[rgba(255,255,255,0.16)]"
+                : "bg-[var(--color-surface-muted)]"
             }`}
             style={{ width: "72%" }}
           />
           <div
             className={`h-2 rounded-full ${
-              mode === "dark" ? "bg-[rgba(255,255,255,0.08)]" : "bg-[var(--color-surface-subtle)]"
+              mode === "dark"
+                ? "bg-[rgba(255,255,255,0.08)]"
+                : "bg-[var(--color-surface-subtle)]"
             }`}
             style={{ width: "52%" }}
           />
@@ -223,7 +234,8 @@ function ThemeOption({
 
 export function SettingsPanel() {
   const supabase = useMemo(() => createClient(), []);
-  const [activeSection, setActiveSection] = useState<SettingsSection>("account");
+  const [activeSection, setActiveSection] =
+    useState<SettingsSection>("account");
   const [themeMode, setThemeMode] = useState<ThemeMode>(readThemeMode);
   const [email, setEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -354,7 +366,9 @@ export function SettingsPanel() {
       setAccountStatus({
         tone: "error",
         text:
-          error instanceof Error ? error.message : "Unable to save your profile.",
+          error instanceof Error
+            ? error.message
+            : "Unable to save your profile.",
       });
     } finally {
       setIsSavingAccount(false);
@@ -436,7 +450,7 @@ export function SettingsPanel() {
   }
 
   return (
-      <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-10 sm:px-8">
+    <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-10 sm:px-8">
       <h1 className="font-display text-[2rem] font-bold tracking-[-0.04em] text-[var(--color-text-primary)]">
         Settings
       </h1>
@@ -584,9 +598,7 @@ export function SettingsPanel() {
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
               {accountStatus ? (
-                <p
-                  className="text-sm text-[var(--color-text-secondary)]"
-                >
+                <p className="text-sm text-[var(--color-text-secondary)]">
                   {accountStatus.text}
                 </p>
               ) : null}
