@@ -7,15 +7,19 @@ import {
   type ChatbotChartPatch,
   type ChatKpiValue,
   type ChartConfig,
+  type DatasetProfile,
 } from "@/shared/contracts";
-import Groq from "groq-sdk";
+import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { env, getGroqApiKey } from "@/shared/lib/env";
+import { jsonCompletion } from "@/shared/lib/ai/groq";
+import { retrieveDatasetContext } from "@/features/rag/server/user-data";
 import type { Column, DashboardState } from "./types";
 import {
   buildColumnPromptStats,
   validateChartCollection,
 } from "./config";
-import { getDatasetRows, getDatasetState } from "./state";
+import { ensureDatasetContext } from "./context";
 
 type Row = Record<string, unknown>;
 
@@ -122,44 +126,31 @@ function formatValue(value: string | number | boolean | null): string {
   return String(value);
 }
 
-function extractText(payload: unknown): string | null {
-  return typeof payload === "string" ? payload : null;
-}
+const LlmChatPayloadSchema = z.object({
+  assistantMessage: z.string().optional(),
+  patch: z.unknown().optional(),
+});
 
-function parseLlmResponse(text: string): ChatResponse | null {
-  const trimmed = text.trim();
-  const start = trimmed.indexOf("{");
-  const end = trimmed.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) {
-    return null;
-  }
+function toChatResponse(
+  parsed: z.infer<typeof LlmChatPayloadSchema>,
+): ChatResponse {
+  const patchResult =
+    parsed.patch === null || parsed.patch === undefined
+      ? null
+      : ChatbotChartPatchSchema.safeParse(parsed.patch);
+  const patch = patchResult && patchResult.success ? patchResult.data : null;
 
-  try {
-    const parsed = JSON.parse(trimmed.slice(start, end + 1)) as {
-      assistantMessage?: unknown;
-      patch?: unknown;
-    };
-    const patch =
-      parsed.patch === null || parsed.patch === undefined
-        ? null
-        : ChatbotChartPatchSchema.safeParse(parsed.patch).success
-          ? (parsed.patch as ChatbotChartPatch)
-          : null;
-
-    return {
-      assistantMessage:
-        typeof parsed.assistantMessage === "string"
-          ? parsed.assistantMessage
-          : patch
-            ? "I prepared a dashboard change."
-            : "I could not produce a valid answer.",
-      mode: patch ? "apply_patch" : "answer",
-      patch,
-      proposal: null,
-    };
-  } catch {
-    return null;
-  }
+  return {
+    assistantMessage:
+      typeof parsed.assistantMessage === "string" && parsed.assistantMessage
+        ? parsed.assistantMessage
+        : patch
+          ? "I prepared a dashboard change."
+          : "I could not produce a valid answer.",
+    mode: patch ? "apply_patch" : "answer",
+    patch,
+    proposal: null,
+  };
 }
 
 function isChartVisible(chart: ChartConfig): boolean {
@@ -325,42 +316,62 @@ function parseExplicitRemoveCommand(
   return chart ? { action: "remove", chartId: chart.id } : null;
 }
 
+function filterPiiFromStats(
+  stats: Record<string, unknown>,
+  profile: DatasetProfile | null,
+): Record<string, unknown> {
+  if (!profile || profile.piiColumns.length === 0) {
+    return stats;
+  }
+  const piiSet = new Set(profile.piiColumns);
+  return Object.fromEntries(
+    Object.entries(stats).filter(([name]) => !piiSet.has(name)),
+  );
+}
+
 async function requestChatResponseFromLlm(input: {
   message: string;
   state: DashboardState;
   chartConfigs: ChartConfig[];
   rows: Row[];
   kpis: ChatKpiValue[];
+  retrievedContext: string[];
+  profile: DatasetProfile | null;
+  topic: string;
 }): Promise<ChatResponse | null> {
-  const apiKey = getGroqApiKey();
-  if (!apiKey) {
+  if (!getGroqApiKey()) {
     return null;
   }
 
-  const client = new Groq({ apiKey });
-  const model = env.GROQ_CHAT_MODEL;
-  const columnStats = buildColumnPromptStats(input.rows, input.state.columns);
+  const columnStats = filterPiiFromStats(
+    buildColumnPromptStats(input.rows, input.state.columns),
+    input.profile,
+  );
+
   const prompt = [
     "Return strict JSON only. No prose outside JSON.",
     `Follow these BI rules exactly: ${BI_GENERATION_RULES.join(" ")}`,
     'Return this schema exactly: {"assistantMessage":"string","patch":{"action":"add","config":{"id":"string","type":"area|bar|donut|scatter|kpi","title":"string","insight":"string","columns":["col"],"aggregation":"sum|avg|count|min|max|null","groupBy":"string|null","timeColumn":"string|null","size":"small|medium|large","visible":true,"order":0,"source":"chatbot","chatbotGenerated":true,"generatedAt":"ISO"}} | {"action":"remove","chartId":"string"} | {"action":"update","chartId":"string","config":{"title":"string?"}} | null}',
     "You are a live dashboard co-pilot.",
+    "IMPORTANT: Reply in the language of the user's message - Hebrew questions get Hebrew answers, English questions get English answers.",
     "Handle all user intents in one response:",
-    "1. Data questions: answer with specific values grounded in the dataset context below.",
+    "1. Data questions: answer with specific values grounded ONLY in the retrieved dataset context below. Do not invent numbers.",
     "2. Dashboard modifications: return a patch that follows the BI rules and uses only provided columns and chart IDs.",
     "3. Insight suggestions: if the user asks what they should look at, return 2 to 3 specific findings with actual values and set patch to null.",
     "4. Chart explanations: explain what a chart means in plain language for a small business owner. Do not use analyst terminology. Mention actual column names and actual values from the dataset context.",
+    "5. Trend explanations: when asked why something changed, describe the movement visible in the retrieved context and clearly separate observation from speculation.",
     "If the user is only asking a question or explanation, set patch to null.",
-    "If you cannot ground a requested change or answer in the provided context, explain that clearly and set patch to null.",
+    "If you cannot ground a requested change or answer in the provided context, say so clearly and set patch to null.",
     JSON.stringify({
       userMessage: input.message,
+      datasetTopic: input.topic,
       rowCount: input.rows.length,
       columns: input.state.columns.map((column) => ({
         name: column.name,
         kind: column.kind,
       })),
       columnStats,
-      sampleRows: input.rows.slice(0, 20),
+      retrievedDatasetContext: input.retrievedContext,
       currentKpis: input.kpis,
       currentCharts: input.chartConfigs.map((chart) => ({
         id: chart.id,
@@ -380,24 +391,12 @@ async function requestChatResponseFromLlm(input: {
     }),
   ].join("\n");
 
-  try {
-    const completion = await client.chat.completions.create({
-      model,
-      temperature: 0.2,
-      max_completion_tokens: 420,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    });
-    const payload = completion.choices[0]?.message?.content ?? null;
-    const text = extractText(payload);
-    return text ? parseLlmResponse(text) : null;
-  } catch {
-    return null;
-  }
+  const parsed = await jsonCompletion(prompt, LlmChatPayloadSchema, {
+    model: env.GROQ_CHAT_MODEL,
+    temperature: 0.2,
+    maxTokens: 700,
+  });
+  return parsed ? toChatResponse(parsed) : null;
 }
 
 function validatePatchColumns(
@@ -646,24 +645,23 @@ function finalizeChatResponse(
 }
 
 export async function handleChat({
+  supabase,
   datasetId,
   message,
   chartConfigs,
   kpis,
 }: {
+  supabase: SupabaseClient;
   datasetId: string;
   message: string;
   chartConfigs: ChartConfig[];
   kpis: ChatKpiValue[];
 }): Promise<ChatResponse> {
-  const state = getDatasetState(datasetId);
-  if (!state) {
+  const context = await ensureDatasetContext(supabase, datasetId);
+  if (!context) {
     throw new Error("not_found");
   }
-  const rows = getDatasetRows(datasetId);
-  if (!rows) {
-    throw new Error("missing_rows");
-  }
+  const { state, rows, profile, topic } = context;
 
   const explicitRemove = parseExplicitRemoveCommand(message, chartConfigs);
   if (explicitRemove) {
@@ -680,12 +678,24 @@ export async function handleChat({
     );
   }
 
+  // Ground the answer in the per-user data RAG instead of re-shipping raw
+  // rows on every turn. Retrieval is cached per (dataset, question).
+  const retrievedChunks = await retrieveDatasetContext(
+    supabase,
+    datasetId,
+    message,
+  );
+  const retrievedContext = retrievedChunks.map((chunk) => chunk.content);
+
   const llmResponse = await requestChatResponseFromLlm({
     message,
     state,
     chartConfigs,
     rows,
     kpis,
+    retrievedContext,
+    profile,
+    topic,
   });
   if (llmResponse) {
     return finalizeChatResponse(llmResponse, chartConfigs, state.columns, rows);
