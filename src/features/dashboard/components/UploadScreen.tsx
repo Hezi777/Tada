@@ -100,7 +100,7 @@ export const UploadScreen = ({
               </h1>
 
               <p className="mt-6 text-lg leading-8 text-muted-foreground">
-                Drop your CSV or Excel file and Tada will compose a dashboard
+                Drop your CSV, Excel, or PDF file and Tada will compose a dashboard
                 with structure, charts, and a chat-ready summary in one pass.
               </p>
 
@@ -166,7 +166,7 @@ export const UploadScreen = ({
                 <Input
                   ref={fileInputRef}
                   type="file"
-                  accept=".csv,.xlsx,.xls"
+                  accept=".csv,.xlsx,.xls,.pdf"
                   onChange={handleFileChange}
                   className="hidden"
                 />

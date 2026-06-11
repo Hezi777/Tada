@@ -20,11 +20,19 @@ import {
   listDashboards,
   loadDashboard,
   createDashboard,
+  generateDashboard,
   persistDashboardCharts,
   uploadDataset,
 } from "@/shared/lib/api";
+import { ConfirmGenerationStep } from "@/features/dashboard/components/ConfirmGenerationStep";
+import type { DatasetTopic, UploadProfileResponse } from "@/shared/contracts";
 
-type DashboardPageState = "loading" | "empty" | "processing" | "loaded";
+type DashboardPageState =
+  | "loading"
+  | "empty"
+  | "confirm"
+  | "processing"
+  | "loaded";
 
 function DashboardUploadEmptyState({
   onFileUpload,
@@ -65,8 +73,8 @@ function DashboardUploadEmptyState({
                 Upload your first dataset
               </h2>
               <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]">
-                Add a CSV or Excel file and TADA will generate your dashboard,
-                KPIs, and charts.
+                Add a CSV, Excel, or PDF file and TADA will profile your data
+                and generate your dashboard, KPIs, and charts.
               </p>
 
               {errorMessage ? (
@@ -88,7 +96,7 @@ function DashboardUploadEmptyState({
               <Input
                 ref={inputRef}
                 type="file"
-                accept=".csv,.xlsx,.xls"
+                accept=".csv,.xlsx,.xls,.pdf"
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0];
@@ -219,6 +227,10 @@ export default function DashboardPage() {
     });
   }, [charts, datasetId]);
 
+  const [profiledUpload, setProfiledUpload] =
+    useState<UploadProfileResponse | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const handleFileUpload = useCallback(
     async (file: File) => {
       setIsUploadReady(false);
@@ -243,11 +255,9 @@ export default function DashboardPage() {
           });
         }
 
-        const snapshot = await uploadDataset(file, dashboardId);
-        isHydratingRef.current = true;
-        lastPersistedChartsRef.current = JSON.stringify(snapshot.charts);
-        initializeDashboardStore(snapshot);
-        setIsUploadReady(true);
+        const profiled = await uploadDataset(file, dashboardId);
+        setProfiledUpload(profiled);
+        setPageState("confirm");
       } catch (error) {
         resetDashboardStore();
         setUploadError(
@@ -256,14 +266,62 @@ export default function DashboardPage() {
             : "Upload failed. Check the API server and try again.",
         );
         setPageState("empty");
-      } finally {
-        isHydratingRef.current = false;
       }
     },
     [activeDashboardId],
   );
 
+  const handleConfirmGeneration = useCallback(
+    async (topic: DatasetTopic, chartCount: number) => {
+      if (!profiledUpload) {
+        return;
+      }
+      setIsGenerating(true);
+      setPageState("processing");
+
+      try {
+        const snapshot = await generateDashboard({
+          datasetId: profiledUpload.datasetId,
+          topic,
+          chartCount,
+        });
+        isHydratingRef.current = true;
+        lastPersistedChartsRef.current = JSON.stringify(snapshot.charts);
+        initializeDashboardStore(snapshot);
+        setProfiledUpload(null);
+        setIsUploadReady(true);
+      } catch (error) {
+        resetDashboardStore();
+        setUploadError(
+          error instanceof Error && error.message
+            ? error.message.replace(/_/g, " ")
+            : "Dashboard generation failed. Try again.",
+        );
+        setPageState("empty");
+      } finally {
+        isHydratingRef.current = false;
+        setIsGenerating(false);
+      }
+    },
+    [profiledUpload],
+  );
+
   const dashboardContent = useMemo(() => {
+    if (pageState === "confirm" && profiledUpload) {
+      return (
+        <ConfirmGenerationStep
+          profiled={profiledUpload}
+          isGenerating={isGenerating}
+          onConfirm={(topic, chartCount) => {
+            void handleConfirmGeneration(topic, chartCount);
+          }}
+          onCancel={() => {
+            setProfiledUpload(null);
+            setPageState("empty");
+          }}
+        />
+      );
+    }
     if (pageState === "processing") {
       return (
         <ProcessingView
@@ -283,7 +341,16 @@ export default function DashboardPage() {
       );
     }
     return <DashboardLoadingState />;
-  }, [handleFileUpload, isUploadReady, loadError, pageState, uploadError]);
+  }, [
+    handleConfirmGeneration,
+    handleFileUpload,
+    isGenerating,
+    isUploadReady,
+    loadError,
+    pageState,
+    profiledUpload,
+    uploadError,
+  ]);
 
   return (
     <AppShell

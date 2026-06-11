@@ -3,14 +3,17 @@ import {
   DeleteChainedFileRequestSchema,
   DashboardListItemSchema,
   UploadDashboardResponseSchema,
+  UploadProfileResponseSchema,
   type ChartConfig,
   type ChatKpiValue,
   type ChatDashboardResponse,
   type CreateDashboardRequest,
   type DashboardListItem,
   type DeleteChainedFileRequest,
+  type GenerateDashboardRequest,
   type UpdateDashboardRequest,
   type UploadDashboardResponse,
+  type UploadProfileResponse,
 } from "@/shared/contracts";
 import { z } from "zod";
 
@@ -59,10 +62,11 @@ async function readApiError(
   return fallback;
 }
 
+/** Phase 1: parse + profile the file. Returns the profile + suggested topic. */
 export async function uploadDataset(
   file: File,
   dashboardId?: string,
-): Promise<UploadDashboardResponse> {
+): Promise<UploadProfileResponse> {
   const formData = new FormData();
   formData.append("file", file);
   if (dashboardId) {
@@ -79,7 +83,40 @@ export async function uploadDataset(
   }
 
   const payload = await response.json();
+  return UploadProfileResponseSchema.parse(payload);
+}
+
+/** Phase 2: generate the grounded dashboard for a confirmed topic + count. */
+export async function generateDashboard(
+  input: GenerateDashboardRequest,
+): Promise<UploadDashboardResponse> {
+  const response = await fetch(`${apiBase}/api/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readApiError(response, "generate_failed"));
+  }
+
+  const payload = await response.json();
   return UploadDashboardResponseSchema.parse(payload);
+}
+
+const DEFAULT_CHART_COUNT = 4;
+
+/** One-shot upload -> generate with the suggested topic (no confirm step). */
+export async function uploadAndGenerate(
+  file: File,
+  dashboardId?: string,
+): Promise<UploadDashboardResponse> {
+  const profiled = await uploadDataset(file, dashboardId);
+  return generateDashboard({
+    datasetId: profiled.datasetId,
+    topic: profiled.suggestedTopic,
+    chartCount: DEFAULT_CHART_COUNT,
+  });
 }
 
 export async function uploadChainedDataset(input: {
@@ -280,7 +317,7 @@ export async function uploadToDashboard(
   dashboardId: string,
   file: File,
 ): Promise<UploadDashboardResponse> {
-  return uploadDataset(file, dashboardId);
+  return uploadAndGenerate(file, dashboardId);
 }
 
 export async function removeFileFromDashboard(
