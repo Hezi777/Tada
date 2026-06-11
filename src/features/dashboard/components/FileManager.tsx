@@ -624,7 +624,7 @@ export default function FileManager() {
               </div>
               <div>
                 <p className="font-display text-lg font-semibold text-[var(--color-text-primary)]">
-                  Drop a CSV or Excel file here
+                  Drop a CSV, Excel, or PDF file here
                 </p>
                 <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
                   Uploading starts a new dashboard automatically.
@@ -640,7 +640,7 @@ export default function FileManager() {
         <input
           ref={dashboardUploadInputRef}
           type="file"
-          accept=".csv,.xlsx,.xls"
+          accept=".csv,.xlsx,.xls,.pdf"
           className="hidden"
           onChange={(event) => {
             const file = event.target.files?.[0];
@@ -1081,7 +1081,7 @@ export default function FileManager() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv,.xlsx,.xls"
+              accept=".csv,.xlsx,.xls,.pdf"
               className="hidden"
               onChange={(event) => {
                 const file = event.target.files?.[0];
@@ -1111,7 +1111,7 @@ export default function FileManager() {
               No files yet
             </h2>
             <p className="mt-3 max-w-sm text-sm leading-7 text-[var(--color-text-secondary)]">
-              Upload a CSV or Excel file to start building charts for this
+              Upload a CSV, Excel, or PDF file to start building charts for this
               dashboard.
             </p>
             <Button

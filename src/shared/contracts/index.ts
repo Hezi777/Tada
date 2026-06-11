@@ -308,6 +308,50 @@ export const DATASET_TOPIC_LABELS: Record<
   unknown: { en: "Not sure / Other", he: "לא בטוח / אחר" },
 };
 
+// ── Dataset profiling (pure TS, no LLM) ──
+
+export const ColumnProfileSchema = z.object({
+  name: z.string().min(1),
+  kind: ColumnKindSchema,
+  nullCount: z.number().int().nonnegative(),
+  uniqueCount: z.number().int().nonnegative(),
+  min: z.union([z.string(), z.number()]).nullable(),
+  max: z.union([z.string(), z.number()]).nullable(),
+  mean: z.number().nullable(),
+  topValues: z.array(
+    z.object({ value: SerializedValueSchema, count: z.number().int() }),
+  ),
+  isPii: z.boolean(),
+});
+export type ColumnProfile = z.infer<typeof ColumnProfileSchema>;
+
+export const DatasetProfileSchema = z.object({
+  rowCount: z.number().int().nonnegative(),
+  columnCount: z.number().int().nonnegative(),
+  columns: z.array(ColumnProfileSchema),
+  piiColumns: z.array(z.string()),
+});
+export type DatasetProfile = z.infer<typeof DatasetProfileSchema>;
+
+export const UploadProfileResponseSchema = z.object({
+  datasetId: z.string().min(1),
+  fileName: z.string().min(1),
+  rowCount: z.number().int().nonnegative(),
+  columns: z.array(DashboardColumnSchema),
+  profile: DatasetProfileSchema,
+  suggestedTopic: DatasetTopicSchema,
+});
+export type UploadProfileResponse = z.infer<typeof UploadProfileResponseSchema>;
+
+export const GenerateDashboardRequestSchema = z.object({
+  datasetId: z.string().min(1),
+  topic: DatasetTopicSchema,
+  chartCount: z.number().int().min(2).max(6),
+});
+export type GenerateDashboardRequest = z.infer<
+  typeof GenerateDashboardRequestSchema
+>;
+
 export const BI_RULE_LIMITS = {
   minCharts: 2,
   maxCharts: 6,

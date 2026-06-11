@@ -1,15 +1,21 @@
-import Papa from "papaparse";
 import { randomUUID } from "node:crypto";
-import path from "node:path";
-import XLSX from "xlsx";
 import type { DashboardState, DatasetMeta } from "./types";
 import type {
+  DatasetProfile,
+  DatasetTopic,
   LoadedDatasetFile,
   SerializedRow,
   UploadDashboardResponse,
 } from "@/shared/contracts";
-import { buildInitialChartConfigs, buildKpiConfigs } from "./config";
+import {
+  buildInitialChartConfigs,
+  buildKpiConfigs,
+  type GenerationContext,
+} from "./config";
 import { inferColumns } from "./infer";
+import { parseUploadedFile, type UploadedFile } from "./parse";
+import { profileDataset, summarizeProfile } from "./profile";
+import { classifyTopic } from "@/features/rag/server/topic";
 import {
   createDatasetState,
   getDatasetFiles,
@@ -20,17 +26,14 @@ import {
 } from "./state";
 
 type Row = Record<string, unknown>;
-export type UploadedFile = {
-  buffer: Buffer;
-  originalname: string;
-};
+export type { UploadedFile } from "./parse";
 type StoredDatasetFile = {
   id: string;
   fileName: string;
   rows: Row[];
 };
 
-function serializeRows(rows: Row[]): SerializedRow[] {
+export function serializeRows(rows: Row[]): SerializedRow[] {
   return rows.map((row) => {
     const next: SerializedRow = {};
     for (const [key, value] of Object.entries(row)) {
@@ -49,35 +52,6 @@ function serializeRows(rows: Row[]): SerializedRow[] {
     }
     return next;
   });
-}
-
-function parseCsv(buffer: Buffer): Row[] {
-  const parsed = Papa.parse(buffer.toString("utf8"), {
-    header: true,
-    skipEmptyLines: true,
-  });
-  if (parsed.errors.length > 0 && parsed.data.length === 0) {
-    throw new Error("csv_parse_failed");
-  }
-  return (parsed.data as Row[]).filter((row) => Object.keys(row).length > 0);
-}
-
-function parseExcel(buffer: Buffer): Row[] {
-  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
-  const sheetName = workbook.SheetNames[0];
-  if (!sheetName) {
-    return [];
-  }
-  const sheet = workbook.Sheets[sheetName];
-  return XLSX.utils.sheet_to_json(sheet, { defval: null }) as Row[];
-}
-
-function parseFile(file: UploadedFile): Row[] {
-  const extension = path.extname(file.originalname).toLowerCase();
-  if (extension === ".xlsx" || extension === ".xls") {
-    return parseExcel(file.buffer);
-  }
-  return parseCsv(file.buffer);
 }
 
 const SAMPLE_ROW_LIMIT = 5;
@@ -158,37 +132,66 @@ function compareSchemaColumns(
   return null;
 }
 
-export async function handleUpload(
-  file: UploadedFile,
-): Promise<UploadDashboardResponse> {
-  if (!file.buffer?.length) {
-    throw new Error("empty_file");
-  }
-  const rows = parseFile(file);
-  if (rows.length === 0) {
-    throw new Error("empty_dataset");
-  }
+export type ProfiledUpload = {
+  rows: Row[];
+  columns: DashboardState["columns"];
+  profile: DatasetProfile;
+  suggestedTopic: DatasetTopic;
+};
+
+/** Phase 1: parse + profile + suggest a topic. No LLM, no chart generation. */
+export async function profileUpload(file: UploadedFile): Promise<ProfiledUpload> {
+  const rows = await parseUploadedFile(file);
   const columns = inferColumns(rows);
-  const kpis = await buildKpiConfigs(rows, columns);
-  const charts = await buildInitialChartConfigs(rows, columns);
-  const datasetId = randomUUID();
-  const datasetMeta = buildDatasetMeta(rows, columns);
-  const initialFile: StoredDatasetFile = {
-    id: randomUUID(),
-    fileName: file.originalname,
-    rows,
+  const profile = profileDataset(rows, columns);
+  const { topic: suggestedTopic } = await classifyTopic(
+    summarizeProfile(profile),
+  );
+  return { rows, columns, profile, suggestedTopic };
+}
+
+/** Phase 2: grounded chart + KPI generation for a confirmed topic/count. */
+export async function generateDashboardArtifacts(
+  rows: Row[],
+  columns: DashboardState["columns"],
+  context: GenerationContext,
+): Promise<Pick<DashboardState, "charts" | "kpis">> {
+  const [charts, kpis] = await Promise.all([
+    buildInitialChartConfigs(rows, columns, context),
+    buildKpiConfigs(rows, columns),
+  ]);
+  return { charts, kpis };
+}
+
+/**
+ * Hydrate the in-memory chat state and build the dashboard response after
+ * generation (or when restoring a persisted dataset).
+ */
+export function buildDashboardSnapshot(input: {
+  datasetId: string;
+  fileName: string;
+  rows: Row[];
+  columns: DashboardState["columns"];
+  charts: DashboardState["charts"];
+  kpis: DashboardState["kpis"];
+  files?: Array<{ id: string; fileName: string; rowCount: number }>;
+}): UploadDashboardResponse {
+  const datasetMeta = buildDatasetMeta(input.rows, input.columns);
+  const storedFile: StoredDatasetFile = {
+    id: input.files?.[0]?.id ?? randomUUID(),
+    fileName: input.fileName,
+    rows: input.rows,
   };
-  const mergedRows = mergeDatasetRows([initialFile]);
-  setDatasetRows(datasetId, mergedRows);
-  setDatasetFiles(datasetId, [initialFile]);
-  const snapshot: DashboardState = createDatasetState(
-    datasetId,
-    columns,
-    kpis,
-    charts,
+  setDatasetRows(input.datasetId, input.rows);
+  setDatasetFiles(input.datasetId, [storedFile]);
+  const snapshot = createDatasetState(
+    input.datasetId,
+    input.columns,
+    input.kpis,
+    input.charts,
     datasetMeta,
   );
-  return buildUploadResponse(snapshot, mergedRows, [initialFile]);
+  return buildUploadResponse(snapshot, input.rows, [storedFile]);
 }
 
 export async function handleChainUpload(
@@ -205,10 +208,7 @@ export async function handleChainUpload(
     throw new Error("not_found");
   }
 
-  const rows = parseFile(file);
-  if (rows.length === 0) {
-    throw new Error("empty_dataset");
-  }
+  const rows = await parseUploadedFile(file);
 
   const nextColumns = inferColumns(rows);
   const schemaError = compareSchemaColumns(state.columns, nextColumns);
