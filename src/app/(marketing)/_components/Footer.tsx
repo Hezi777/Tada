@@ -9,15 +9,17 @@ const NAV = [
     header: 'Product',
     links: [
       { label: 'Home', href: '/' },
-      { label: 'Features', href: '#features' },
-      { label: 'How it works', href: '#how-it-works' },
+      { label: 'Features', href: '/#features' },
+      { label: 'How it works', href: '/#how-it-works' },
+      { label: 'Pricing', href: '/pricing' },
     ],
   },
   {
     header: 'Company',
     links: [
-      { label: 'About', href: '#' },
-      { label: 'Blog', href: '#' },
+      { label: 'About', href: '/about' },
+      { label: 'Privacy', href: '/privacy' },
+      { label: 'Terms', href: '/terms' },
     ],
   },
   {
@@ -55,10 +57,10 @@ export function Footer() {
             Calm analytics for fast-moving teams.
           </p>
           <a
-            href="mailto:hello@tada.so"
+            href="mailto:hello@tada.app"
             className="mt-1 block text-sm text-slate-500 transition-colors hover:text-slate-900"
           >
-            hello@tada.so
+            hello@tada.app
           </a>
         </div>
 
@@ -91,11 +93,11 @@ export function Footer() {
       <div className="mx-auto flex max-w-7xl items-center justify-between">
         <p className="text-sm text-slate-400">© 2025 Tada. All rights reserved.</p>
         <div className="flex items-center gap-3 text-sm text-slate-400">
-          <a href="#" className="transition-colors hover:text-slate-600">
+          <a href="/terms" className="transition-colors hover:text-slate-600">
             Terms
           </a>
           <span>·</span>
-          <a href="#" className="transition-colors hover:text-slate-600">
+          <a href="/privacy" className="transition-colors hover:text-slate-600">
             Privacy
           </a>
         </div>

@@ -2,16 +2,17 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/shared/ui/button';
 import { TadaLogo } from '@/shared/brand/TadaLogo';
 
 interface HeaderProps {
-  isAuthenticated: boolean;
-  userEmail: string | null;
-  onLogin: () => void;
-  onGetStarted: () => void;
-  onOpenWorkspace: () => void;
+  isAuthenticated?: boolean;
+  userEmail?: string | null;
+  onLogin?: () => void;
+  onGetStarted?: () => void;
+  onOpenWorkspace?: () => void;
 }
 
 function getDisplayInitial(email: string | null): string {
@@ -22,13 +23,18 @@ function getDisplayInitial(email: string | null): string {
 }
 
 export function Header({
-  isAuthenticated,
-  userEmail,
+  isAuthenticated = false,
+  userEmail = null,
   onLogin,
   onGetStarted,
   onOpenWorkspace,
 }: HeaderProps) {
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+
+  const handleLogin = onLogin ?? (() => router.push('/login'));
+  const handleGetStarted = onGetStarted ?? (() => router.push('/login'));
+  const handleOpenWorkspace = onOpenWorkspace ?? (() => router.push('/dashboard'));
 
   useEffect(() => {
     function onScroll() {
@@ -87,18 +93,30 @@ export function Header({
 
         {/* Nav */}
         <nav className="hidden items-center gap-6 md:flex">
-          <a
-            href="#features"
+          <Link
+            href="/#features"
             className="text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
           >
             Features
-          </a>
-          <a
-            href="#how-it-works"
+          </Link>
+          <Link
+            href="/#how-it-works"
             className="text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
           >
             How it works
-          </a>
+          </Link>
+          <Link
+            href="/pricing"
+            className="text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
+          >
+            Pricing
+          </Link>
+          <Link
+            href="/about"
+            className="text-sm font-medium text-muted-foreground transition-colors duration-200 hover:text-foreground"
+          >
+            About
+          </Link>
         </nav>
 
         {/* Actions */}
@@ -108,16 +126,16 @@ export function Header({
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                 {getDisplayInitial(userEmail)}
               </div>
-              <Button variant="default" size="sm" onClick={onOpenWorkspace}>
+              <Button variant="default" size="sm" onClick={handleOpenWorkspace}>
                 Open workspace
               </Button>
             </>
           ) : (
             <>
-              <Button variant="ghost" size="sm" onClick={onLogin}>
+              <Button variant="ghost" size="sm" onClick={handleLogin}>
                 Log in
               </Button>
-              <Button variant="default" size="sm" onClick={onGetStarted}>
+              <Button variant="default" size="sm" onClick={handleGetStarted}>
                 Get started
               </Button>
             </>
