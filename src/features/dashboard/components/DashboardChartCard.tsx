@@ -1,5 +1,5 @@
 import { memo, useState, type CSSProperties } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Scaling } from "lucide-react";
 import { CSS } from "@dnd-kit/utilities";
 import { useSortable } from "@dnd-kit/sortable";
 import {
@@ -43,8 +43,14 @@ import {
   buildScatterSeries,
   formatNumber as legacyFormatNumber,
 } from "@/features/dashboard/client/runtime";
+import {
+  abbreviateNumber,
+  ltrIsolate,
+  truncateLabel,
+} from "@/shared/lib/format";
 import type { LayoutItem } from "@/features/dashboard/client/layout";
 import { DASHBOARD_COLORS } from "@/features/dashboard/client/design";
+import { updateChart } from "@/features/dashboard/client/store";
 
 const CHART_COLOR = DASHBOARD_COLORS.primary;
 const CHART_GRID_COLOR = DASHBOARD_COLORS.chartGrid;
@@ -87,20 +93,21 @@ function formatMetric(value: string | number): string | number {
 
 function formatAxisValue(value: string | number): string {
   if (typeof value === "number") {
-    return legacyFormatNumber(value) ?? String(value);
+    return abbreviateNumber(value);
   }
 
+  // Israeli date convention: DD/MM, never US month-first.
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    const date = new Date(`${value}T00:00:00Z`);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const [, month, day] = value.split("-");
+    return ltrIsolate(`${day}/${month}`);
   }
 
   if (/^\d{4}-\d{2}$/.test(value)) {
-    const date = new Date(`${value}-01T00:00:00Z`);
-    return date.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+    const [year, month] = value.split("-");
+    return ltrIsolate(`${month}/${year.slice(2)}`);
   }
 
-  return value.length > 12 ? `${value.slice(0, 10)}…` : value;
+  return truncateLabel(value, 13);
 }
 
 function buildValueChartConfig(): ChartPrimitiveConfig {
@@ -403,6 +410,63 @@ const DashboardChartContent = memo(function DashboardChartContent({
 
   const chartConfig = buildValueChartConfig();
   const maxValue = Math.max(...series.map((entry) => entry.value));
+  const isHorizontal = chart.orientation === "horizontal";
+
+  if (isHorizontal) {
+    // Long category labels read better on horizontal bars (BI rule
+    // long_labels_use_horizontal_bar).
+    return (
+      <ChartContainer
+        config={chartConfig}
+        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-white`}
+      >
+        <BarChart
+          data={series}
+          layout="vertical"
+          margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
+        >
+          <CartesianGrid
+            horizontal={false}
+            stroke={CHART_GRID_COLOR}
+            strokeDasharray="4 10"
+          />
+          <XAxis
+            type="number"
+            axisLine={false}
+            tickLine={false}
+            fontSize={11}
+            tickMargin={8}
+            tickFormatter={(value: number) => formatAxisValue(value)}
+            stroke={CHART_AXIS_COLOR}
+          />
+          <YAxis
+            type="category"
+            dataKey="label"
+            axisLine={false}
+            tickLine={false}
+            fontSize={11}
+            tickMargin={8}
+            width={104}
+            tickFormatter={(value: string) => truncateLabel(value, 16)}
+            stroke={CHART_AXIS_COLOR}
+          />
+          <ChartTooltip
+            cursor={{ fill: "#E6E8EA" }}
+            content={<ChartTooltipContent />}
+          />
+          <Bar dataKey="value" radius={[0, 10, 10, 0]}>
+            {series.map((entry) => (
+              <Cell
+                key={`${chart.id}-bar-${entry.label}`}
+                fill={CHART_COLOR}
+                fillOpacity={entry.value === maxValue ? 1 : 0.28}
+              />
+            ))}
+          </Bar>
+        </BarChart>
+      </ChartContainer>
+    );
+  }
 
   return (
       <ChartContainer
@@ -442,7 +506,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
           content={<ChartTooltipContent />}
         />
         <Bar dataKey="value" radius={[10, 10, 0, 0]}>
-          {series.map((entry, index) => (
+          {series.map((entry) => (
             <Cell
               key={`${chart.id}-bar-${entry.label}`}
               fill={CHART_COLOR}
@@ -504,6 +568,29 @@ const DashboardChartCard = memo(function DashboardChartCard({
             <Badge className="rounded-full border-0 bg-[#e6e8ea] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-secondary)] hover:bg-[#e6e8ea]">
               {chart.type}
             </Badge>
+            <ShadTooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  aria-label={`Resize ${chart.title} (currently ${chart.size})`}
+                  className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
+                  onClick={() => {
+                    const nextSize =
+                      chart.size === "small"
+                        ? "medium"
+                        : chart.size === "medium"
+                          ? "large"
+                          : "small";
+                    updateChart(chart.id, { size: nextSize });
+                  }}
+                >
+                  <Scaling className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Resize chart ({chart.size})</TooltipContent>
+            </ShadTooltip>
             <ShadTooltip>
               <TooltipTrigger asChild>
                 <Button

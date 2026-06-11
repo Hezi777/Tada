@@ -2,6 +2,7 @@
 
 import { type Key, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Camera,
   Check,
   CreditCard,
   Monitor,
@@ -47,7 +48,7 @@ const SETTINGS_NAV: Array<{
   { key: "billing", label: "Billing", icon: CreditCard },
 ];
 
-const LANGUAGE_OPTIONS = ["English (US)", "Hebrew (IL)", "Spanish (ES)"];
+const LANGUAGE_OPTIONS = ["English (US)", "Hebrew (IL)"];
 
 function readThemeMode(): ThemeMode {
   if (typeof window === "undefined") {
@@ -235,6 +236,9 @@ export function SettingsPanel() {
   const [userMetadata, setUserMetadata] = useState<Record<string, unknown>>({});
   const [isSavingAccount, setIsSavingAccount] = useState(false);
   const [accountStatus, setAccountStatus] = useState<AccountStatus>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [billingMessage, setBillingMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -266,9 +270,13 @@ export function SettingsPanel() {
       setFirstName(derivedName.firstName);
       setLastName(derivedName.lastName);
       setLanguagePreference(
-        typeof metadata.language_preference === "string"
+        typeof metadata.language_preference === "string" &&
+          LANGUAGE_OPTIONS.includes(metadata.language_preference)
           ? metadata.language_preference
           : LANGUAGE_OPTIONS[0],
+      );
+      setAvatarUrl(
+        typeof metadata.avatar_url === "string" ? metadata.avatar_url : null,
       );
     });
 
@@ -353,6 +361,56 @@ export function SettingsPanel() {
     }
   }
 
+  async function handleAvatarUpload(file: File) {
+    if (!userId) {
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setAccountStatus({
+        tone: "error",
+        text: "Profile pictures must be under 2MB.",
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setAccountStatus(null);
+    try {
+      const extension = file.name.split(".").pop()?.toLowerCase() ?? "png";
+      const path = `${userId}/avatar.${extension}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+      // Cache-bust so the new image shows immediately.
+      const url = `${data.publicUrl}?v=${Date.now()}`;
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { ...userMetadata, avatar_url: url },
+      });
+      if (updateError) {
+        throw updateError;
+      }
+
+      setUserMetadata((current) => ({ ...current, avatar_url: url }));
+      setAvatarUrl(url);
+      setAccountStatus({ tone: "success", text: "Profile picture updated." });
+    } catch (error) {
+      setAccountStatus({
+        tone: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Unable to upload your picture.",
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
+
   async function handleDeleteAccount() {
     setIsDeleting(true);
     setDeleteErrorMessage(null);
@@ -418,6 +476,55 @@ export function SettingsPanel() {
 
               <div className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
                 ID {userId ? truncateUuid(userId) : "Pending"}
+              </div>
+            </div>
+
+            <div className="mb-8 flex items-center gap-5">
+              <div className="relative">
+                {avatarUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={avatarUrl}
+                    alt="Profile picture"
+                    className="h-20 w-20 rounded-full object-cover shadow-sm"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-muted)]">
+                    <UserRound className="h-9 w-9" />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  aria-label="Change profile picture"
+                  className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-accent)] text-white shadow-sm transition hover:bg-[#0047ab] disabled:opacity-60"
+                >
+                  <Camera className="h-4 w-4" />
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (file) {
+                      void handleAvatarUpload(file);
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  Profile picture
+                </p>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  {isUploadingAvatar
+                    ? "Uploading..."
+                    : "PNG, JPG, or WebP up to 2MB."}
+                </p>
               </div>
             </div>
 

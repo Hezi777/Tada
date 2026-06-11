@@ -338,17 +338,33 @@ export function buildGroupedSeries(
       }))
       .sort((left, right) => right.value - left.value);
 
-    if (chart.type === "donut" && series.length > CHART_LIMITS.donut) {
-      const kept = series.slice(0, CHART_LIMITS.donut);
+    // categoryLimit is set by the BI rules engine (top-N + Other bucket).
+    const donutLimit = chart.categoryLimit ?? CHART_LIMITS.donut;
+    if (chart.type === "donut" && series.length > donutLimit) {
+      const kept = series.slice(0, donutLimit - 1);
       const otherValue = series
-        .slice(CHART_LIMITS.donut)
+        .slice(donutLimit - 1)
         .reduce((sum, entry) => sum + entry.value, 0);
       return otherValue > 0
         ? [...kept, { label: "Other", value: otherValue }]
         : kept;
     }
 
-    return chart.type === "bar" ? series.slice(0, CHART_LIMITS.bar) : series;
+    if (chart.type === "bar") {
+      const barLimit = chart.categoryLimit ?? CHART_LIMITS.bar;
+      if (chart.categoryLimit && series.length > barLimit) {
+        const kept = series.slice(0, barLimit);
+        const otherValue = series
+          .slice(barLimit)
+          .reduce((sum, entry) => sum + entry.value, 0);
+        return otherValue > 0
+          ? [...kept, { label: "Other", value: otherValue }]
+          : kept;
+      }
+      return series.slice(0, barLimit);
+    }
+
+    return series;
   }
 
   const valueColumn = chart.columns[0] ?? null;

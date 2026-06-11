@@ -8,6 +8,7 @@ import FileManager from "./FileManager";
 import { SettingsPanel } from "./SettingsPanel";
 import { FloatingChat } from "./FloatingChat";
 import { logout } from "@/features/auth/server/actions";
+import { createClient } from "@/shared/lib/supabase/client";
 
 interface AppShellProps {
   dashboardContent?: ReactNode;
@@ -67,6 +68,22 @@ export function AppShell({
 }: AppShellProps) {
   const [themeMode, setThemeMode] = useState<ThemeMode>(readThemeMode);
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    void createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        const url = data.user?.user_metadata?.avatar_url;
+        if (mounted && typeof url === "string") {
+          setAvatarUrl(url);
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [activeTab]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -164,9 +181,23 @@ export function AppShell({
               <Bell className="h-4 w-4" />
             </Button>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--color-text-secondary)] shadow-[0_8px_24px_rgba(25,28,30,0.06)]">
-              <CircleUserRound className="h-5 w-5" />
-            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab("settings")}
+              aria-label="Open settings"
+              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white text-[var(--color-text-secondary)] shadow-[0_8px_24px_rgba(25,28,30,0.06)] transition hover:opacity-80"
+            >
+              {avatarUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={avatarUrl}
+                  alt="Your profile"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <CircleUserRound className="h-5 w-5" />
+              )}
+            </button>
 
             <form action={logout}>
               <Button
