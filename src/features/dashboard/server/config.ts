@@ -118,6 +118,63 @@ function pearsonCorrelation(left: number[], right: number[]): number | null {
   return numerator / Math.sqrt(leftDenominator * rightDenominator);
 }
 
+// Non-additive numeric columns: ids, codes, years, postal/zip codes, phone
+// numbers, coordinates, and ordinal ranks. Summing or averaging these
+// produces meaningless totals (e.g. "Average release_year"), so chart
+// builders must treat them as categorical dimensions (group by / count)
+// rather than as the measure being aggregated.
+const NON_MEASURE_NAME_PATTERN =
+  /(^|[_\s])(id|uuid|code|zip|postal|phone|tel|lat|lng|latitude|longitude|rank|position|ordinal|year|yr)([_\s\d]|$)|מזהה|טלפון|מיקוד|שנה/i;
+
+const MIN_PLAUSIBLE_YEAR = 1000;
+const MAX_PLAUSIBLE_YEAR = 2100;
+
+/**
+ * Conservative guard: returns true only when a numeric column represents a
+ * true additive/averageable measure (amounts, quantities, prices,
+ * durations, counts). Returns false for non-additive numeric dimensions
+ * (years, identifiers, codes, postal codes, phone numbers, coordinates,
+ * ordinal ranks) which should instead be grouped/counted, not summed/averaged.
+ */
+export function isAdditiveMeasure(rows: Row[], column: Column): boolean {
+  if (column.kind !== "numeric") {
+    return false;
+  }
+  if (NON_MEASURE_NAME_PATTERN.test(column.name)) {
+    return false;
+  }
+
+  const values = rows
+    .map((row) => toNumber(row[column.name]))
+    .filter((value): value is number => value !== null);
+  if (values.length === 0) {
+    return false;
+  }
+
+  // Year-like: every value is a whole number within a plausible calendar
+  // year range (e.g. release_year, founded_year without a matching name).
+  const allPlausibleYears = values.every(
+    (value) =>
+      Number.isInteger(value) &&
+      value >= MIN_PLAUSIBLE_YEAR &&
+      value <= MAX_PLAUSIBLE_YEAR,
+  );
+  if (allPlausibleYears) {
+    return false;
+  }
+
+  // Identifier-like: whole numbers that are almost all unique, with no
+  // fractional component anywhere — typical of surrogate keys / codes.
+  if (values.length >= 5 && values.every((value) => Number.isInteger(value))) {
+    const distinct = new Set(values);
+    if (distinct.size / values.length > 0.95) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function createChartId(order: number): string {
   return `chart_${String(order + 1).padStart(2, "0")}`;
 }
@@ -451,6 +508,19 @@ function reduceAggregate(
   return bucket.sum;
 }
 
+/**
+ * Downgrades a candidate numeric column to `null` when it is not a true
+ * measure (see isAdditiveMeasure), so builders fall back to counting
+ * records instead of summing/averaging a year, id, code, or similar
+ * non-additive numeric dimension.
+ */
+function resolveMeasureColumn(rows: Row[], column: Column | null): Column | null {
+  if (!column) {
+    return null;
+  }
+  return isAdditiveMeasure(rows, column) ? column : null;
+}
+
 function buildAreaInsight(
   series: Array<{ key: string; value: number }>,
   metricLabel: string,
@@ -508,8 +578,9 @@ function buildScatterInsight(
 function buildAreaChart(
   rows: Row[],
   dateColumn: Column,
-  numericColumn: Column | null,
+  numericColumnInput: Column | null,
 ): IncomingChartConfig | null {
+  const numericColumn = resolveMeasureColumn(rows, numericColumnInput);
   const aggregation = numericColumn ? "sum" : "count";
   const series = aggregateByTime(
     rows,
@@ -540,8 +611,9 @@ function buildAreaChart(
 function buildBarChart(
   rows: Row[],
   categoryColumn: Column,
-  numericColumn: Column | null,
+  numericColumnInput: Column | null,
 ): IncomingChartConfig | null {
+  const numericColumn = resolveMeasureColumn(rows, numericColumnInput);
   const aggregation = numericColumn ? "sum" : "count";
   const series = aggregateByCategory(
     rows,
@@ -572,8 +644,9 @@ function buildBarChart(
 function buildDonutChart(
   rows: Row[],
   categoryColumn: Column,
-  numericColumn: Column | null,
+  numericColumnInput: Column | null,
 ): IncomingChartConfig | null {
+  const numericColumn = resolveMeasureColumn(rows, numericColumnInput);
   const aggregation = numericColumn ? "sum" : "count";
   const series = aggregateByCategory(
     rows,
@@ -665,51 +738,11 @@ function buildScatterChart(
   };
 }
 
-function buildSingleValueBar(
-  rows: Row[],
-  numericColumn: Column,
-): IncomingChartConfig | null {
-  const values = rows
-    .map((row) => toNumber(row[numericColumn.name]))
-    .filter((value): value is number => value !== null);
-  if (values.length === 0) {
-    return null;
-  }
-  const avg = mean(values);
-  return {
-    type: "bar",
-    title: `Average ${numericColumn.name}`,
-    insight: `${numericColumn.name} averages ${Math.round(avg * 100) / 100} across the dataset.`,
-    columns: [numericColumn.name],
-    aggregation: "avg",
-    groupBy: null,
-    timeColumn: null,
-    size: "small",
-  };
-}
-
-function buildSingleValueDonut(
-  rows: Row[],
-  numericColumn: Column,
-): IncomingChartConfig | null {
-  const values = rows
-    .map((row) => toNumber(row[numericColumn.name]))
-    .filter((value): value is number => value !== null);
-  if (values.length === 0) {
-    return null;
-  }
-  const total = values.reduce((sum, value) => sum + value, 0);
-  return {
-    type: "donut",
-    title: `${numericColumn.name} share`,
-    insight: `${numericColumn.name} totals ${Math.round(total * 100) / 100} across the dataset.`,
-    columns: [numericColumn.name],
-    aggregation: "sum",
-    groupBy: null,
-    timeColumn: null,
-    size: "small",
-  };
-}
+// Note: a single aggregate value (e.g. "Average X" or "X total") rendered
+// as one bar or one donut slice is not a meaningful chart — it carries the
+// same information as a KPI card, but as a misleading giant bar / full
+// circle. buildKpiConfigs already surfaces these totals as KPIs, so no
+// single-value bar/donut builder is used in the fallback chart set below.
 
 function buildRecordCountBar(rows: Row[]): IncomingChartConfig | null {
   if (rows.length === 0) {
@@ -895,10 +928,6 @@ function buildFallbackCharts(rows: Row[], columns: Column[]): ChartConfig[] {
     maybeAdd(buildDonutChart(rows, primaryCategory, primaryNumeric));
   }
   maybeAdd(buildScatterChart(rows, columns));
-  if (primaryNumeric) {
-    maybeAdd(buildSingleValueBar(rows, primaryNumeric));
-    maybeAdd(buildSingleValueDonut(rows, primaryNumeric));
-  }
   maybeAdd(buildRecordCountBar(rows));
   maybeAdd(buildRecordCountDonut(rows));
 
@@ -919,6 +948,39 @@ function buildFallbackCharts(rows: Row[], columns: Column[]): ChartConfig[] {
     "fallback",
     false,
   );
+}
+
+/**
+ * Drops bar/donut charts that aggregate a single column with no groupBy —
+ * these render as one giant bar or one full donut slice, i.e. a single
+ * aggregate value masquerading as a chart (the same defect as
+ * buildSingleValueBar/buildSingleValueDonut). Such values belong in a KPI
+ * card. Also removes charts that duplicate an earlier chart's measure,
+ * aggregation, and groupBy (e.g. two donuts that would render the same
+ * total), keeping the first occurrence.
+ */
+function dedupeAndCleanCharts(charts: IncomingChartConfig[]): IncomingChartConfig[] {
+  const seenSignatures = new Set<string>();
+  const result: IncomingChartConfig[] = [];
+
+  for (const chart of charts) {
+    const isSingleValueShape =
+      (chart.type === "bar" || chart.type === "donut") &&
+      !chart.groupBy &&
+      chart.columns.length <= 1;
+    if (isSingleValueShape) {
+      continue;
+    }
+
+    const signature = `${chart.type}:${chart.aggregation ?? "none"}:${[...chart.columns].sort().join("|")}:${chart.groupBy ?? ""}`;
+    if (seenSignatures.has(signature)) {
+      continue;
+    }
+    seenSignatures.add(signature);
+    result.push(chart);
+  }
+
+  return result;
 }
 
 function normalizeSuggestedChart(
@@ -1053,9 +1115,11 @@ async function suggestChartsWithLLM(
     return null;
   }
 
-  const incoming = parsed.charts
-    .map((chart) => normalizeSuggestedChart(chart))
-    .filter((chart): chart is IncomingChartConfig => Boolean(chart));
+  const incoming = dedupeAndCleanCharts(
+    parsed.charts
+      .map((chart) => normalizeSuggestedChart(chart))
+      .filter((chart): chart is IncomingChartConfig => Boolean(chart)),
+  );
   if (incoming.length === 0) {
     return null;
   }
