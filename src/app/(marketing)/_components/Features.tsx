@@ -19,25 +19,25 @@ function DashboardGraphic() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="mt-6 rounded-[1.5rem] border border-primary/10 bg-white p-5 shadow-soft">
+    <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/10 p-5 shadow-premium backdrop-blur-sm">
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl bg-primary/[0.05] p-3">
-            <p className="text-xs text-muted-foreground">Revenue</p>
-            <p className="mt-2 text-lg font-bold text-foreground">$148k</p>
-            <p className="mt-1 text-xs font-semibold text-primary">+18%</p>
+          <div className="rounded-xl bg-white/10 p-3">
+            <p className="text-xs text-white/70">Revenue</p>
+            <p className="display-number mt-2 text-lg text-white">$148k</p>
+            <p className="mt-1 text-xs font-semibold text-emerald-300">+18%</p>
           </div>
-          <div className="rounded-xl bg-primary/[0.05] p-3">
-            <p className="text-xs text-muted-foreground">Users</p>
-            <p className="mt-2 text-lg font-bold text-foreground">2.4k</p>
+          <div className="rounded-xl bg-white/10 p-3">
+            <p className="text-xs text-white/70">Users</p>
+            <p className="display-number mt-2 text-lg text-white">2.4k</p>
           </div>
-          <div className="hidden rounded-xl bg-primary/[0.05] p-3 sm:block">
-            <p className="text-xs text-muted-foreground">Orders</p>
-            <p className="mt-2 text-lg font-bold text-foreground">932</p>
+          <div className="hidden rounded-xl bg-white/10 p-3 sm:block">
+            <p className="text-xs text-white/70">Orders</p>
+            <p className="display-number mt-2 text-lg text-white">932</p>
           </div>
-          <div className="hidden rounded-xl bg-primary/[0.05] p-3 sm:block">
-            <p className="text-xs text-muted-foreground">Churn</p>
-            <p className="mt-2 text-lg font-bold text-foreground">1.2%</p>
+          <div className="hidden rounded-xl bg-white/10 p-3 sm:block">
+            <p className="text-xs text-white/70">Churn</p>
+            <p className="display-number mt-2 text-lg text-white">1.2%</p>
           </div>
         </div>
         <div className="relative flex flex-1 flex-col justify-end gap-2">

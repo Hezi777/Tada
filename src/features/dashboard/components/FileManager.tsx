@@ -591,7 +591,7 @@ export default function FileManager() {
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="font-display text-[2.25rem] font-bold tracking-[-0.05em] text-[var(--color-text-primary)]">
+              <h1 className="font-display text-[2.25rem] font-black tracking-[-0.05em] text-[var(--color-text-primary)]">
                 My Dashboards
               </h1>
               <p className="mt-2 text-sm font-medium text-[var(--color-text-secondary)]">

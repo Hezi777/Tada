@@ -456,14 +456,14 @@ export function FloatingChat() {
       {isMobile ? (
         <Drawer open={isOpen} onOpenChange={setIsOpen}>
           <DrawerContent className="mt-0 h-[85vh] overflow-hidden rounded-t-[24px] border-0 bg-card p-0 shadow-[0_-12px_40px_rgba(0,0,0,0.18)]">
-            <DrawerHeader className="bg-[linear-gradient(145deg,var(--color-accent)_0%,var(--color-accent-secondary)_100%)] px-5 py-4 text-left text-white">
+            <DrawerHeader className="mesh-navy px-5 py-4 text-left text-white">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                     <WandSparkles className="h-4.5 w-4.5" />
                   </div>
                   <div>
-                    <DrawerTitle className="text-base font-bold text-white">
+                    <DrawerTitle className="text-base font-extrabold text-white">
                       Tada Wiz
                     </DrawerTitle>
                     <DrawerDescription className="mt-0.5 text-[13px] text-white/75">
@@ -504,17 +504,17 @@ export function FloatingChat() {
                   : { opacity: 0, y: 10, scale: 0.95 }
               }
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-card shadow-[0_12px_40px_rgba(0,0,0,0.14)]"
+              className="shadow-premium fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-card"
             >
               <div className="flex h-full flex-col">
-                <div className="bg-[linear-gradient(145deg,var(--color-accent)_0%,var(--color-accent-secondary)_100%)] px-5 py-4 text-white">
+                <div className="mesh-navy px-5 py-4 text-white">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                         <WandSparkles className="h-4.5 w-4.5" />
                       </div>
                       <div>
-                        <div className="text-base font-bold">Tada Wiz</div>
+                        <div className="text-base font-extrabold">Tada Wiz</div>
                         <p className="mt-0.5 text-[13px] text-white/75">
                           Ask anything about your data
                         </p>

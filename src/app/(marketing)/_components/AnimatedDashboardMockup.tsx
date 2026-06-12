@@ -43,7 +43,7 @@ export function AnimatedDashboardMockup() {
       <div className="absolute -inset-x-10 bottom-0 h-40 rounded-[2.5rem] bg-emerald-400/10 blur-3xl" />
 
       {/* Main Glass Panel */}
-      <div className="relative flex flex-col gap-4 rounded-[2rem] border border-white/60 bg-white/40 p-5 shadow-2xl backdrop-blur-xl">
+      <div className="relative flex flex-col gap-4 rounded-[2rem] border border-white/60 bg-white/40 p-5 shadow-premium backdrop-blur-xl">
         {/* Top KPI row */}
         <div className="flex gap-4">
           <div className="flex-1 rounded-[1.25rem] border border-white/80 bg-white/70 p-4 shadow-sm">
@@ -51,7 +51,7 @@ export function AnimatedDashboardMockup() {
               Q3 Forecast
             </p>
             <div className="mt-1 flex items-baseline gap-1">
-              <span className="text-3xl font-extrabold text-foreground">
+              <span className="display-number text-3xl text-foreground">
                 ${displayCount}k
               </span>
               <span className="flex items-center text-xs font-semibold text-emerald-500">
