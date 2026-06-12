@@ -51,9 +51,10 @@ function NavItem({
     <button
       type="button"
       onClick={onClick}
-      className={`h-8 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
+      aria-current={active ? "page" : undefined}
+      className={`h-9 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
         active
-          ? "bg-[#191c1e] text-white"
+          ? "bg-[var(--color-accent)] text-white shadow-[0_12px_24px_-14px_rgba(0,50,125,0.65)]"
           : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
       }`}
     >
@@ -83,7 +84,7 @@ export function AppShell({
     return () => {
       mounted = false;
     };
-  }, [activeTab]);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -143,12 +144,12 @@ export function AppShell({
 
             <nav className="hidden items-center gap-2 md:flex">
               <NavItem
-                label="Dashboard"
+                label="Overview"
                 active={activeTab === "dashboard"}
                 onClick={() => setActiveTab("dashboard")}
               />
               <NavItem
-                label="Dashboards"
+                label="Files"
                 active={activeTab === "dashboards"}
                 onClick={() => setActiveTab("dashboards")}
               />
@@ -192,9 +193,27 @@ export function AppShell({
             </form>
           </div>
         </div>
+
+        <nav className="flex items-center gap-2 overflow-x-auto border-t border-[var(--color-border)] px-4 py-2 md:hidden">
+          <NavItem
+            label="Overview"
+            active={activeTab === "dashboard"}
+            onClick={() => setActiveTab("dashboard")}
+          />
+          <NavItem
+            label="Files"
+            active={activeTab === "dashboards"}
+            onClick={() => setActiveTab("dashboards")}
+          />
+          <NavItem
+            label="Settings"
+            active={activeTab === "settings"}
+            onClick={() => setActiveTab("settings")}
+          />
+        </nav>
       </header>
 
-      <main className="mx-auto h-[calc(100vh-64px)] max-w-[1280px] overflow-y-auto pt-16">
+      <main className="mx-auto h-[calc(100vh-113px)] max-w-[1280px] overflow-y-auto pt-[113px] md:h-[calc(100vh-64px)] md:pt-16">
         {activeTab === "settings" ? (
           <SettingsPanel />
         ) : activeTab === "dashboards" ? (

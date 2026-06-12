@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, Send, Sparkles, WandSparkles, X } from "lucide-react";
+import { Loader2, Send, Sparkles, WandSparkles, X } from "lucide-react";
 import {
   BI_RULE_LIMITS,
   type ChatChartProposal,
@@ -252,7 +252,7 @@ export function FloatingChat() {
           aria-label="Send message"
         >
           {isSending ? (
-            <MessageCircle className="h-4 w-4" />
+            <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />
           ) : (
             <Send className="h-4 w-4" />
           )}
@@ -273,8 +273,8 @@ export function FloatingChat() {
 
           {canChat && messages.length === 0 ? (
             <Card className="rounded-[20px] border-0 bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
-              Ask about your data, request a chart change, or get help
-              reading a view.
+              Ask about your data, request a chart change, or get help reading a
+              view.
             </Card>
           ) : null}
 
@@ -386,7 +386,7 @@ export function FloatingChat() {
       `}</style>
 
       {/* FAB with pulse ring */}
-      <div className="fixed bottom-8 right-8 z-50">
+      <div className="fixed bottom-6 right-6 z-50">
         {!isOpen && (
           <span className="fab-pulse-ring absolute inset-0 rounded-full" />
         )}
@@ -396,7 +396,11 @@ export function FloatingChat() {
           className="relative h-[52px] w-[52px] rounded-full border-0 bg-[var(--color-accent)] text-white shadow-[0_18px_36px_-18px_rgba(0,50,125,0.55)] transition-all duration-200 ease-in-out hover:scale-105 hover:bg-[var(--color-accent-secondary)] hover:shadow-[0_22px_40px_-18px_rgba(0,50,125,0.65)]"
           aria-label={isOpen ? "Close TADA Wiz" : "Open TADA Wiz"}
         >
-          <Sparkles className="h-5 w-5" />
+          {isOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Sparkles className="h-5 w-5" />
+          )}
         </Button>
       </div>
 
@@ -405,7 +409,7 @@ export function FloatingChat() {
           {isMobile ? (
             <Drawer open={isOpen} onOpenChange={setIsOpen}>
               <DrawerContent className="mt-0 h-[85vh] overflow-hidden rounded-t-[24px] border-0 bg-white p-0 shadow-[0_-12px_40px_rgba(0,0,0,0.18)]">
-                <DrawerHeader className="bg-[linear-gradient(145deg,#00327D_0%,#0047AB_100%)] px-5 py-4 text-left text-white">
+                <DrawerHeader className="bg-[linear-gradient(145deg,var(--color-accent)_0%,var(--color-accent-secondary)_100%)] px-5 py-4 text-left text-white">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
@@ -442,7 +446,7 @@ export function FloatingChat() {
               style={{ animation: "wizOpen 200ms ease" }}
             >
               <div className="flex h-full flex-col">
-                <div className="bg-[linear-gradient(145deg,#00327D_0%,#0047AB_100%)] px-5 py-4 text-white">
+                <div className="bg-[linear-gradient(145deg,var(--color-accent)_0%,var(--color-accent-secondary)_100%)] px-5 py-4 text-white">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">

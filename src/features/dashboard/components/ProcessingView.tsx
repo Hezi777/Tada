@@ -50,7 +50,7 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
   }, [stepsDone, isReady, onComplete]);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-4 py-10 sm:px-6">
+    <div className="flex h-full flex-col items-center justify-center px-5 py-6">
       <div className="mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
         <Card className="rounded-[24px] border-0 bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
           <div className="inline-flex rounded-full bg-[rgba(0,50,125,0.08)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">

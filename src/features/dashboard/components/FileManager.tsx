@@ -57,6 +57,7 @@ import {
   updateDashboard,
   uploadToDashboard,
 } from "@/shared/lib/api";
+import { formatDateIL } from "@/shared/lib/format";
 import {
   clearActiveDashboard,
   getCachedDashboard,
@@ -126,17 +127,6 @@ function AnimatedLoadingText() {
       </AnimatePresence>
     </div>
   );
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  if (Number.isNaN(date.getTime())) {
-    return dateStr;
-  }
-  // Israeli display convention.
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  return `${day}/${month}/${date.getFullYear()}`;
 }
 
 function formatApiMessage(message: string): string {
@@ -606,7 +596,7 @@ export default function FileManager() {
             <Button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="h-10 rounded-full bg-[var(--color-accent)] px-5 text-white hover:bg-[#0047ab]"
+              className="h-10 rounded-full bg-[var(--color-accent)] px-5 text-white hover:bg-[var(--color-accent-secondary)]"
             >
               <Plus className="h-4 w-4" />
               New Dashboard
@@ -817,7 +807,7 @@ export default function FileManager() {
                                     }
                                     className={`h-7 w-7 rounded-full border border-white/70 transition-all ${
                                       color === dashboard.color
-                                        ? "ring-2 ring-[#00327d] ring-offset-1"
+                                        ? "ring-2 ring-[var(--color-accent)] ring-offset-1"
                                         : "hover:scale-110"
                                     }`}
                                     style={{ backgroundColor: color }}
@@ -901,7 +891,7 @@ export default function FileManager() {
                       <p className="mt-2 text-sm font-medium tabular-nums text-[var(--color-text-secondary)]">
                         {dashboard.fileCount}{" "}
                         {dashboard.fileCount === 1 ? "file" : "files"} ·{" "}
-                        {formatDate(dashboard.updatedAt)}
+                        {formatDateIL(dashboard.updatedAt)}
                       </p>
                     </div>
                   </Card>
@@ -996,7 +986,7 @@ export default function FileManager() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => void handleDeleteDashboard()}
-                className="bg-[var(--color-accent)] text-white hover:bg-[#0047ab]"
+                className="bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-secondary)]"
               >
                 Delete
               </AlertDialogAction>
@@ -1062,7 +1052,7 @@ export default function FileManager() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="relative h-10 rounded-full bg-[var(--color-accent)] px-0 text-sm font-semibold text-white hover:bg-[#0047ab] disabled:w-[200px]"
+              className="relative h-10 rounded-full bg-[var(--color-accent)] px-0 text-sm font-semibold text-white hover:bg-[var(--color-accent-secondary)] disabled:w-[200px]"
             >
               <AnimatePresence mode="popLayout" initial={false}>
                 {isUploading ? (
@@ -1132,7 +1122,7 @@ export default function FileManager() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="mt-6 h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[#0047ab]"
+              className="mt-6 h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-accent-secondary)]"
             >
               <Upload className="h-4 w-4" />
               Upload File
@@ -1140,15 +1130,22 @@ export default function FileManager() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3">
-            {filteredFiles.map((file) => (
-              <Card
-                key={file.id}
-                className="group relative overflow-hidden rounded-[20px] border-0 bg-white shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_54px_-30px_rgba(25,28,30,0.24)]"
-              >
-                <div className="flex min-h-[180px] flex-col justify-between">
-                  <div className="flex items-start gap-4 p-5 pb-0">
+            {filteredFiles.map((file) => {
+              const extension =
+                file.fileName.split(".").pop()?.toUpperCase() ?? "FILE";
+              const isSpreadsheet =
+                file.fileName.endsWith(".csv") ||
+                file.fileName.endsWith(".xlsx") ||
+                file.fileName.endsWith(".xls");
+
+              return (
+                <Card
+                  key={file.id}
+                  className="group relative overflow-hidden rounded-[20px] border-0 bg-white shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_54px_-30px_rgba(25,28,30,0.24)]"
+                >
+                  <div className="flex items-start gap-4 p-5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
-                      {file.fileName.endsWith(".csv") ? (
+                      {isSpreadsheet ? (
                         <Table className="h-5 w-5" />
                       ) : (
                         <FileText className="h-5 w-5" />
@@ -1156,10 +1153,13 @@ export default function FileManager() {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
+                      <p
+                        className="truncate text-sm font-semibold text-[var(--color-text-primary)]"
+                        title={file.fileName}
+                      >
                         {file.fileName}
                       </p>
-                      <div className="mt-2 flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                         <span className="tabular-nums">
                           {file.rowCount.toLocaleString()}
                         </span>
@@ -1171,22 +1171,32 @@ export default function FileManager() {
                         ) : null}
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center justify-end p-5 pt-4">
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       onClick={() => setDeleteFileConfirm(file)}
-                      className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
+                      aria-label={`Remove ${file.fileName}`}
+                      className="h-8 w-8 shrink-0 rounded-full text-[var(--color-text-muted)] opacity-0 transition-opacity hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] group-hover:opacity-100"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
-              </Card>
-            ))}
+
+                  <div className="flex items-center justify-between border-t border-[rgba(25,28,30,0.06)] bg-[var(--color-surface-muted)] px-5 py-3">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
+                      {extension}
+                    </span>
+                    {file.isPrimary ? (
+                      <span className="text-[11px] font-medium text-[var(--color-text-secondary)]">
+                        Used for dashboard charts
+                      </span>
+                    ) : null}
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1207,7 +1217,7 @@ export default function FileManager() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void handleRemoveFile()}
-              className="bg-[var(--color-accent)] text-white hover:bg-[#0047ab]"
+              className="bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-secondary)]"
             >
               Remove
             </AlertDialogAction>
