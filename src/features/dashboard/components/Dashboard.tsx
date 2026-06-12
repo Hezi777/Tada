@@ -261,35 +261,33 @@ function KpiCard({
 
   return (
     <Card
-      className={`dashboard-hover relative overflow-hidden rounded-[24px] border-0 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] ${
-        isPrimary ? "bg-[var(--color-accent)] text-white" : "bg-card"
+      className={`dashboard-hover relative overflow-hidden rounded-[20px] ${
+        isPrimary
+          ? "border-0 bg-[var(--color-accent)] text-white"
+          : "border border-[var(--color-border)] bg-card"
       }`}
     >
-      <CardContent className="relative flex min-h-[176px] flex-col justify-between overflow-hidden px-8 py-7">
+      <CardContent className="relative flex min-h-[176px] flex-col justify-between overflow-hidden p-6">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <div
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] ${
-                isPrimary
-                  ? "bg-white/14 text-white"
-                  : "bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]"
-              }`}
-            >
-              <Icon className="h-4 w-4" strokeWidth={2} />
-            </div>
-            <p
-              className={`truncate text-[11px] font-semibold uppercase tracking-[0.18em] ${
-                isPrimary
-                  ? "text-white/72"
-                  : "text-[var(--color-text-secondary)]"
-              }`}
-            >
-              {label}
-            </p>
+          <div
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+              isPrimary
+                ? "bg-white/10 text-white"
+                : "bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]"
+            }`}
+          >
+            <Icon className="h-5 w-5" strokeWidth={2} />
           </div>
+          <p
+            className={`truncate text-sm font-medium ${
+              isPrimary ? "text-white/70" : "text-[var(--color-text-secondary)]"
+            }`}
+          >
+            {label}
+          </p>
         </div>
 
-        <div className="relative z-10 min-w-0">
+        <div className="relative z-10 mt-4 min-w-0">
           <div
             className={`truncate font-display font-extrabold leading-tight tracking-[-0.04em] tabular-nums ${kpiValueSizeClass(
               displayValue,
@@ -302,7 +300,7 @@ function KpiCard({
             <span
               className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
                 isPrimary
-                  ? "bg-white/14 text-white"
+                  ? "bg-white/10 text-white"
                   : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
               }`}
             >
@@ -312,7 +310,7 @@ function KpiCard({
 
           <p
             className={`mt-3 line-clamp-2 max-w-[16rem] text-[12px] leading-5 ${
-              isPrimary ? "text-white/74" : "text-[var(--color-text-secondary)]"
+              isPrimary ? "text-white/70" : "text-[var(--color-text-secondary)]"
             }`}
           >
             {description}
@@ -322,7 +320,7 @@ function KpiCard({
         <Icon
           strokeWidth={1.5}
           className={`pointer-events-none absolute -bottom-5 -right-5 h-24 w-24 ${
-            isPrimary ? "text-white/10" : "text-[rgba(0,50,125,0.07)]"
+            isPrimary ? "text-white/10" : "text-[rgba(0,50,125,0.05)]"
           }`}
         />
       </CardContent>
@@ -334,14 +332,15 @@ function DashboardSkeleton() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-12 items-center bg-card px-5" />
-      <div className="grid grid-cols-1 gap-8 px-5 py-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 px-5 py-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
           <Card
             key={index}
-            className="overflow-hidden rounded-[24px] border-0 bg-card shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            className="overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card"
           >
-            <CardContent className="px-8 py-8">
-              <Skeleton className="h-3 w-20 rounded-full" />
+            <CardContent className="p-6">
+              <Skeleton className="h-10 w-10 rounded-xl" />
+              <Skeleton className="mt-4 h-3 w-20 rounded-full" />
               <Skeleton className="mt-3 h-6 w-24 rounded-full" />
               <Skeleton className="mt-2 h-3 w-28 rounded-full" />
             </CardContent>
@@ -349,8 +348,8 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div className="flex-1 px-5 pb-4">
-        <Card className="h-full rounded-[24px] border-0 bg-card shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
-          <Skeleton className="h-full w-full rounded-[24px]" />
+        <Card className="h-full rounded-2xl border border-[var(--color-border)] bg-card">
+          <Skeleton className="h-full w-full rounded-2xl" />
         </Card>
       </div>
     </div>
@@ -738,9 +737,9 @@ export function Dashboard() {
 
     return (
       <>
-        <div className="flex shrink-0 flex-col gap-4 px-5 pb-4 pt-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="font-display text-[32px] font-extrabold tracking-[-0.04em] text-[var(--color-text-primary)]">
+        <div className="flex shrink-0 flex-col gap-4 px-5 pb-5 pt-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+            <div className="font-display text-[28px] font-extrabold tracking-[-0.04em] text-[var(--color-text-primary)]">
               {title}
             </div>
             <p className="mt-1 max-w-[52rem] truncate text-sm text-[var(--color-text-secondary)]">
@@ -748,8 +747,8 @@ export function Dashboard() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--color-surface-muted)] px-4 text-sm font-medium text-[var(--color-text-secondary)] shadow-none">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="inline-flex h-10 items-center gap-2 rounded-full border border-[var(--color-border)] bg-card px-4 text-sm font-medium text-[var(--color-text-secondary)]">
               <CalendarDays className="h-4 w-4 text-[var(--color-accent)]" />
               <span className="tabular-nums">
                 {rows.length.toLocaleString()} rows
@@ -762,8 +761,8 @@ export function Dashboard() {
               activeDashboardName={activeDashboardName}
               activeDashboardIcon={activeDashboardIcon}
               fallbackLabel={fileName ?? "No dashboard"}
-              triggerClassName="h-11 rounded-full border border-transparent bg-[var(--color-surface-muted)] px-4 text-[13px] text-[var(--color-text-primary)] hover:bg-card hover:text-[var(--color-text-primary)]"
-              contentClassName="rounded-[20px] border border-transparent bg-card shadow-[0_32px_64px_-42px_rgba(25,28,30,0.18)]"
+              triggerClassName="h-10 rounded-full border border-[var(--color-border)] bg-card px-4 text-[13px] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
+              contentClassName="rounded-[20px] border border-[var(--color-border)] bg-card shadow-[0_32px_64px_-42px_rgba(25,28,30,0.18)]"
               onSwitchDashboard={(dashboard) => {
                 void handleSwitch(dashboard);
               }}
@@ -773,7 +772,7 @@ export function Dashboard() {
             <Button
               type="button"
               onClick={() => setManageViewsOpen((current) => !current)}
-              className={`h-11 rounded-full px-5 text-sm font-semibold text-white shadow-[0_24px_48px_-28px_rgba(0,50,125,0.65)] transition ${
+              className={`h-10 rounded-full px-4 text-sm font-semibold text-white transition ${
                 manageViewsOpen
                   ? "bg-[#191c1e]"
                   : "bg-[var(--color-accent)] hover:bg-[#0047ab]"
@@ -841,7 +840,7 @@ export function Dashboard() {
             charts={orderedCharts}
           />
 
-          <div className="grid shrink-0 grid-cols-1 gap-8 px-5 pb-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid shrink-0 grid-cols-1 gap-5 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-4">
             {kpiCards.map((card) => (
               <KpiCard
                 key={card.id}
@@ -912,7 +911,7 @@ export function Dashboard() {
                   items={layoutItems.map((chart) => chart.id)}
                   strategy={rectSortingStrategy}
                 >
-                  <div className="grid h-full grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+                  <div className="grid h-full grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12 xl:gap-6">
                     {layoutItems.map((chart) => (
                       <div
                         key={chart.id}
