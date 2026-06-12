@@ -13,7 +13,8 @@ function baseColSpan(size: ChartConfig["size"]): number {
   return 4;
 }
 
-function normalizeLastRow(row: LayoutItem[]): LayoutItem[] {
+/** Scale a row's items so their colSpans sum to GRID_COLUMNS (no gaps). */
+function normalizeRow(row: LayoutItem[]): LayoutItem[] {
   if (row.length === 0) {
     return row;
   }
@@ -79,8 +80,10 @@ export function calculateLayout(charts: ChartConfig[]): LayoutItem[] {
   }
 
   if (currentRow.length > 0) {
-    rows.push(normalizeLastRow(currentRow));
+    rows.push(currentRow);
   }
 
-  return rows.flat();
+  // Normalize EVERY row (not just the last) so each one fills the full grid
+  // width — the dashboard tiles with no gaps regardless of chart count.
+  return rows.map(normalizeRow).flat();
 }
