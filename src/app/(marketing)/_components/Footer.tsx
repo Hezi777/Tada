@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Github, Linkedin, Twitter } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { TadaLogo } from "@/shared/brand/TadaLogo";
-import { LinearReveal } from "./LinearReveal";
 import { Separator } from "./Separator";
 
 const NAV = [
@@ -54,9 +53,9 @@ export function Footer() {
   });
 
   return (
-    <footer className="relative overflow-hidden border-t border-[#00327d]/10 bg-background px-4 pb-10 pt-20 sm:px-6">
+    <footer className="relative border-t border-[#00327d]/10 bg-background px-4 py-16 sm:px-6">
       <div className="mx-auto max-w-7xl">
-        {/* Top: brand + nav columns */}
+        {/* Brand + nav columns */}
         <div className="grid grid-cols-1 gap-12 md:grid-cols-[1.2fr_2fr]">
           {/* Brand */}
           <motion.div {...fadeUp(0)}>
@@ -116,14 +115,14 @@ export function Footer() {
         </div>
 
         {/* Divider */}
-        <motion.div {...fadeUp(0.3)} className="mt-14 flex justify-center">
+        <motion.div {...fadeUp(0.3)} className="mt-12 flex justify-center">
           <Separator
             direction="horizontal"
             className="w-full bg-[#00327d]/10"
           />
         </motion.div>
 
-        {/* Bottom row */}
+        {/* Bottom bar */}
         <motion.div
           {...fadeUp(0.36)}
           className="mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row"
@@ -147,16 +146,6 @@ export function Footer() {
             </Link>
           </div>
         </motion.div>
-
-        {/* Giant wordmark */}
-        <div className="mt-10 flex justify-center overflow-hidden sm:mt-16">
-          <LinearReveal
-            text="Tada"
-            as="span"
-            delay={0.2}
-            className="select-none text-[22vw] font-bold leading-none tracking-tight text-primary/[0.06] sm:text-[18vw] md:text-[14vw]"
-          />
-        </div>
       </div>
     </footer>
   );
