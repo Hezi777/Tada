@@ -61,40 +61,57 @@
   }
 
   .dark {
-    --background: 210 100% 99%;
-    --foreground: 217 35% 16%;
-    --card: 0 0% 100%;
-    --card-foreground: 217 35% 16%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 217 35% 16%;
-    --primary: 211 90% 54%;
+    /* App custom tokens — the ones components actually use. Dark canvas,
+       lifted surfaces, brand blue brightened one family-step for contrast. */
+    --color-bg: #0e1116;
+    --color-surface: #171b22;
+    --color-surface-muted: #1f242d;
+    --color-surface-subtle: #272d37;
+    --color-border: rgba(255, 255, 255, 0.1);
+    --color-accent: #2f65b5;
+    --color-accent-secondary: #4a7acc;
+    --color-accent-light: #1a2740;
+    --color-text-primary: #eef1f5;
+    --color-text-secondary: #aab3c0;
+    --color-text-muted: #6f7785;
+    --color-chart-grid: #272d37;
+    --color-chart-axis: #8891a0;
+
+    /* shadcn HSL tokens (button/card/popover/input primitives). */
+    --background: 220 22% 8%;
+    --foreground: 210 20% 96%;
+    --card: 222 18% 12%;
+    --card-foreground: 210 20% 96%;
+    --popover: 222 18% 12%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 213 59% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 212 74% 96%;
-    --secondary-foreground: 216 29% 26%;
-    --muted: 212 55% 96%;
-    --muted-foreground: 216 15% 46%;
-    --accent: 201 94% 91%;
-    --accent-foreground: 214 73% 32%;
-    --destructive: 0 84% 60%;
+    --secondary: 220 14% 18%;
+    --secondary-foreground: 210 20% 92%;
+    --muted: 220 14% 18%;
+    --muted-foreground: 215 12% 60%;
+    --accent: 220 14% 20%;
+    --accent-foreground: 210 20% 92%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 213 45% 88%;
-    --input: 213 45% 88%;
-    --ring: 211 90% 54%;
-    --glow: 210 100% 72%;
-    --surface: 210 100% 98%;
-    --surface-elevated: 0 0% 100%;
-    --hero-tint: 210 100% 97%;
-    --hero-grid: 212 65% 90%;
-    --shadow-color: 215 74% 31%;
-    --panel: 210 82% 98%;
-    --sidebar-background: 211 83% 98%;
-    --sidebar-foreground: 216 29% 26%;
-    --sidebar-primary: 211 90% 54%;
+    --border: 220 14% 20%;
+    --input: 220 14% 22%;
+    --ring: 213 59% 50%;
+    --glow: 213 70% 55%;
+    --surface: 220 22% 8%;
+    --surface-elevated: 222 18% 12%;
+    --hero-tint: 220 22% 10%;
+    --hero-grid: 220 14% 18%;
+    --shadow-color: 220 40% 3%;
+    --panel: 222 18% 12%;
+    --sidebar-background: 222 18% 11%;
+    --sidebar-foreground: 210 20% 92%;
+    --sidebar-primary: 213 59% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 212 74% 95%;
-    --sidebar-accent-foreground: 216 29% 26%;
-    --sidebar-border: 213 45% 88%;
-    --sidebar-ring: 211 90% 54%;
+    --sidebar-accent: 220 14% 18%;
+    --sidebar-accent-foreground: 210 20% 92%;
+    --sidebar-border: 220 14% 20%;
+    --sidebar-ring: 213 59% 50%;
   }
 
   * {
@@ -114,8 +131,8 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-satoshi), var(--font-assistant), sans-serif;
-    background-color: #f7f9fb;
-    color: hsl(var(--foreground));
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
     min-height: 100vh;
     overflow-x: hidden;
   }
