@@ -461,7 +461,7 @@ export function SettingsPanel() {
 
   return (
     <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-10 sm:px-8">
-      <h1 className="font-display text-[2rem] font-bold tracking-[-0.04em] text-[var(--color-text-primary)]">
+      <h1 className="font-display text-[2.25rem] font-black tracking-[-0.045em] text-[var(--color-text-primary)]">
         Settings
       </h1>
 
@@ -485,10 +485,10 @@ export function SettingsPanel() {
         <div className="flex-1 space-y-8">
           <section
             ref={profileRef}
-            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-premium"
           >
             <div className="mb-6">
-              <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
+              <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-extrabold tracking-[-0.03em] text-[var(--color-text-primary)]">
                 <UserRound className="h-5 w-5 text-[var(--color-accent)]" />
                 Profile
               </h2>
@@ -602,9 +602,9 @@ export function SettingsPanel() {
 
           <section
             ref={appearanceRef}
-            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-premium"
           >
-            <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
+            <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-extrabold tracking-[-0.03em] text-[var(--color-text-primary)]">
               <Paintbrush className="h-5 w-5 text-[var(--color-accent)]" />
               Appearance
             </h2>
@@ -651,9 +651,9 @@ export function SettingsPanel() {
 
           <section
             ref={languageRef}
-            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-premium"
           >
-            <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
+            <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-extrabold tracking-[-0.03em] text-[var(--color-text-primary)]">
               <Globe className="h-5 w-5 text-[var(--color-accent)]" />
               Language
             </h2>
@@ -703,11 +703,11 @@ export function SettingsPanel() {
 
           <section
             ref={accountRef}
-            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-premium"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-extrabold tracking-[-0.03em] text-[var(--color-text-primary)]">
                   <CreditCard className="h-5 w-5 text-[var(--color-accent)]" />
                   Account
                 </h2>

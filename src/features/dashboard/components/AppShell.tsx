@@ -70,17 +70,11 @@ function NavItem({
       aria-current={active ? "page" : undefined}
       className={`flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)] ${
         active
-          ? "bg-[rgba(0,50,125,0.08)] font-semibold text-[var(--color-text-primary)]"
+          ? "mesh-navy font-bold text-white shadow-premium"
           : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
       }`}
     >
-      <span
-        className={
-          active
-            ? "text-[var(--color-accent)]"
-            : "text-[var(--color-text-muted)]"
-        }
-      >
+      <span className={active ? "text-white" : "text-[var(--color-text-muted)]"}>
         {icon}
       </span>
       {label}
@@ -218,7 +212,7 @@ export function AppShell({
             priority
             className="h-8 w-8 shrink-0"
           />
-          <span className="text-lg font-bold text-[var(--color-text-primary)]">
+          <span className="text-xl font-black tracking-tight text-[var(--color-text-primary)]">
             Tada
           </span>
         </Link>
@@ -259,12 +253,12 @@ export function AppShell({
       <div className="shrink-0 border-t border-[var(--color-border)] p-3">
         <Link
           href="/pricing"
-          className="block rounded-xl bg-[var(--color-surface-muted)] p-3 transition hover:opacity-90"
+          className="mesh-teal shadow-premium block rounded-xl p-3 transition hover:opacity-90"
         >
-          <span className="inline-flex items-center rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[11px] font-semibold text-white">
+          <span className="inline-flex items-center rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[11px] font-bold text-white">
             Beta
           </span>
-          <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+          <p className="mt-2 text-xs font-medium text-[var(--color-text-secondary)]">
             All features free during beta
           </p>
         </Link>
