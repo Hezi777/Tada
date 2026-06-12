@@ -693,10 +693,7 @@ export default function FileManager() {
           {isLoading ? (
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 3 }).map((_, index) => (
-                <Skeleton
-                  key={index}
-                  className="aspect-[3/2] rounded-[20px]"
-                />
+                <Skeleton key={index} className="aspect-[3/2] rounded-[20px]" />
               ))}
             </div>
           ) : (
@@ -716,7 +713,7 @@ export default function FileManager() {
                         void handleDrillIn(dashboard);
                       }
                     }}
-                    className="group relative flex aspect-[3/2] cursor-pointer flex-col overflow-hidden rounded-[20px] border-0 bg-card shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_60px_-30px_rgba(25,28,30,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+                    className="group relative flex aspect-[3/2] cursor-pointer flex-col overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_60px_-30px_rgba(25,28,30,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
                     onClick={() => void handleDrillIn(dashboard)}
                   >
                     <div
@@ -911,7 +908,7 @@ export default function FileManager() {
               <button
                 type="button"
                 onClick={() => setCreateOpen(true)}
-                className="group flex aspect-[3/2] flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-[rgba(0,50,125,0.24)] bg-card transition-all duration-300 hover:border-[var(--color-accent)] hover:bg-[var(--color-surface-muted)]"
+                className="group flex aspect-[3/2] flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-[var(--color-border)] bg-card transition-all duration-300 hover:border-[var(--color-accent)] hover:bg-[var(--color-surface-muted)]"
               >
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-muted)] transition-colors group-hover:text-[var(--color-accent)]">
                   <Plus className="h-7 w-7" />
@@ -1009,7 +1006,7 @@ export default function FileManager() {
 
   return (
     <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-8 sm:px-8">
-      <div className="flex flex-col gap-5 rounded-[24px] bg-card px-6 py-6 shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
+      <div className="flex flex-col gap-5 rounded-[20px] border border-[var(--color-border)] bg-card px-6 py-6 shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
         <div className="flex flex-wrap items-center gap-3">
           <TooltipProvider delayDuration={100}>
             <Tooltip>
@@ -1019,6 +1016,7 @@ export default function FileManager() {
                   variant="ghost"
                   size="icon"
                   onClick={handleBack}
+                  aria-label="Back to dashboards"
                   className="h-10 w-10 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -1030,7 +1028,7 @@ export default function FileManager() {
 
           {activeDash ? (
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-accent-light)] text-[var(--color-accent)]">
                 {(() => {
                   const ActiveIcon = getIconComponent(activeDash.icon);
                   return <ActiveIcon className="h-5 w-5" />;
@@ -1107,21 +1105,23 @@ export default function FileManager() {
             />
           </div>
         </div>
-
       </div>
 
       <div className="mt-8 flex-1">
         {filteredFiles.length === 0 ? (
-          <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[24px] bg-card px-6 py-10 text-center shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
-            <div className="flex h-20 w-20 items-center justify-center rounded-[28px] bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
+          <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[20px] border border-[var(--color-border)] bg-card px-6 py-10 text-center shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
+            <div className="flex h-20 w-20 items-center justify-center rounded-[28px] bg-[var(--color-accent-light)] text-[var(--color-accent)]">
               <UploadCloud className="h-8 w-8" />
             </div>
             <h2 className="mt-6 font-display text-[1.875rem] font-bold tracking-[-0.04em] text-[var(--color-text-primary)]">
-              No files yet
+              {searchQuery.trim()
+                ? "No files match your search"
+                : "No files yet"}
             </h2>
             <p className="mt-3 max-w-sm text-sm leading-7 text-[var(--color-text-secondary)]">
-              Upload a CSV, Excel, or PDF file to start building charts for this
-              dashboard.
+              {searchQuery.trim()
+                ? "Try a different search term, or clear the search to see all files."
+                : "Upload a CSV, Excel, or PDF file to start building charts for this dashboard."}
             </p>
             <Button
               type="button"
@@ -1134,7 +1134,7 @@ export default function FileManager() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {filteredFiles.map((file) => {
               const extension =
                 file.fileName.split(".").pop()?.toUpperCase() ?? "FILE";
@@ -1146,10 +1146,10 @@ export default function FileManager() {
               return (
                 <Card
                   key={file.id}
-                  className="group relative overflow-hidden rounded-[20px] border-0 bg-card shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_54px_-30px_rgba(25,28,30,0.24)]"
+                  className="group relative overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_54px_-30px_rgba(25,28,30,0.24)]"
                 >
                   <div className="flex items-start gap-4 p-5">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-accent-light)] text-[var(--color-accent)]">
                       {isSpreadsheet ? (
                         <Table className="h-5 w-5" />
                       ) : (
@@ -1170,7 +1170,7 @@ export default function FileManager() {
                         </span>
                         <span>rows</span>
                         {file.isPrimary ? (
-                          <Badge className="rounded-full border-0 bg-[rgba(0,50,125,0.08)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[rgba(0,50,125,0.08)]">
+                          <Badge className="rounded-full border-0 bg-[var(--color-accent-light)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
                             Primary
                           </Badge>
                         ) : null}
@@ -1189,7 +1189,7 @@ export default function FileManager() {
                     </Button>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-[rgba(25,28,30,0.06)] bg-[var(--color-surface-muted)] px-5 py-3">
+                  <div className="flex items-center justify-between border-t border-[var(--color-border)] bg-[var(--color-surface-muted)] px-5 py-3">
                     <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
                       {extension}
                     </span>

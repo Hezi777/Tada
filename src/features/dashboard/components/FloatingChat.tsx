@@ -37,6 +37,12 @@ interface Message {
   proposalState?: "pending" | "accepted" | "dismissed";
 }
 
+const SUGGESTION_PROMPTS = [
+  "Summarize the key trends in this data",
+  "Which chart should I look at first?",
+  "Add a chart comparing top categories",
+];
+
 function emitChartPulse(chartId: string | undefined): void {
   if (!chartId || typeof window === "undefined") {
     return;
@@ -230,7 +236,7 @@ export function FloatingChat() {
   };
 
   const composer = (
-    <div className="px-4 py-3">
+    <div className="border-t border-[var(--color-border)] bg-card px-4 py-3">
       <div className="flex items-end gap-2">
         <Textarea
           ref={textareaRef}
@@ -243,7 +249,7 @@ export function FloatingChat() {
             }
           }}
           placeholder="Ask Tada Wiz..."
-          className="max-h-32 min-h-[44px] flex-1 resize-none rounded-[8px] border border-transparent bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
+          className="max-h-32 min-h-[44px] flex-1 resize-none rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus-visible:ring-[var(--color-accent)]"
           aria-label="Type your message"
           disabled={!canChat || isSending}
           rows={1}
@@ -252,7 +258,7 @@ export function FloatingChat() {
           size="icon"
           onClick={handleSend}
           disabled={!canChat || isSending || !input.trim()}
-          className="h-11 w-11 rounded-full bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-secondary)]"
+          className="h-11 w-11 shrink-0 rounded-full border-0 bg-[linear-gradient(135deg,var(--color-accent)_0%,var(--color-accent-secondary)_100%)] text-white shadow-[0_10px_24px_-12px_rgba(0,50,125,0.6)] transition-transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
           aria-label="Send message"
         >
           {isSending ? (
@@ -270,16 +276,30 @@ export function FloatingChat() {
       <ScrollArea className="dashboard-scroll flex-1 bg-card">
         <div className="space-y-4 px-4 py-4">
           {!canChat ? (
-            <Card className="rounded-[20px] border-0 bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
+            <Card className="rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
               Upload a file to start chatting with Tada Wiz.
             </Card>
           ) : null}
 
           {canChat && messages.length === 0 ? (
-            <Card className="rounded-[20px] border-0 bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
-              Ask about your data, request a chart change, or get help reading a
-              view.
-            </Card>
+            <div className="space-y-3">
+              <Card className="rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
+                Ask about your data, request a chart change, or get help reading
+                a view.
+              </Card>
+              <div className="flex flex-wrap gap-2">
+                {SUGGESTION_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => setInput(prompt)}
+                    className="rounded-full border border-[var(--color-border)] bg-card px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
           ) : null}
 
           {messages.map((message) => (
@@ -291,7 +311,7 @@ export function FloatingChat() {
                 className={`max-w-[88%] px-4 py-3 text-sm leading-6 ${
                   message.role === "user"
                     ? "rounded-[12px_12px_2px_12px] bg-[var(--color-accent)] text-white"
-                    : "rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-primary)]"
+                    : "rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]"
                 }`}
               >
                 {message.content}
@@ -354,7 +374,7 @@ export function FloatingChat() {
 
           {isSending ? (
             <div className="flex justify-start">
-              <div className="flex items-center gap-1 rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
+              <div className="flex items-center gap-1 rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3">
                 {[0, 1, 2].map((index) => (
                   <span
                     key={index}
@@ -393,7 +413,7 @@ export function FloatingChat() {
         <Button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className="relative h-[52px] w-[52px] rounded-full border-0 bg-[var(--color-accent)] text-white shadow-[0_18px_36px_-18px_rgba(0,50,125,0.55)] transition-all duration-200 ease-in-out hover:scale-105 hover:bg-[var(--color-accent-secondary)] hover:shadow-[0_22px_40px_-18px_rgba(0,50,125,0.65)]"
+          className="relative h-[52px] w-[52px] rounded-full border-0 bg-[linear-gradient(135deg,var(--color-accent)_0%,var(--color-accent-secondary)_100%)] text-white shadow-[0_18px_36px_-18px_rgba(0,50,125,0.55)] transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-[0_22px_40px_-18px_rgba(0,50,125,0.65)]"
           aria-label={isOpen ? "Close Tada Wiz" : "Open Tada Wiz"}
           aria-expanded={isOpen}
         >
@@ -403,9 +423,7 @@ export function FloatingChat() {
                 key="close"
                 className="flex h-5 w-5 items-center justify-center"
                 initial={
-                  prefersReducedMotion
-                    ? false
-                    : { opacity: 0, rotate: -90 }
+                  prefersReducedMotion ? false : { opacity: 0, rotate: -90 }
                 }
                 animate={{ opacity: 1, rotate: 0 }}
                 exit={
@@ -420,9 +438,7 @@ export function FloatingChat() {
                 key="open"
                 className="flex h-5 w-5 items-center justify-center"
                 initial={
-                  prefersReducedMotion
-                    ? false
-                    : { opacity: 0, rotate: 90 }
+                  prefersReducedMotion ? false : { opacity: 0, rotate: 90 }
                 }
                 animate={{ opacity: 1, rotate: 0 }}
                 exit={
@@ -488,7 +504,7 @@ export function FloatingChat() {
                   : { opacity: 0, y: 10, scale: 0.95 }
               }
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-[24px] border-0 bg-card shadow-[0_12px_40px_rgba(0,0,0,0.14)]"
+              className="fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-card shadow-[0_12px_40px_rgba(0,0,0,0.14)]"
             >
               <div className="flex h-full flex-col">
                 <div className="bg-[linear-gradient(145deg,var(--color-accent)_0%,var(--color-accent-secondary)_100%)] px-5 py-4 text-white">
