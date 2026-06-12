@@ -14,7 +14,8 @@ import { motion, useReducedMotion } from "framer-motion";
 const easeOut = { ease: "easeOut" as const };
 
 function DashboardGraphic() {
-  const bars = [40, 65, 50, 80, 60];
+  const bars = [40, 65, 50, 80, 60, 92];
+  const highlightIndex = bars.length - 1;
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -39,30 +40,38 @@ function DashboardGraphic() {
             <p className="mt-2 text-lg font-bold text-foreground">1.2%</p>
           </div>
         </div>
-        <div className="flex flex-1 flex-col justify-end gap-4">
-          <div className="flex h-[90px] items-end gap-2">
-            {bars.map((height, index) => (
-              <motion.div
-                key={`${height}-${index}`}
-                initial={{ height: shouldReduceMotion ? `${height}%` : 0 }}
-                whileInView={{ height: `${height}%` }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1, ...easeOut }}
-                className={`w-7 rounded-t-md ${
-                  height === 80 ? "bg-primary" : "bg-primary/20"
-                }`}
-              />
-            ))}
-          </div>
+        <div className="relative flex flex-1 flex-col justify-end gap-2">
           <svg
             viewBox="0 0 220 70"
-            className="h-16 w-full overflow-visible"
+            className="absolute inset-x-0 bottom-2 h-16 w-full overflow-visible"
+            preserveAspectRatio="none"
             aria-hidden="true"
           >
+            <defs>
+              <linearGradient
+                id="features-area-gradient"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0%" stopColor="#2f6df6" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="#2f6df6" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <motion.path
+              d="M10 56 C 45 54, 62 36, 92 38 S 144 18, 210 14 L 210 70 L 10 70 Z"
+              fill="url(#features-area-gradient)"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            />
             <motion.path
               d="M10 56 C 45 54, 62 36, 92 38 S 144 18, 210 14"
-              stroke="hsl(var(--primary) / 0.55)"
-              strokeWidth="2"
+              stroke="#2f6df6"
+              strokeWidth="2.5"
+              strokeLinecap="round"
               fill="none"
               initial={{ pathLength: shouldReduceMotion ? 1 : 0 }}
               whileInView={{ pathLength: 1 }}
@@ -73,6 +82,29 @@ function DashboardGraphic() {
               }}
             />
           </svg>
+          <div className="flex h-[90px] items-end gap-2">
+            {bars.map((height, index) => {
+              const isHighlight = index === highlightIndex;
+              return (
+                <motion.div
+                  key={`${height}-${index}`}
+                  initial={{ height: shouldReduceMotion ? `${height}%` : 0 }}
+                  whileInView={{ height: `${height}%` }}
+                  viewport={{ once: true }}
+                  transition={{
+                    duration: 0.6,
+                    delay: index * 0.1,
+                    ...easeOut,
+                  }}
+                  className={`w-7 rounded-t-md ${
+                    isHighlight
+                      ? "bg-[linear-gradient(180deg,#14b8a6,#22c55e)] shadow-[0_0_14px_rgba(34,197,94,0.4)]"
+                      : "bg-[linear-gradient(180deg,#2f6df6,#00327d)] opacity-80"
+                  }`}
+                />
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -208,7 +240,10 @@ export function Features() {
       <div className="container">
         {/* Heading */}
         <div className="mb-14 max-w-2xl">
-          <div className="eyebrow mb-5">Features</div>
+          <div className="eyebrow mb-5">
+            <span className="h-1.5 w-1.5 rounded-full bg-[linear-gradient(135deg,#00327d,#22c55e)]" />
+            Features
+          </div>
           <h2 className="text-4xl text-foreground sm:text-5xl">
             Zero friction. Pure insight.
           </h2>
@@ -225,8 +260,8 @@ export function Features() {
             {...reveal(0)}
             className="surface-panel flex flex-col rounded-[20px] border border-white/80 p-6 shadow-soft transition-shadow duration-300 hover:shadow-card sm:p-8 lg:col-span-2"
           >
-            <div className="flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-primary/[0.08]">
-              <Zap className="h-7 w-7 text-primary" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-[1.25rem] bg-[linear-gradient(135deg,#00327d,#2f6df6)] shadow-[0_8px_24px_-8px_rgba(0,50,125,0.5)]">
+              <Zap className="h-7 w-7 text-white" />
             </div>
             <h3 className="mt-5 text-2xl font-bold text-foreground sm:text-3xl">
               Instant dashboards

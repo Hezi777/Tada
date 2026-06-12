@@ -49,7 +49,10 @@ export function HowItWorks() {
       <div className="container max-w-5xl">
         {/* Heading */}
         <div className="mx-auto mb-20 max-w-2xl text-center">
-          <div className="eyebrow mb-5">How It Works</div>
+          <div className="eyebrow mb-5">
+            <span className="h-1.5 w-1.5 rounded-full bg-[linear-gradient(135deg,#00327d,#22c55e)]" />
+            How It Works
+          </div>
           <h2 className="text-4xl text-foreground sm:text-5xl">
             Three steps to clarity
           </h2>
@@ -114,8 +117,11 @@ export function HowItWorks() {
                   {...reveal(isEven ? "left" : "right")}
                   className={`${isEven ? "sm:order-1" : ""} flex ${isEven ? "sm:justify-end" : "sm:justify-start"}`}
                 >
-                  <div className="flex h-40 w-full max-w-sm items-center justify-center rounded-[20px] border border-white/80 bg-white shadow-soft sm:h-48">
-                    <step.icon className="h-12 w-12 text-primary/30" />
+                  <div className="relative flex h-40 w-full max-w-sm items-center justify-center overflow-hidden rounded-[20px] border border-white/80 bg-white shadow-soft sm:h-48">
+                    <div className="absolute -inset-8 bg-[radial-gradient(circle_at_30%_30%,hsl(var(--primary)/0.08),transparent_60%),radial-gradient(circle_at_75%_75%,rgba(34,197,94,0.08),transparent_55%)]" />
+                    <div className="relative flex h-16 w-16 items-center justify-center rounded-[1.25rem] bg-primary/[0.08]">
+                      <step.icon className="h-8 w-8 text-primary" />
+                    </div>
                   </div>
                 </motion.div>
               </div>
