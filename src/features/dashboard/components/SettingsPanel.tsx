@@ -5,6 +5,7 @@ import {
   Camera,
   Check,
   CreditCard,
+  Globe,
   Monitor,
   Moon,
   Paintbrush,
@@ -32,7 +33,7 @@ import {
 } from "@/features/dashboard/client/locale";
 
 type ThemeMode = "system" | "light" | "dark";
-type SettingsSection = "account" | "appearance" | "billing";
+type SettingsSection = "profile" | "appearance" | "language" | "account";
 
 type AccountStatus = { tone: "success" | "error"; text: string } | null;
 
@@ -45,9 +46,10 @@ const SETTINGS_NAV: Array<{
   label: string;
   icon: typeof UserRound;
 }> = [
-  { key: "account", label: "Account", icon: UserRound },
+  { key: "profile", label: "Profile", icon: UserRound },
   { key: "appearance", label: "Appearance", icon: Paintbrush },
-  { key: "billing", label: "Billing", icon: CreditCard },
+  { key: "language", label: "Language", icon: Globe },
+  { key: "account", label: "Account", icon: CreditCard },
 ];
 
 const LANGUAGE_OPTIONS = ["English (US)", "Hebrew (IL)"];
@@ -239,7 +241,7 @@ function ThemeOption({
 export function SettingsPanel() {
   const supabase = useMemo(() => createClient(), []);
   const [activeSection, setActiveSection] =
-    useState<SettingsSection>("account");
+    useState<SettingsSection>("profile");
   const [themeMode, setThemeMode] = useState<ThemeMode>(readThemeMode);
   const [email, setEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -262,9 +264,10 @@ export function SettingsPanel() {
     null,
   );
 
-  const accountRef = useRef<HTMLElement | null>(null);
+  const profileRef = useRef<HTMLElement | null>(null);
   const appearanceRef = useRef<HTMLElement | null>(null);
-  const billingRef = useRef<HTMLElement | null>(null);
+  const languageRef = useRef<HTMLElement | null>(null);
+  const accountRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -323,11 +326,13 @@ export function SettingsPanel() {
     setActiveSection(section);
 
     const targetRef =
-      section === "account"
-        ? accountRef
+      section === "profile"
+        ? profileRef
         : section === "appearance"
           ? appearanceRef
-          : billingRef;
+          : section === "language"
+            ? languageRef
+            : accountRef;
 
     targetRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -479,23 +484,17 @@ export function SettingsPanel() {
 
         <div className="flex-1 space-y-8">
           <section
-            ref={accountRef}
-            className="rounded-[24px] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            ref={profileRef}
+            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
           >
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
-                  <UserRound className="h-5 w-5 text-[var(--color-accent)]" />
-                  Account Information
-                </h2>
-                <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                  Manage the personal details tied to your Tada workspace.
-                </p>
-              </div>
-
-              <div className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
-                ID {userId ? truncateUuid(userId) : "Pending"}
-              </div>
+            <div className="mb-6">
+              <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                <UserRound className="h-5 w-5 text-[var(--color-accent)]" />
+                Profile
+              </h2>
+              <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                Manage the personal details tied to your Tada workspace.
+              </p>
             </div>
 
             <div className="mb-8 flex items-center gap-5">
@@ -517,7 +516,7 @@ export function SettingsPanel() {
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={isUploadingAvatar}
                   aria-label="Change profile picture"
-                  className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-accent)] text-white shadow-sm transition hover:bg-[#0047ab] disabled:opacity-60"
+                  className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-accent)] text-white shadow-sm transition hover:bg-[var(--color-accent-secondary)] disabled:opacity-60"
                 >
                   <Camera className="h-4 w-4" />
                 </button>
@@ -555,7 +554,7 @@ export function SettingsPanel() {
                 <Input
                   value={firstName}
                   onChange={(event) => setFirstName(event.target.value)}
-                  className="h-11 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-card px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
+                  className="h-11 rounded-[8px] border border-[var(--color-border)] bg-card px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
                 />
               </div>
 
@@ -566,7 +565,7 @@ export function SettingsPanel() {
                 <Input
                   value={lastName}
                   onChange={(event) => setLastName(event.target.value)}
-                  className="h-11 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-card px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
+                  className="h-11 rounded-[8px] border border-[var(--color-border)] bg-card px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
                 />
               </div>
 
@@ -579,27 +578,6 @@ export function SettingsPanel() {
                   readOnly
                   className="h-11 rounded-[8px] border-transparent bg-[var(--color-surface-subtle)] px-4 text-sm text-[var(--color-text-secondary)] shadow-none focus-visible:ring-0"
                 />
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
-                  Language Preference
-                </label>
-                <select
-                  value={languagePreference}
-                  onChange={(event) => {
-                    const next = event.target.value;
-                    setLanguagePreference(next);
-                    persistLanguageCode(languageCodeFromLabel(next));
-                  }}
-                  className="h-11 w-full rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-card px-4 text-sm text-foreground outline-none transition focus-visible:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(0,50,125,0.12)]"
-                >
-                  {LANGUAGE_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
 
@@ -615,38 +593,16 @@ export function SettingsPanel() {
                   void handleSaveAccount();
                 }}
                 disabled={isSavingAccount}
-                className="h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[#0047ab]"
+                className="h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-accent-secondary)]"
               >
                 {isSavingAccount ? "Saving..." : "Save Changes"}
               </Button>
-            </div>
-            <div className="mt-8 rounded-[20px] bg-[var(--color-surface-muted)] p-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-                    Delete account
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                    Permanently remove your workspace access and stored data.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDeleteDialogOpen(true)}
-                  disabled={isDeleting}
-                  className="h-10 rounded-full border border-transparent bg-card px-5 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete account
-                </Button>
-              </div>
             </div>
           </section>
 
           <section
             ref={appearanceRef}
-            className="rounded-[24px] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
           >
             <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
               <Paintbrush className="h-5 w-5 text-[var(--color-accent)]" />
@@ -694,23 +650,80 @@ export function SettingsPanel() {
           </section>
 
           <section
-            ref={billingRef}
-            className="rounded-[24px] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            ref={languageRef}
+            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+          >
+            <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
+              <Globe className="h-5 w-5 text-[var(--color-accent)]" />
+              Language
+            </h2>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+              Choose the language used across your Tada workspace.
+            </p>
+
+            <div className="mt-6 max-w-sm space-y-2">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                Language Preference
+              </label>
+              <select
+                value={languagePreference}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  setLanguagePreference(next);
+                  persistLanguageCode(languageCodeFromLabel(next));
+                }}
+                className="h-11 w-full rounded-[8px] border border-[var(--color-border)] bg-card px-4 text-sm text-foreground outline-none transition focus-visible:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(0,50,125,0.12)]"
+              >
+                {LANGUAGE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+              {accountStatus ? (
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  {accountStatus.text}
+                </p>
+              ) : null}
+              <Button
+                type="button"
+                onClick={() => {
+                  void handleSaveAccount();
+                }}
+                disabled={isSavingAccount}
+                className="h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-accent-secondary)]"
+              >
+                {isSavingAccount ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </section>
+
+          <section
+            ref={accountRef}
+            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
                   <CreditCard className="h-5 w-5 text-[var(--color-accent)]" />
-                  Billing &amp; Plan
+                  Account
                 </h2>
                 <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                  Manage your plan and keep track of workspace capacity.
+                  Manage your plan, workspace capacity, and account access.
                 </p>
               </div>
 
-              <span className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-primary)]">
-                Free Plan
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-primary)]">
+                  Free Plan
+                </span>
+                <span className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
+                  ID {userId ? truncateUuid(userId) : "Pending"}
+                </span>
+              </div>
             </div>
 
             <div className="mt-8">
@@ -730,7 +743,7 @@ export function SettingsPanel() {
               </div>
             </div>
 
-            <div className="mt-8 flex flex-col gap-6 rounded-[20px] bg-[var(--color-surface-muted)] px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-8 flex flex-col gap-6 rounded-[16px] bg-[var(--color-surface-muted)] px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="font-display text-xl font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
                   Upgrade to Pro
@@ -745,7 +758,7 @@ export function SettingsPanel() {
                 onClick={() =>
                   setBillingMessage("Billing actions are not connected yet.")
                 }
-                className="h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[#0047ab]"
+                className="h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-accent-secondary)]"
               >
                 Upgrade Now
               </Button>
@@ -756,13 +769,36 @@ export function SettingsPanel() {
                 {billingMessage}
               </p>
             ) : null}
-          </section>
 
-          {deleteErrorMessage ? (
-            <div className="rounded-[20px] bg-[var(--color-surface-muted)] px-6 py-4 text-sm text-[var(--color-text-secondary)]">
-              {deleteErrorMessage}
+            <div className="mt-8 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                    Delete account
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                    Permanently remove your workspace access and stored data.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  disabled={isDeleting}
+                  className="h-10 rounded-full border border-[var(--color-border)] bg-card px-5 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete account
+                </Button>
+              </div>
             </div>
-          ) : null}
+
+            {deleteErrorMessage ? (
+              <div className="mt-4 rounded-[16px] bg-[var(--color-surface-muted)] px-6 py-4 text-sm text-[var(--color-text-secondary)]">
+                {deleteErrorMessage}
+              </div>
+            ) : null}
+          </section>
         </div>
       </div>
 
@@ -778,7 +814,7 @@ export function SettingsPanel() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-[var(--color-accent)] text-white hover:bg-[#0047ab]"
+              className="bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-secondary)]"
               disabled={isDeleting}
               onClick={(event) => {
                 event.preventDefault();
