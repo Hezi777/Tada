@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 const faqs = [
   {
-    question: "What file formats does TADA support?",
+    question: "What file formats does Tada support?",
     answer:
       "Tada currently supports CSV and Excel (.xlsx, .xls) files. Just drag and drop your file, and we'll automatically parse the structure, detect columns, and prepare it for instant visualization.",
   },
@@ -34,6 +34,7 @@ const faqs = [
 
 export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <section className="relative px-4 py-24 sm:px-6">
@@ -51,7 +52,9 @@ export function FAQ() {
             return (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
+                initial={
+                  shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }
+                }
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-80px" }}
                 transition={{ duration: 0.4, delay: index * 0.08 }}

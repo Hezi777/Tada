@@ -1,36 +1,40 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, useAnimation } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  useTransform,
+} from "framer-motion";
 import { Sparkles, TrendingUp, Zap } from "lucide-react";
 
+const KPI_TARGET = 148;
+
 export function AnimatedDashboardMockup() {
+  const shouldReduceMotion = useReducedMotion();
+  const motionValue = useMotionValue(0);
+  const spring = useSpring(motionValue, { duration: 2000, bounce: 0 });
+  const rounded = useTransform(spring, (value) => Math.floor(value));
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    // Animate the KPI counter
-    let startTimestamp: number;
-    const duration = 2000;
-    const target = 148;
+    if (shouldReduceMotion) {
+      return;
+    }
 
-    const step = (timestamp: number) => {
-      if (!startTimestamp) startTimestamp = timestamp;
-      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+    motionValue.set(KPI_TARGET);
+    const unsubscribe = rounded.on("change", (value) => setCount(value));
+    return () => unsubscribe();
+  }, [motionValue, rounded, shouldReduceMotion]);
 
-      // Use easeOutQuart for smooth deceleration
-      const easeProgress = 1 - Math.pow(1 - progress, 4);
-      setCount(Math.floor(easeProgress * target));
-
-      if (progress < 1) {
-        window.requestAnimationFrame(step);
-      }
-    };
-
-    window.requestAnimationFrame(step);
-  }, []);
+  const displayCount = shouldReduceMotion ? KPI_TARGET : count;
 
   return (
-    <div className="relative w-full max-w-[500px] animate-bob">
+    <div
+      className={`relative w-full max-w-[500px] ${shouldReduceMotion ? "" : "animate-bob"}`}
+    >
       {/* Glow behind the mockup */}
       <div className="absolute -inset-4 rounded-[2.5rem] bg-primary/20 blur-3xl" />
 
@@ -44,7 +48,7 @@ export function AnimatedDashboardMockup() {
             </p>
             <div className="mt-1 flex items-baseline gap-1">
               <span className="text-3xl font-extrabold text-foreground">
-                ${count}k
+                ${displayCount}k
               </span>
               <span className="flex items-center text-xs font-semibold text-emerald-500">
                 <TrendingUp className="me-0.5 h-3 w-3" />
@@ -106,7 +110,10 @@ export function AnimatedDashboardMockup() {
                 fill="url(#line-gradient)"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 1, delay: 0.5 }}
+                transition={{
+                  duration: 1,
+                  delay: shouldReduceMotion ? 0 : 0.5,
+                }}
               />
 
               {/* The Line */}
@@ -116,9 +123,12 @@ export function AnimatedDashboardMockup() {
                 stroke="hsl(var(--primary))"
                 strokeWidth="4"
                 strokeLinecap="round"
-                initial={{ pathLength: 0 }}
+                initial={{ pathLength: shouldReduceMotion ? 1 : 0 }}
                 animate={{ pathLength: 1 }}
-                transition={{ duration: 2, ease: "easeOut" }}
+                transition={{
+                  duration: shouldReduceMotion ? 0 : 2,
+                  ease: "easeOut",
+                }}
               />
 
               {/* Data point dot */}
@@ -129,9 +139,16 @@ export function AnimatedDashboardMockup() {
                 fill="white"
                 stroke="hsl(var(--primary))"
                 strokeWidth="3"
-                initial={{ scale: 0, opacity: 0 }}
+                initial={{
+                  scale: shouldReduceMotion ? 1 : 0,
+                  opacity: shouldReduceMotion ? 1 : 0,
+                }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5, delay: 1.8, type: "spring" }}
+                transition={{
+                  duration: 0.5,
+                  delay: shouldReduceMotion ? 0 : 1.8,
+                  type: "spring",
+                }}
               />
             </svg>
           </div>

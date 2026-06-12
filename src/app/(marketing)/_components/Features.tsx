@@ -9,7 +9,7 @@ import {
   TrendingUp,
   AlertTriangle,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 const easeOut = { ease: "easeOut" as const };
 
@@ -45,12 +45,16 @@ const features = [
 ] as const;
 
 function FileFormatGraphic() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="hidden min-h-[220px] flex-1 rounded-[1.75rem] border border-primary/10 bg-white shadow-soft md:block">
       <div className="flex h-full flex-col items-center justify-center gap-5 p-6">
         <div className="flex items-center justify-center gap-6">
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={
+              shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -20 }
+            }
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, ...easeOut }}
@@ -60,7 +64,9 @@ function FileFormatGraphic() {
             <span className="text-xs font-semibold text-primary">CSV</span>
           </motion.div>
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={
+              shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -20 }
+            }
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.15, ...easeOut }}
@@ -71,7 +77,7 @@ function FileFormatGraphic() {
           </motion.div>
         </div>
         <motion.div
-          animate={{ y: [-6, 6, -6] }}
+          animate={shouldReduceMotion ? {} : { y: [-6, 6, -6] }}
           transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
           className="flex items-center justify-center text-muted-foreground"
         >
@@ -85,6 +91,7 @@ function FileFormatGraphic() {
 
 function DashboardGraphic() {
   const bars = [40, 65, 50, 80, 60];
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <div className="hidden min-h-[220px] flex-1 rounded-[1.75rem] border border-primary/10 bg-white p-5 shadow-soft md:block">
@@ -105,7 +112,7 @@ function DashboardGraphic() {
             {bars.map((height, index) => (
               <motion.div
                 key={`${height}-${index}`}
-                initial={{ height: 0 }}
+                initial={{ height: shouldReduceMotion ? `${height}%` : 0 }}
                 whileInView={{ height: `${height}%` }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1, ...easeOut }}
@@ -125,10 +132,13 @@ function DashboardGraphic() {
               stroke="hsl(var(--primary) / 0.55)"
               strokeWidth="2"
               fill="none"
-              initial={{ pathLength: 0 }}
+              initial={{ pathLength: shouldReduceMotion ? 1 : 0 }}
               whileInView={{ pathLength: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
+              transition={{
+                duration: shouldReduceMotion ? 0 : 1.2,
+                ease: "easeOut",
+              }}
             />
           </svg>
         </div>
@@ -138,10 +148,12 @@ function DashboardGraphic() {
 }
 
 function ChatGraphic() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="hidden min-h-[220px] flex-1 flex-col justify-center gap-3 rounded-[1.75rem] border border-primary/10 bg-white px-6 py-6 shadow-soft md:flex">
       <motion.div
-        initial={{ opacity: 0, x: 20 }}
+        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.1, ...easeOut }}
@@ -150,7 +162,7 @@ function ChatGraphic() {
         Show me revenue by region
       </motion.div>
       <motion.div
-        initial={{ opacity: 0, x: -20 }}
+        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.3, ...easeOut }}
@@ -159,7 +171,7 @@ function ChatGraphic() {
         Here&apos;s your regional breakdown.
       </motion.div>
       <motion.div
-        initial={{ opacity: 0, x: 20 }}
+        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.5, ...easeOut }}
@@ -172,7 +184,7 @@ function ChatGraphic() {
           {[0, 1, 2].map((dot) => (
             <motion.span
               key={dot}
-              animate={{ opacity: [0.3, 1, 0.3] }}
+              animate={shouldReduceMotion ? {} : { opacity: [0.3, 1, 0.3] }}
               transition={{
                 duration: 1,
                 delay: dot * 0.2,
@@ -189,6 +201,8 @@ function ChatGraphic() {
 }
 
 function InsightsGraphic() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div className="hidden min-h-[220px] flex-1 flex-col justify-center gap-5 rounded-[1.75rem] border border-primary/10 bg-white px-6 py-6 shadow-soft md:flex">
       <svg
@@ -219,24 +233,27 @@ function InsightsGraphic() {
           stroke="hsl(var(--primary))"
           strokeWidth="2.5"
           fill="none"
-          initial={{ pathLength: 0 }}
+          initial={{ pathLength: shouldReduceMotion ? 1 : 0 }}
           whileInView={{ pathLength: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 1.5, ease: "easeInOut" }}
+          transition={{
+            duration: shouldReduceMotion ? 0 : 1.5,
+            ease: "easeInOut",
+          }}
         />
         <motion.circle
           cx="300"
           cy="10"
           r="5"
           fill="hsl(var(--primary))"
-          animate={{ scale: [1, 1.8, 1] }}
+          animate={shouldReduceMotion ? {} : { scale: [1, 1.8, 1] }}
           transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
           style={{ transformBox: "fill-box", transformOrigin: "center" }}
         />
       </svg>
       <div className="flex flex-wrap gap-3">
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.2, ...easeOut }}
@@ -248,7 +265,7 @@ function InsightsGraphic() {
           </span>
         </motion.div>
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.4, ...easeOut }}
@@ -284,6 +301,8 @@ function FeatureGraphic({
 }
 
 export function Features() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <section id="features" className="relative px-4 py-24 sm:px-6">
       <div className="container">
@@ -304,7 +323,9 @@ export function Features() {
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
-              initial={{ opacity: 0, y: 40 }}
+              initial={
+                shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 40 }
+              }
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.6, delay: index * 0.1, ...easeOut }}

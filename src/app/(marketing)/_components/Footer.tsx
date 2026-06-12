@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { Github, Linkedin, Twitter } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { TadaLogo } from "@/shared/brand/TadaLogo";
+import { LinearReveal } from "./LinearReveal";
+import { Separator } from "./Separator";
 
 const NAV = [
   {
@@ -28,98 +31,133 @@ const NAV = [
   },
 ];
 
+const SOCIALS = [
+  { icon: Twitter, label: "Twitter / X", href: "https://x.com" },
+  { icon: Linkedin, label: "LinkedIn", href: "https://linkedin.com" },
+  { icon: Github, label: "GitHub", href: "https://github.com" },
+];
+
+const ease = [0.25, 0.46, 0.45, 0.94] as const;
+
 export function Footer() {
+  const shouldReduceMotion = useReducedMotion();
+
+  const fadeUp = (delay: number) => ({
+    initial: shouldReduceMotion
+      ? { opacity: 0 }
+      : { opacity: 0, y: 20, filter: "blur(6px)" },
+    whileInView: shouldReduceMotion
+      ? { opacity: 1 }
+      : { opacity: 1, y: 0, filter: "blur(0px)" },
+    viewport: { once: true },
+    transition: { duration: 0.6, delay, ease },
+  });
+
   return (
-    <motion.footer
-      className="bg-secondary/40 px-4 pb-8 pt-16 sm:px-6"
-      initial={{ y: 20, opacity: 0 }}
-      whileInView={{ y: 0, opacity: 1 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-    >
-      {/* 4-column grid */}
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 md:grid-cols-4">
-        {/* Col 1: Logo + tagline */}
-        <div>
-          <Link
-            href="/"
-            className="flex items-center gap-3 transition-opacity hover:opacity-80"
-          >
-            <TadaLogo className="h-10 w-10 text-[var(--color-accent)]" />
-            <span className="ms-2 font-sans text-xl font-bold text-foreground">
-              Tada
-            </span>
-          </Link>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Calm analytics for fast-moving teams.
-          </p>
-          <a
-            href="mailto:hello@tada.app"
-            className="mt-1 block text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            hello@tada.app
-          </a>
-        </div>
-
-        {/* Col 2-4: Nav columns */}
-        {NAV.map((col) => (
-          <div key={col.header}>
-            <p className="mb-4 text-sm font-semibold text-foreground">
-              {col.header}
+    <footer className="relative overflow-hidden border-t border-[#00327d]/10 bg-background px-4 pb-10 pt-20 sm:px-6">
+      <div className="mx-auto max-w-7xl">
+        {/* Top: brand + nav columns */}
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-[1.2fr_2fr]">
+          {/* Brand */}
+          <motion.div {...fadeUp(0)}>
+            <Link
+              href="/"
+              className="flex items-center gap-3 transition-opacity hover:opacity-80"
+            >
+              <TadaLogo className="h-9 w-9 text-primary" />
+              <span className="font-sans text-xl font-bold text-foreground">
+                Tada
+              </span>
+            </Link>
+            <p className="mt-4 max-w-xs text-sm leading-7 text-muted-foreground">
+              Calm analytics for fast-moving teams. Upload a file, get a
+              dashboard, ask anything.
             </p>
-            <ul className="flex flex-col gap-3">
-              {col.links.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground"
-                  >
-                    {link.label}
-                  </a>
-                </li>
+
+            {/* Socials */}
+            <div className="mt-6 flex items-center gap-3">
+              {SOCIALS.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.label}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[#00327d]/10 text-muted-foreground transition-colors duration-200 hover:border-primary/20 hover:text-primary"
+                >
+                  <social.icon className="h-4 w-4" />
+                </a>
               ))}
-            </ul>
+            </div>
+          </motion.div>
+
+          {/* Nav columns */}
+          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3">
+            {NAV.map((col, colIndex) => (
+              <motion.div key={col.header} {...fadeUp(0.1 + colIndex * 0.08)}>
+                <p className="mb-4 text-sm font-semibold text-foreground">
+                  {col.header}
+                </p>
+                <ul className="flex flex-col gap-3">
+                  {col.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-muted-foreground transition-colors duration-200 hover:text-primary"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            ))}
           </div>
-        ))}
-      </div>
-
-      {/* Divider */}
-      <div className="mx-auto mt-12 mb-8 max-w-7xl border-t border-border" />
-
-      {/* Bottom row */}
-      <div className="mx-auto flex max-w-7xl items-center justify-between">
-        <p className="text-sm text-muted-foreground/70">
-          © 2026 Tada. All rights reserved.
-        </p>
-        <div className="flex items-center gap-3 text-sm text-muted-foreground/70">
-          <a href="/terms" className="transition-colors hover:text-foreground">
-            Terms
-          </a>
-          <span>·</span>
-          <a
-            href="/privacy"
-            className="transition-colors hover:text-foreground"
-          >
-            Privacy
-          </a>
         </div>
-        <a
-          href="https://x.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Twitter / X"
-          className="text-muted-foreground/70 transition-colors hover:text-foreground"
+
+        {/* Divider */}
+        <motion.div {...fadeUp(0.3)} className="mt-14 flex justify-center">
+          <Separator
+            direction="horizontal"
+            className="w-full bg-[#00327d]/10"
+          />
+        </motion.div>
+
+        {/* Bottom row */}
+        <motion.div
+          {...fadeUp(0.36)}
+          className="mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row"
         >
-          <svg
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.26 5.632 5.904-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z" />
-          </svg>
-        </a>
+          <p className="text-sm text-muted-foreground/70">
+            &copy; 2026 Tada. All rights reserved.
+          </p>
+          <div className="flex items-center gap-3 text-sm text-muted-foreground/70">
+            <Link
+              href="/terms"
+              className="transition-colors hover:text-primary"
+            >
+              Terms
+            </Link>
+            <Separator direction="vertical" className="bg-[#00327d]/10" />
+            <Link
+              href="/privacy"
+              className="transition-colors hover:text-primary"
+            >
+              Privacy
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Giant wordmark */}
+        <div className="mt-10 flex justify-center overflow-hidden sm:mt-16">
+          <LinearReveal
+            text="Tada"
+            as="span"
+            delay={0.2}
+            className="select-none text-[22vw] font-bold leading-none tracking-tight text-primary/[0.06] sm:text-[18vw] md:text-[14vw]"
+          />
+        </div>
       </div>
-    </motion.footer>
+    </footer>
   );
 }

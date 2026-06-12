@@ -2,7 +2,12 @@
 
 import { useRef } from "react";
 import { Upload, Cpu, LayoutDashboard } from "lucide-react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { Card } from "@/shared/ui/card";
 
 const steps = [
@@ -70,6 +75,8 @@ function AnimatedConnector() {
 }
 
 export function HowItWorks() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <section id="how-it-works" className="relative px-4 py-24 sm:px-6">
       <div className="container">
@@ -106,13 +113,13 @@ export function HowItWorks() {
                   {/* Numbered circle — spring scale-in */}
                   <motion.div
                     className="relative z-10 mb-8 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-bold text-white shadow-glow ring-8 ring-white"
-                    initial={{ scale: 0 }}
+                    initial={{ scale: shouldReduceMotion ? 1 : 0 }}
                     whileInView={{ scale: 1 }}
                     viewport={{ once: true, margin: "-100px" }}
                     transition={{
                       type: "spring",
                       stiffness: 200,
-                      delay: index * 0.15,
+                      delay: shouldReduceMotion ? 0 : index * 0.15,
                     }}
                   >
                     {index + 1}
@@ -121,7 +128,11 @@ export function HowItWorks() {
                   {/* Card — y fade-in */}
                   <motion.div
                     className="w-full flex-1"
-                    initial={{ y: 40, opacity: 0 }}
+                    initial={
+                      shouldReduceMotion
+                        ? { opacity: 0 }
+                        : { y: 40, opacity: 0 }
+                    }
                     whileInView={{ y: 0, opacity: 1 }}
                     viewport={{ once: true, margin: "-100px" }}
                     transition={{
