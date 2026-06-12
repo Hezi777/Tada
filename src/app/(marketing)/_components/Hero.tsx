@@ -38,7 +38,9 @@ export function Hero({ onGetStarted }: HeroProps) {
           <div className="max-w-3xl">
             {/* eyebrow */}
             <motion.div className="eyebrow mb-6" {...rise(0)}>
-              <Sparkles className="h-3.5 w-3.5" />
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[linear-gradient(135deg,#00327d,#22c55e)]">
+                <Sparkles className="h-3 w-3 text-white" />
+              </span>
               AI-generated dashboards
             </motion.div>
 
