@@ -5,9 +5,9 @@ import { Header } from "@/app/(marketing)/_components/Header";
 import { Footer } from "@/app/(marketing)/_components/Footer";
 
 export const metadata: Metadata = {
-  title: "About — Tada",
+  title: "About - Tada",
   description:
-    "Tada is a small team in Israel building AI dashboards for small businesses — grounded generation, Hebrew-first data handling, and honest answers from your own files.",
+    "Tada is a small team in Israel building AI dashboards for small businesses - grounded generation, Hebrew-first data handling, and honest answers from your own files.",
 };
 
 const differences = [
@@ -15,13 +15,13 @@ const differences = [
     icon: BookOpenCheck,
     title: "Grounded, not guessed",
     description:
-      "Every dashboard Tada generates is checked against a library of BI best-practice rules and retrieved context from your own data. Charts are validated before they ever reach your screen — if the AI cannot justify a chart, it does not draw one.",
+      "Every dashboard Tada generates is checked against a library of BI best-practice rules and retrieved context from your own data. Charts are validated before they ever reach your screen - if the AI cannot justify a chart, it does not draw one.",
   },
   {
     icon: Languages,
     title: "Hebrew first",
     description:
-      "Hebrew column names, right-to-left text, and mixed-language files are not edge cases for us — they are the starting point. You can chat with your data in Hebrew or English and switch mid-conversation.",
+      "Hebrew column names, right-to-left text, and mixed-language files are not edge cases for us - they are the starting point. You can chat with your data in Hebrew or English and switch mid-conversation.",
   },
   {
     icon: Globe2,
@@ -35,7 +35,7 @@ const values = [
   {
     title: "Honesty over hype",
     description:
-      "AI makes mistakes, and we say so — in the product, not just the fine print. Tada shows its work so you can verify a number before you act on it.",
+      "AI makes mistakes, and we say so - in the product, not just the fine print. Tada shows its work so you can verify a number before you act on it.",
   },
   {
     title: "Calm software",
@@ -69,7 +69,7 @@ export default function AboutPage() {
             <p>
               Tada started with a familiar scene: a small business owner in
               Israel, a folder full of spreadsheets, and a question that should
-              have been simple — &ldquo;how did we actually do last
+              have been simple - &ldquo;how did we actually do last
               month?&rdquo; The data was all there. The answer was not.
             </p>
             <p>
@@ -77,8 +77,8 @@ export default function AboutPage() {
               businesses get told to learn a dashboard tool, hire a consultant,
               or just keep squinting at Excel. We thought that was unfair, so we
               built the tool we wished existed: upload a CSV, Excel, or PDF
-              file, and get a real dashboard — with charts chosen by
-              best-practice rules, not vibes — in seconds. Then ask follow-up
+              file, and get a real dashboard - with charts chosen by
+              best-practice rules, not vibes - in seconds. Then ask follow-up
               questions in plain Hebrew or English and watch the answers appear.
             </p>
             <p>

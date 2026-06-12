@@ -5,7 +5,7 @@ import { Header } from "@/app/(marketing)/_components/Header";
 import { Footer } from "@/app/(marketing)/_components/Footer";
 
 export const metadata: Metadata = {
-  title: "Pricing — Tada",
+  title: "Pricing - Tada",
   description:
     "Start free and upgrade when you need more. Simple plans for AI-generated dashboards from your CSV, Excel, and PDF data.",
 };
@@ -62,7 +62,7 @@ const faqs = [
   {
     question: "When will paid plans be available?",
     answer:
-      "Tada is currently in beta and every feature is free while we polish the product. Paid plans launch soon — create a free account now and we will let you know before anything changes.",
+      "Tada is currently in beta and every feature is free while we polish the product. Paid plans launch soon - create a free account now and we will let you know before anything changes.",
   },
   {
     question: "What currency are prices in?",
@@ -72,7 +72,7 @@ const faqs = [
   {
     question: "Can I change or cancel my plan?",
     answer:
-      "Yes. You will be able to upgrade, downgrade, or cancel at any time from your account settings. Downgrades and cancellations take effect at the end of the current billing period — no phone calls, no retention forms.",
+      "Yes. You will be able to upgrade, downgrade, or cancel at any time from your account settings. Downgrades and cancellations take effect at the end of the current billing period - no phone calls, no retention forms.",
   },
   {
     question: "What happens to my dashboards if I downgrade?",

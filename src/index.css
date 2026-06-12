@@ -61,7 +61,7 @@
   }
 
   .dark {
-    /* App custom tokens — the ones components actually use. Dark canvas,
+    /* App custom tokens - the ones components actually use. Dark canvas,
        lifted surfaces, brand blue brightened one family-step for contrast. */
     --color-bg: #0e1116;
     --color-surface: #171b22;

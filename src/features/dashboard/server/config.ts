@@ -164,7 +164,7 @@ export function isAdditiveMeasure(rows: Row[], column: Column): boolean {
   }
 
   // Identifier-like: whole numbers that are almost all unique, with no
-  // fractional component anywhere — typical of surrogate keys / codes.
+  // fractional component anywhere - typical of surrogate keys / codes.
   if (values.length >= 5 && values.every((value) => Number.isInteger(value))) {
     const distinct = new Set(values);
     if (distinct.size / values.length > 0.95) {
@@ -739,7 +739,7 @@ function buildScatterChart(
 }
 
 // Note: a single aggregate value (e.g. "Average X" or "X total") rendered
-// as one bar or one donut slice is not a meaningful chart — it carries the
+// as one bar or one donut slice is not a meaningful chart - it carries the
 // same information as a KPI card, but as a misleading giant bar / full
 // circle. buildKpiConfigs already surfaces these totals as KPIs, so no
 // single-value bar/donut builder is used in the fallback chart set below.
@@ -951,7 +951,7 @@ function buildFallbackCharts(rows: Row[], columns: Column[]): ChartConfig[] {
 }
 
 /**
- * Drops bar/donut charts that aggregate a single column with no groupBy —
+ * Drops bar/donut charts that aggregate a single column with no groupBy -
  * these render as one giant bar or one full donut slice, i.e. a single
  * aggregate value masquerading as a chart (the same defect as
  * buildSingleValueBar/buildSingleValueDonut). Such values belong in a KPI

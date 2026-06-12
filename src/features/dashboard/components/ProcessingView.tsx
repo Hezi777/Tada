@@ -28,7 +28,7 @@ const PHASE_CONTENT: Record<
     heading: "Scanning your dataset",
     blurb:
       "Tada is reading your file's structure and column types. You'll choose how to build it in just a moment.",
-    note: "Profiling runs locally — personal columns never reach the AI.",
+    note: "Profiling runs locally - personal columns never reach the AI.",
     steps: [
       "Reading file structure...",
       "Detecting column types...",

@@ -3,7 +3,7 @@ import { createClient } from "@/shared/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-/** GET /api/dashboards/[id]/meta — lightweight endpoint for drill-in fetching (skips row JSON payload) */
+/** GET /api/dashboards/[id]/meta - lightweight endpoint for drill-in fetching (skips row JSON payload) */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },

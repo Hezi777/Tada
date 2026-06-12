@@ -3,7 +3,7 @@ import { createClient } from "@/shared/lib/supabase/server";
 
 export const runtime = "nodejs";
 
-/** POST /api/dashboards/[id]/datasets — attach a dataset to a dashboard */
+/** POST /api/dashboards/[id]/datasets - attach a dataset to a dashboard */
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -58,7 +58,7 @@ export async function POST(
   return NextResponse.json({ ok: true });
 }
 
-/** DELETE /api/dashboards/[id]/datasets — detach a dataset from a dashboard */
+/** DELETE /api/dashboards/[id]/datasets - detach a dataset from a dashboard */
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },

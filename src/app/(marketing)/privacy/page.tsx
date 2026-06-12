@@ -3,7 +3,7 @@ import { Header } from "@/app/(marketing)/_components/Header";
 import { Footer } from "@/app/(marketing)/_components/Footer";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Tada",
+  title: "Privacy Policy - Tada",
   description:
     "How Tada collects, stores, and protects your data: what we keep, how AI processing works, and how to delete everything.",
 };
@@ -19,9 +19,9 @@ const sections: Section[] = [
     heading: "What we collect",
     paragraphs: ["We collect only what we need to run Tada for you:"],
     list: [
-      "Account information — the email address you sign up with, and your authentication details.",
-      "Uploaded datasets — the CSV, Excel, and PDF files you upload, and the dashboards generated from them.",
-      "Usage data — basic product events such as uploads, dashboard generations, and chat messages, used to keep the service reliable and improve it.",
+      "Account information - the email address you sign up with, and your authentication details.",
+      "Uploaded datasets - the CSV, Excel, and PDF files you upload, and the dashboards generated from them.",
+      "Usage data - basic product events such as uploads, dashboard generations, and chat messages, used to keep the service reliable and improve it.",
     ],
   },
   {
@@ -34,7 +34,7 @@ const sections: Section[] = [
     heading: "How AI processing works",
     paragraphs: [
       "Tada uses large language models to generate dashboards and answer questions about your data. When you upload a file or ask a question, relevant portions of your data are sent to Groq's API for processing. Groq processes this data to generate a response and does not use it to train models.",
-      "Before anything is sent to the AI, Tada scans your dataset for columns that look like personal information — names, phone numbers, email addresses, ID numbers, and similar fields. Detected PII columns are excluded from AI prompts and from search indexes. They stay in your stored dataset, but they are not shared with the model.",
+      "Before anything is sent to the AI, Tada scans your dataset for columns that look like personal information - names, phone numbers, email addresses, ID numbers, and similar fields. Detected PII columns are excluded from AI prompts and from search indexes. They stay in your stored dataset, but they are not shared with the model.",
     ],
   },
   {
@@ -47,7 +47,7 @@ const sections: Section[] = [
   {
     heading: "Cookies",
     paragraphs: [
-      "Tada uses cookies only to keep you signed in — a secure authentication session cookie set when you log in. We do not use advertising cookies, third-party trackers, or cross-site analytics cookies.",
+      "Tada uses cookies only to keep you signed in - a secure authentication session cookie set when you log in. We do not use advertising cookies, third-party trackers, or cross-site analytics cookies.",
     ],
   },
   {
@@ -59,7 +59,7 @@ const sections: Section[] = [
   {
     heading: "Changes to this policy",
     paragraphs: [
-      "If we make meaningful changes to this policy, we will update this page and note the new date below. For significant changes — anything that affects how your data is processed — we will also notify you by email before the change takes effect.",
+      "If we make meaningful changes to this policy, we will update this page and note the new date below. For significant changes - anything that affects how your data is processed - we will also notify you by email before the change takes effect.",
     ],
   },
   {
@@ -88,7 +88,7 @@ export default function PrivacyPage() {
             <p className="text-base leading-8 text-muted-foreground">
               Tada turns the files you upload into dashboards and answers. That
               only works if you can trust us with your data, so this policy is
-              written to be read — it explains what we collect, where it lives,
+              written to be read - it explains what we collect, where it lives,
               what the AI sees, and how to make us delete all of it.
             </p>
 
