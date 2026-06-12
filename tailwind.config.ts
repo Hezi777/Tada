@@ -21,13 +21,20 @@ export default {
     extend: {
       fontFamily: {
         sans: [
-          "var(--font-inter)",
-          "var(--font-heebo)",
           "var(--font-satoshi)",
+          "var(--font-assistant)",
           "sans-serif",
         ],
-        display: ["var(--font-satoshi)", "var(--font-heebo)", "sans-serif"],
-        label: ["var(--font-inter)", "var(--font-heebo)", "sans-serif"],
+        display: [
+          "var(--font-satoshi)",
+          "var(--font-assistant)",
+          "sans-serif",
+        ],
+        label: [
+          "var(--font-satoshi)",
+          "var(--font-assistant)",
+          "sans-serif",
+        ],
       },
       colors: {
         border: "hsl(var(--border))",
