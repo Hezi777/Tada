@@ -157,6 +157,9 @@ export default function DashboardPage() {
   const charts = useDashboardStore((snapshot) => snapshot.charts);
   const activeDashboardId = useDashboardStore((s) => s.activeDashboardId);
   const [pageState, setPageState] = useState<DashboardPageState>("loading");
+  const [processingPhase, setProcessingPhase] = useState<
+    "profiling" | "generating"
+  >("profiling");
   const [isUploadReady, setIsUploadReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -257,6 +260,7 @@ export default function DashboardPage() {
     async (file: File) => {
       setIsUploadReady(false);
       setUploadError(null);
+      setProcessingPhase("profiling");
       setPageState("processing");
 
       try {
@@ -304,6 +308,7 @@ export default function DashboardPage() {
         return;
       }
       setIsGenerating(true);
+      setProcessingPhase("generating");
       setPageState("processing");
 
       try {
@@ -357,6 +362,7 @@ export default function DashboardPage() {
     if (pageState === "processing") {
       return (
         <ProcessingView
+          phase={processingPhase}
           onComplete={() => setPageState("loaded")}
           isReady={isUploadReady}
         />
@@ -380,6 +386,7 @@ export default function DashboardPage() {
     isUploadReady,
     loadError,
     pageState,
+    processingPhase,
     profiledUpload,
     uploadError,
   ]);
