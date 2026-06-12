@@ -48,6 +48,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/shared/ui/tooltip";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { useToast } from "@/shared/hooks/use-toast";
 import {
   createDashboard,
   deleteDashboard,
@@ -239,20 +241,19 @@ function DashboardPreview({ index }: { index: number }) {
 }
 
 export default function FileManager() {
+  const { toast } = useToast();
   const [view, setView] = useState<View>("dashboards");
   const [dashboards, setDashboards] = useState<DashboardListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("updated");
   const [currentPage, setCurrentPage] = useState(1);
-  const [quickUploadError, setQuickUploadError] = useState<string | null>(null);
   const [isQuickUploading, setIsQuickUploading] = useState(false);
 
   const [activeDash, setActiveDash] = useState<DashboardListItem | null>(null);
   const [scopedFiles, setScopedFiles] = useState<ScopedFile[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const dashboardUploadInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -331,7 +332,6 @@ export default function FileManager() {
 
   async function handleQuickUpload(file: File) {
     setIsQuickUploading(true);
-    setQuickUploadError(null);
 
     try {
       const created = await createDashboard({
@@ -375,11 +375,15 @@ export default function FileManager() {
       );
       setView("files");
     } catch (error) {
-      setQuickUploadError(
+      const message =
         error instanceof Error
           ? formatApiMessage(error.message)
-          : "Upload failed",
-      );
+          : "Upload failed";
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: message,
+      });
     } finally {
       setIsQuickUploading(false);
     }
@@ -466,7 +470,6 @@ export default function FileManager() {
     setActiveDash(dashboard);
     setView("files");
     setSearchQuery("");
-    setUploadError(null);
 
     const cached = getCachedDashboard(dashboard.id);
     if (cached) {
@@ -506,7 +509,6 @@ export default function FileManager() {
     }
 
     setIsUploading(true);
-    setUploadError(null);
 
     try {
       const result = await uploadToDashboard(activeDash.id, file);
@@ -542,11 +544,15 @@ export default function FileManager() {
         ),
       );
     } catch (error) {
-      setUploadError(
+      const message =
         error instanceof Error
           ? formatApiMessage(error.message)
-          : "Upload failed",
-      );
+          : "Upload failed";
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: message,
+      });
     } finally {
       setIsUploading(false);
     }
@@ -607,7 +613,7 @@ export default function FileManager() {
             type="button"
             onClick={() => dashboardUploadInputRef.current?.click()}
             disabled={isQuickUploading}
-            className="flex w-full items-center justify-between rounded-[20px] border-2 border-dashed border-[var(--color-accent)] bg-white px-6 py-5 text-left transition-colors hover:bg-[var(--color-surface-muted)] disabled:cursor-not-allowed"
+            className="flex w-full items-center justify-between rounded-[20px] border-2 border-dashed border-[var(--color-accent)] bg-card px-6 py-5 text-left transition-colors hover:bg-[var(--color-surface-muted)] disabled:cursor-not-allowed"
           >
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
@@ -646,19 +652,13 @@ export default function FileManager() {
           }}
         />
 
-        {quickUploadError ? (
-          <div className="mt-5 rounded-[20px] bg-[var(--color-surface-muted)] px-4 py-3 text-sm font-medium text-[var(--color-text-secondary)]">
-            {quickUploadError}
-          </div>
-        ) : null}
-
         <div className="mt-8 flex justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
                 variant="ghost"
-                className="h-10 rounded-full bg-[var(--color-surface-muted)] px-4 text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-white hover:text-[var(--color-text-primary)]"
+                className="h-10 rounded-full bg-[var(--color-surface-muted)] px-4 text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-card hover:text-[var(--color-text-primary)]"
               >
                 Sort by:{" "}
                 {sortMode === "updated"
@@ -691,11 +691,13 @@ export default function FileManager() {
 
         <div className="mt-6">
           {isLoading ? (
-            <div className="flex min-h-[420px] items-center justify-center">
-              <div className="flex items-center gap-3 rounded-full bg-white px-5 py-3 text-sm font-medium text-[var(--color-text-secondary)] shadow-[0_20px_44px_-30px_rgba(25,28,30,0.2)]">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading dashboards...
-              </div>
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton
+                  key={index}
+                  className="aspect-[3/2] rounded-[20px]"
+                />
+              ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
@@ -706,7 +708,15 @@ export default function FileManager() {
                 return (
                   <Card
                     key={dashboard.id}
-                    className="group relative flex aspect-[3/2] cursor-pointer flex-col overflow-hidden rounded-[20px] border-0 bg-white shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_60px_-30px_rgba(25,28,30,0.24)]"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        void handleDrillIn(dashboard);
+                      }
+                    }}
+                    className="group relative flex aspect-[3/2] cursor-pointer flex-col overflow-hidden rounded-[20px] border-0 bg-card shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_60px_-30px_rgba(25,28,30,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
                     onClick={() => void handleDrillIn(dashboard)}
                   >
                     <div
@@ -862,7 +872,7 @@ export default function FileManager() {
                       </div>
                     </div>
 
-                    <div className="flex flex-1 flex-col justify-center bg-white px-5 pb-5 pt-4">
+                    <div className="flex flex-1 flex-col justify-center bg-card px-5 pb-5 pt-4">
                       {renamingId === dashboard.id ? (
                         <form
                           onSubmit={(event) => {
@@ -877,7 +887,7 @@ export default function FileManager() {
                             onChange={(event) =>
                               setRenameValue(event.target.value)
                             }
-                            className="h-9 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-white text-sm font-semibold"
+                            className="h-9 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-card text-sm font-semibold"
                             onBlur={() => void handleRename(dashboard.id)}
                             autoFocus
                           />
@@ -901,7 +911,7 @@ export default function FileManager() {
               <button
                 type="button"
                 onClick={() => setCreateOpen(true)}
-                className="group flex aspect-[3/2] flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-[rgba(0,50,125,0.24)] bg-white transition-all duration-300 hover:border-[var(--color-accent)] hover:bg-[var(--color-surface-muted)]"
+                className="group flex aspect-[3/2] flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-[rgba(0,50,125,0.24)] bg-card transition-all duration-300 hover:border-[var(--color-accent)] hover:bg-[var(--color-surface-muted)]"
               >
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-muted)] transition-colors group-hover:text-[var(--color-accent)]">
                   <Plus className="h-7 w-7" />
@@ -942,7 +952,7 @@ export default function FileManager() {
                   className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
                     active
                       ? "bg-[var(--color-accent)] text-white"
-                      : "text-[var(--color-text-secondary)] hover:bg-white"
+                      : "text-[var(--color-text-secondary)] hover:bg-card"
                   }`}
                 >
                   {page}
@@ -999,7 +1009,7 @@ export default function FileManager() {
 
   return (
     <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-8 sm:px-8">
-      <div className="flex flex-col gap-5 rounded-[24px] bg-white px-6 py-6 shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
+      <div className="flex flex-col gap-5 rounded-[24px] bg-card px-6 py-6 shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
         <div className="flex flex-wrap items-center gap-3">
           <TooltipProvider delayDuration={100}>
             <Tooltip>
@@ -1098,16 +1108,11 @@ export default function FileManager() {
           </div>
         </div>
 
-        {uploadError ? (
-          <div className="rounded-[20px] bg-[var(--color-surface-muted)] px-4 py-3 text-sm font-medium text-[var(--color-text-secondary)]">
-            {uploadError}
-          </div>
-        ) : null}
       </div>
 
       <div className="mt-8 flex-1">
         {filteredFiles.length === 0 ? (
-          <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[24px] bg-white px-6 py-10 text-center shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
+          <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[24px] bg-card px-6 py-10 text-center shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
             <div className="flex h-20 w-20 items-center justify-center rounded-[28px] bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
               <UploadCloud className="h-8 w-8" />
             </div>
@@ -1141,7 +1146,7 @@ export default function FileManager() {
               return (
                 <Card
                   key={file.id}
-                  className="group relative overflow-hidden rounded-[20px] border-0 bg-white shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_54px_-30px_rgba(25,28,30,0.24)]"
+                  className="group relative overflow-hidden rounded-[20px] border-0 bg-card shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_54px_-30px_rgba(25,28,30,0.24)]"
                 >
                   <div className="flex items-start gap-4 p-5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">

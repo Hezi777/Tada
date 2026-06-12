@@ -89,7 +89,7 @@ export default function CreateDashboardModal({
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <DialogContent
-        className="overflow-hidden rounded-[24px] border border-transparent bg-white p-0 text-[var(--color-text-primary)] shadow-[0_32px_64px_-44px_rgba(25,28,30,0.24)] sm:max-w-lg"
+        className="overflow-hidden rounded-[24px] border border-transparent bg-card p-0 text-[var(--color-text-primary)] shadow-[0_32px_64px_-44px_rgba(25,28,30,0.24)] sm:max-w-lg"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
         }}
@@ -151,7 +151,7 @@ export default function CreateDashboardModal({
                     style={{
                       backgroundColor: isSelected
                         ? `${selectedColor}14`
-                        : "white",
+                        : "hsl(var(--card))",
                       color: isSelected
                         ? selectedColor
                         : "var(--color-text-muted)",

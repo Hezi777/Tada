@@ -1,4 +1,7 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Loader2, Send, Sparkles, WandSparkles, X } from "lucide-react";
 import {
   BI_RULE_LIMITS,
@@ -57,6 +60,7 @@ export function FloatingChat() {
   const [isSending, setIsSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canChat = Boolean(datasetId);
+  const prefersReducedMotion = useReducedMotion();
 
   const liveKpis: ChatKpiValue[] = kpiConfigs.map((kpi) => ({
     id: kpi.id,
@@ -141,7 +145,7 @@ export function FloatingChat() {
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       let content =
-        "TADA Wiz is unavailable right now. Make sure the API is running.";
+        "Tada Wiz is unavailable right now. Make sure the API is running.";
       if (error instanceof Error) {
         if (error.message === "not_found" || error.message === "missing_rows") {
           content =
@@ -238,7 +242,7 @@ export function FloatingChat() {
               handleSend();
             }
           }}
-          placeholder="Ask TADA Wiz..."
+          placeholder="Ask Tada Wiz..."
           className="max-h-32 min-h-[44px] flex-1 resize-none rounded-[8px] border border-transparent bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
           aria-label="Type your message"
           disabled={!canChat || isSending}
@@ -263,11 +267,11 @@ export function FloatingChat() {
 
   const chatBody = (
     <>
-      <ScrollArea className="dashboard-scroll flex-1 bg-white">
+      <ScrollArea className="dashboard-scroll flex-1 bg-card">
         <div className="space-y-4 px-4 py-4">
           {!canChat ? (
             <Card className="rounded-[20px] border-0 bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
-              Upload a file to start chatting with TADA Wiz.
+              Upload a file to start chatting with Tada Wiz.
             </Card>
           ) : null}
 
@@ -375,10 +379,6 @@ export function FloatingChat() {
   return (
     <>
       <style>{`
-        @keyframes wizOpen {
-          from { opacity: 0; transform: translateY(10px) scale(0.95); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
         @keyframes wizDot {
           0%, 80%, 100% { transform: scale(0.6); opacity: 0.35; }
           40% { transform: scale(1); opacity: 1; }
@@ -394,56 +394,101 @@ export function FloatingChat() {
           type="button"
           onClick={() => setIsOpen((current) => !current)}
           className="relative h-[52px] w-[52px] rounded-full border-0 bg-[var(--color-accent)] text-white shadow-[0_18px_36px_-18px_rgba(0,50,125,0.55)] transition-all duration-200 ease-in-out hover:scale-105 hover:bg-[var(--color-accent-secondary)] hover:shadow-[0_22px_40px_-18px_rgba(0,50,125,0.65)]"
-          aria-label={isOpen ? "Close TADA Wiz" : "Open TADA Wiz"}
+          aria-label={isOpen ? "Close Tada Wiz" : "Open Tada Wiz"}
+          aria-expanded={isOpen}
         >
-          {isOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Sparkles className="h-5 w-5" />
-          )}
+          <AnimatePresence mode="wait" initial={false}>
+            {isOpen ? (
+              <motion.span
+                key="close"
+                className="flex h-5 w-5 items-center justify-center"
+                initial={
+                  prefersReducedMotion
+                    ? false
+                    : { opacity: 0, rotate: -90 }
+                }
+                animate={{ opacity: 1, rotate: 0 }}
+                exit={
+                  prefersReducedMotion ? undefined : { opacity: 0, rotate: 90 }
+                }
+                transition={{ duration: 0.15 }}
+              >
+                <X className="h-5 w-5" />
+              </motion.span>
+            ) : (
+              <motion.span
+                key="open"
+                className="flex h-5 w-5 items-center justify-center"
+                initial={
+                  prefersReducedMotion
+                    ? false
+                    : { opacity: 0, rotate: 90 }
+                }
+                animate={{ opacity: 1, rotate: 0 }}
+                exit={
+                  prefersReducedMotion ? undefined : { opacity: 0, rotate: -90 }
+                }
+                transition={{ duration: 0.15 }}
+              >
+                <Sparkles className="h-5 w-5" />
+              </motion.span>
+            )}
+          </AnimatePresence>
         </Button>
       </div>
 
-      {isOpen ? (
-        <>
-          {isMobile ? (
-            <Drawer open={isOpen} onOpenChange={setIsOpen}>
-              <DrawerContent className="mt-0 h-[85vh] overflow-hidden rounded-t-[24px] border-0 bg-white p-0 shadow-[0_-12px_40px_rgba(0,0,0,0.18)]">
-                <DrawerHeader className="bg-[linear-gradient(145deg,var(--color-accent)_0%,var(--color-accent-secondary)_100%)] px-5 py-4 text-left text-white">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
-                        <WandSparkles className="h-4.5 w-4.5" />
-                      </div>
-                      <div>
-                        <DrawerTitle className="text-base font-bold text-white">
-                          TADA Wiz
-                        </DrawerTitle>
-                        <DrawerDescription className="mt-0.5 text-[13px] text-white/75">
-                          Ask anything about your data
-                        </DrawerDescription>
-                      </div>
-                    </div>
-                    <DrawerClose asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full text-white hover:bg-white/10 hover:text-white"
-                        aria-label="Close TADA Wiz"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </DrawerClose>
+      {isMobile ? (
+        <Drawer open={isOpen} onOpenChange={setIsOpen}>
+          <DrawerContent className="mt-0 h-[85vh] overflow-hidden rounded-t-[24px] border-0 bg-card p-0 shadow-[0_-12px_40px_rgba(0,0,0,0.18)]">
+            <DrawerHeader className="bg-[linear-gradient(145deg,var(--color-accent)_0%,var(--color-accent-secondary)_100%)] px-5 py-4 text-left text-white">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
+                    <WandSparkles className="h-4.5 w-4.5" />
                   </div>
-                </DrawerHeader>
-                <div className="flex min-h-0 flex-1 flex-col">{chatBody}</div>
-              </DrawerContent>
-            </Drawer>
-          ) : (
-            <div
-              className="fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-[24px] border-0 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14)]"
-              style={{ animation: "wizOpen 200ms ease" }}
+                  <div>
+                    <DrawerTitle className="text-base font-bold text-white">
+                      Tada Wiz
+                    </DrawerTitle>
+                    <DrawerDescription className="mt-0.5 text-[13px] text-white/75">
+                      Ask anything about your data
+                    </DrawerDescription>
+                  </div>
+                </div>
+                <DrawerClose asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full text-white hover:bg-white/10 hover:text-white"
+                    aria-label="Close Tada Wiz"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerHeader>
+            <div className="flex min-h-0 flex-1 flex-col">{chatBody}</div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <AnimatePresence>
+          {isOpen ? (
+            <motion.div
+              key="wiz-panel"
+              initial={
+                prefersReducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: 10, scale: 0.95 }
+              }
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={
+                prefersReducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: 10, scale: 0.95 }
+              }
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-[24px] border-0 bg-card shadow-[0_12px_40px_rgba(0,0,0,0.14)]"
             >
               <div className="flex h-full flex-col">
                 <div className="bg-[linear-gradient(145deg,var(--color-accent)_0%,var(--color-accent-secondary)_100%)] px-5 py-4 text-white">
@@ -453,7 +498,7 @@ export function FloatingChat() {
                         <WandSparkles className="h-4.5 w-4.5" />
                       </div>
                       <div>
-                        <div className="text-base font-bold">TADA Wiz</div>
+                        <div className="text-base font-bold">Tada Wiz</div>
                         <p className="mt-0.5 text-[13px] text-white/75">
                           Ask anything about your data
                         </p>
@@ -465,7 +510,7 @@ export function FloatingChat() {
                       size="icon"
                       onClick={() => setIsOpen(false)}
                       className="h-8 w-8 rounded-full text-white hover:bg-white/10 hover:text-white"
-                      aria-label="Close TADA Wiz"
+                      aria-label="Close Tada Wiz"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -473,10 +518,10 @@ export function FloatingChat() {
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col">{chatBody}</div>
               </div>
-            </div>
-          )}
-        </>
-      ) : null}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      )}
     </>
   );
 }

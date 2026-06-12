@@ -1,3 +1,5 @@
+"use client";
+
 import { type Key, useCallback, useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
@@ -31,6 +33,7 @@ import type { ChartConfig, KPIConfig, SerializedRow } from "@/shared/contracts";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
+import { Skeleton } from "@/shared/ui/skeleton";
 import {
   computeKpiValue,
   formatNumber as legacyFormatNumber,
@@ -259,14 +262,23 @@ function KpiCard({
   return (
     <Card
       className={`dashboard-hover relative overflow-hidden rounded-[24px] border-0 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] ${
-        isPrimary ? "bg-[var(--color-accent)] text-white" : "bg-white"
+        isPrimary ? "bg-[var(--color-accent)] text-white" : "bg-card"
       }`}
     >
       <CardContent className="relative flex min-h-[176px] flex-col justify-between overflow-hidden px-8 py-7">
         <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] ${
+                isPrimary
+                  ? "bg-white/14 text-white"
+                  : "bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]"
+              }`}
+            >
+              <Icon className="h-4 w-4" strokeWidth={2} />
+            </div>
             <p
-              className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
+              className={`truncate text-[11px] font-semibold uppercase tracking-[0.18em] ${
                 isPrimary
                   ? "text-white/72"
                   : "text-[var(--color-text-secondary)]"
@@ -321,23 +333,25 @@ function KpiCard({
 function DashboardSkeleton() {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-12 items-center bg-white px-5" />
+      <div className="flex h-12 items-center bg-card px-5" />
       <div className="grid grid-cols-1 gap-8 px-5 py-3 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
           <Card
             key={index}
-            className="overflow-hidden rounded-[24px] border-0 bg-white shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            className="overflow-hidden rounded-[24px] border-0 bg-card shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
           >
             <CardContent className="px-8 py-8">
-              <div className="h-3 w-20 animate-shimmer rounded-full bg-[#e6e8ea]" />
-              <div className="mt-3 h-6 w-24 animate-shimmer rounded-full bg-[#e6e8ea]" />
-              <div className="mt-2 h-3 w-28 animate-shimmer rounded-full bg-[#e6e8ea]" />
+              <Skeleton className="h-3 w-20 rounded-full" />
+              <Skeleton className="mt-3 h-6 w-24 rounded-full" />
+              <Skeleton className="mt-2 h-3 w-28 rounded-full" />
             </CardContent>
           </Card>
         ))}
       </div>
       <div className="flex-1 px-5 pb-4">
-        <Card className="h-full rounded-[24px] border-0 bg-white shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]" />
+        <Card className="h-full rounded-[24px] border-0 bg-card shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
+          <Skeleton className="h-full w-full rounded-[24px]" />
+        </Card>
       </div>
     </div>
   );
@@ -429,7 +443,7 @@ function ManageViewsSection({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-white hover:text-[var(--color-text-primary)]"
+                    className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-card hover:text-[var(--color-text-primary)]"
                     onClick={() => toggleChartPinned(chart.id)}
                     aria-label={
                       chart.pinned
@@ -461,7 +475,7 @@ function ManageViewsSection({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-white hover:text-[var(--color-text-primary)]"
+                      className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-card hover:text-[var(--color-text-primary)]"
                       onClick={() => {
                         if (visibleCount < BI_RULE_LIMITS.maxCharts) {
                           promoteHiddenChart(chart.id);
@@ -482,7 +496,7 @@ function ManageViewsSection({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-white hover:text-[var(--color-text-primary)]"
+                    className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-card hover:text-[var(--color-text-primary)]"
                     onClick={() => removeChart(chart.id)}
                     disabled={!canDelete}
                     aria-label={`Remove ${chart.title}`}
@@ -493,7 +507,7 @@ function ManageViewsSection({
               </div>
 
               {!visible && replaceTargetFor === chart.id ? (
-                <div className="mt-3 rounded-[16px] bg-white p-3">
+                <div className="mt-3 rounded-[16px] bg-card p-3">
                   <p className="text-xs font-medium text-[var(--color-text-secondary)]">
                     Replace one visible chart to show this view:
                   </p>
@@ -504,7 +518,7 @@ function ManageViewsSection({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="h-8 rounded-full border border-transparent bg-[var(--color-surface-muted)] px-3 text-xs text-[var(--color-text-primary)] hover:bg-white"
+                        className="h-8 rounded-full border border-transparent bg-[var(--color-surface-muted)] px-3 text-xs text-[var(--color-text-primary)] hover:bg-card"
                         onClick={() => {
                           promoteHiddenChart(chart.id, candidate.id);
                           setReplaceTargetFor(null);
@@ -748,8 +762,8 @@ export function Dashboard() {
               activeDashboardName={activeDashboardName}
               activeDashboardIcon={activeDashboardIcon}
               fallbackLabel={fileName ?? "No dashboard"}
-              triggerClassName="h-11 rounded-full border border-transparent bg-[var(--color-surface-muted)] px-4 text-[13px] text-[var(--color-text-primary)] hover:bg-white hover:text-[var(--color-text-primary)]"
-              contentClassName="rounded-[20px] border border-transparent bg-white shadow-[0_32px_64px_-42px_rgba(25,28,30,0.18)]"
+              triggerClassName="h-11 rounded-full border border-transparent bg-[var(--color-surface-muted)] px-4 text-[13px] text-[var(--color-text-primary)] hover:bg-card hover:text-[var(--color-text-primary)]"
+              contentClassName="rounded-[20px] border border-transparent bg-card shadow-[0_32px_64px_-42px_rgba(25,28,30,0.18)]"
               onSwitchDashboard={(dashboard) => {
                 void handleSwitch(dashboard);
               }}
@@ -787,11 +801,14 @@ export function Dashboard() {
   if (!datasetId) {
     return (
       <div className="flex h-full items-center justify-center bg-[var(--color-bg)] p-8">
-        <Card className="rounded-[24px] border-0 bg-white px-10 py-12 text-center shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
-          <h1 className="font-display text-3xl font-bold text-[var(--color-text-primary)]">
+        <Card className="flex flex-col items-center rounded-[24px] border-0 bg-card px-10 py-12 text-center shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
+          <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
+            <LayoutPanelLeft className="h-7 w-7" />
+          </div>
+          <h1 className="mt-6 font-display text-3xl font-bold text-[var(--color-text-primary)]">
             Upload a dataset to begin
           </h1>
-          <p className="mt-3 text-base text-[var(--color-text-secondary)]">
+          <p className="mt-3 max-w-sm text-base text-[var(--color-text-secondary)]">
             Your dashboard will render directly from centralized chart and KPI
             state.
           </p>
@@ -840,15 +857,26 @@ export function Dashboard() {
 
           <div className="px-5 pb-6">
             {layoutItems.length === 0 ? (
-              <Card className="flex h-full items-center justify-center rounded-[24px] border-0 bg-white shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
-                <div className="text-center">
-                  <h2 className="font-display text-2xl font-bold text-[var(--color-text-primary)]">
+              <Card className="flex h-full min-h-[320px] items-center justify-center rounded-[24px] border-0 bg-card shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
+                <div className="flex flex-col items-center px-6 text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
+                    <LayoutPanelLeft className="h-7 w-7" />
+                  </div>
+                  <h2 className="mt-6 font-display text-2xl font-bold text-[var(--color-text-primary)]">
                     No visible charts
                   </h2>
-                  <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                  <p className="mt-2 max-w-sm text-sm text-[var(--color-text-secondary)]">
                     Re-enable a hidden chart to bring the dashboard back into
                     view.
                   </p>
+                  <Button
+                    type="button"
+                    onClick={() => setIsManageViewsOpen((current) => !current)}
+                    className="mt-6 h-10 rounded-full bg-[var(--color-accent)] px-5 text-sm font-semibold text-white hover:bg-[#0047ab]"
+                  >
+                    <LayoutPanelLeft className="mr-2 h-4 w-4" />
+                    Manage Views
+                  </Button>
                 </div>
               </Card>
             ) : (
@@ -884,18 +912,18 @@ export function Dashboard() {
                   items={layoutItems.map((chart) => chart.id)}
                   strategy={rectSortingStrategy}
                 >
-                  <div className="grid h-full grid-cols-1 gap-4 xl:grid-cols-12">
+                  <div className="grid h-full grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
                     {layoutItems.map((chart) => (
                       <div
                         key={chart.id}
                         className={
-                          chart.colSpan >= 8
-                            ? "xl:col-span-8"
-                            : chart.colSpan === 6
-                              ? "xl:col-span-6"
-                              : chart.colSpan === 12
-                                ? "xl:col-span-12"
-                                : "xl:col-span-4"
+                          chart.colSpan === 12
+                            ? "md:col-span-2 xl:col-span-12"
+                            : chart.colSpan >= 8
+                              ? "md:col-span-2 xl:col-span-8"
+                              : chart.colSpan === 6
+                                ? "md:col-span-2 xl:col-span-6"
+                                : "md:col-span-1 xl:col-span-4"
                         }
                       >
                         <DashboardChartCard chart={chart} rows={rows} />

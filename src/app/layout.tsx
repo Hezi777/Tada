@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Assistant } from "next/font/google";
 import { satoshi } from "@/shared/fonts/satoshi";
+import { Toaster } from "@/shared/ui/toaster";
+import { HtmlLocaleSync } from "@/features/dashboard/components/HtmlLocaleSync";
 import "../index.css";
 
 // Satoshi is the primary Latin/display face. Assistant supplies Hebrew glyphs
@@ -15,7 +17,7 @@ const assistant = Assistant({
 
 export const metadata: Metadata = {
   metadataBase: new URL("http://localhost:3000"),
-  title: "TADA - Instant AI Dashboards from Your Data",
+  title: "Tada - Instant AI Dashboards from Your Data",
   description:
     "Upload any CSV or Excel file and get an AI-generated dashboard in seconds. Ask questions, get insights, no setup required.",
   icons: {
@@ -37,7 +39,9 @@ export default function RootLayout({
       <body
         className={`${satoshi.variable} ${assistant.variable} font-sans`}
       >
+        <HtmlLocaleSync />
         {children}
+        <Toaster />
       </body>
     </html>
   );

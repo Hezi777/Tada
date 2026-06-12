@@ -1,6 +1,9 @@
+"use client";
+
 import { type ReactNode, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CircleUserRound, LogOut } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Dashboard } from "./Dashboard";
@@ -52,7 +55,7 @@ function NavItem({
       type="button"
       onClick={onClick}
       aria-current={active ? "page" : undefined}
-      className={`h-9 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
+      className={`h-9 rounded-full px-4 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)] ${
         active
           ? "bg-[var(--color-accent)] text-white shadow-[0_12px_24px_-14px_rgba(0,50,125,0.65)]"
           : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
@@ -70,6 +73,7 @@ export function AppShell({
   const [themeMode, setThemeMode] = useState<ThemeMode>(readThemeMode);
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     let mounted = true;
@@ -124,7 +128,7 @@ export function AppShell({
 
   return (
     <div className="h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text-primary)]">
-      <header className="fixed inset-x-0 top-0 z-40 bg-white">
+      <header className="fixed inset-x-0 top-0 z-40 bg-card">
         <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex items-center gap-6">
             <Link
@@ -166,7 +170,7 @@ export function AppShell({
               type="button"
               onClick={() => setActiveTab("settings")}
               aria-label="Open settings"
-              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-white text-[var(--color-text-secondary)] shadow-[0_8px_24px_rgba(25,28,30,0.06)] transition hover:opacity-80"
+              className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-card text-[var(--color-text-secondary)] shadow-[0_8px_24px_rgba(25,28,30,0.06)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
             >
               {avatarUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
@@ -214,15 +218,26 @@ export function AppShell({
       </header>
 
       <main className="mx-auto h-[calc(100vh-113px)] max-w-[1280px] overflow-y-auto pt-[113px] md:h-[calc(100vh-64px)] md:pt-16">
-        {activeTab === "settings" ? (
-          <SettingsPanel />
-        ) : activeTab === "dashboards" ? (
-          <FileManager />
-        ) : dashboardContent ? (
-          dashboardContent
-        ) : (
-          <Dashboard />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeTab}
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="h-full"
+          >
+            {activeTab === "settings" ? (
+              <SettingsPanel />
+            ) : activeTab === "dashboards" ? (
+              <FileManager />
+            ) : dashboardContent ? (
+              dashboardContent
+            ) : (
+              <Dashboard />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {showFloatingChat ? <FloatingChat /> : null}
