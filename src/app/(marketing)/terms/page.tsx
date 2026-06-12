@@ -3,7 +3,7 @@ import { Header } from "@/app/(marketing)/_components/Header";
 import { Footer } from "@/app/(marketing)/_components/Footer";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Tada",
+  title: "Terms of Service - Tada",
   description:
     "The terms that govern your use of Tada: service description, acceptable use, content ownership, AI disclaimers, and liability.",
 };
@@ -19,7 +19,7 @@ const sections: Section[] = [
   {
     heading: "1. The service",
     paragraphs: [
-      "Tada is a web application that turns data files you upload — CSV, Excel, and PDF — into AI-generated dashboards, and lets you ask questions about that data in Hebrew or English. Tada is currently offered in beta: features may change, and parts of the service described as “coming soon” (including paid plans) are not yet available.",
+      "Tada is a web application that turns data files you upload - CSV, Excel, and PDF - into AI-generated dashboards, and lets you ask questions about that data in Hebrew or English. Tada is currently offered in beta: features may change, and parts of the service described as “coming soon” (including paid plans) are not yet available.",
       "By creating an account or using Tada, you agree to these terms. If you are using Tada on behalf of a business, you confirm you are authorised to accept these terms for that business.",
     ],
   },
@@ -48,7 +48,7 @@ const sections: Section[] = [
   {
     heading: "4. Your content",
     paragraphs: [
-      "You keep full ownership of everything you upload to Tada and of the dashboards generated from it. By uploading data, you grant us a limited licence to store and process that data solely to provide the service to you — generating dashboards, answering your questions, and keeping backups. This licence ends when you delete the data or your account.",
+      "You keep full ownership of everything you upload to Tada and of the dashboards generated from it. By uploading data, you grant us a limited licence to store and process that data solely to provide the service to you - generating dashboards, answering your questions, and keeping backups. This licence ends when you delete the data or your account.",
       "We do not sell your data and we do not use it to train AI models.",
     ],
   },
@@ -68,7 +68,7 @@ const sections: Section[] = [
   {
     heading: "7. Limitation of liability",
     paragraphs: [
-      "To the maximum extent permitted by law, Tada and its team are not liable for indirect, incidental, special, or consequential damages, or for loss of profits, revenue, or data, arising from your use of the service. Our total liability for any claim related to the service is limited to the amount you paid us in the twelve months before the claim arose — or, while the service is free, to ₪100.",
+      "To the maximum extent permitted by law, Tada and its team are not liable for indirect, incidental, special, or consequential damages, or for loss of profits, revenue, or data, arising from your use of the service. Our total liability for any claim related to the service is limited to the amount you paid us in the twelve months before the claim arose - or, while the service is free, to ₪100.",
       "Nothing in these terms excludes liability that cannot be excluded under applicable law.",
     ],
   },

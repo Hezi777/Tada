@@ -88,7 +88,7 @@ export function ConfirmGenerationStep({
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-accent)]" />
             <p className="text-xs leading-5 text-[var(--color-text-secondary)]">
               Personal data detected in {profiled.profile.piiColumns.join(", ")}{" "}
-              — these columns are kept out of AI prompts and search indexes.
+              - these columns are kept out of AI prompts and search indexes.
             </p>
           </div>
         ) : null}

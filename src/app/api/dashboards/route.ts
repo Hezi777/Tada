@@ -4,7 +4,7 @@ import { CreateDashboardRequestSchema } from "@/shared/contracts";
 
 export const runtime = "nodejs";
 
-/** GET /api/dashboards — list all dashboards for the current user */
+/** GET /api/dashboards - list all dashboards for the current user */
 export async function GET() {
   const supabase = await createClient();
   const {
@@ -59,7 +59,7 @@ export async function GET() {
   return NextResponse.json(items);
 }
 
-/** POST /api/dashboards — create a new dashboard */
+/** POST /api/dashboards - create a new dashboard */
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {

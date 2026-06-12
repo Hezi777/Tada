@@ -23,7 +23,7 @@ function buildDatasetMeta(
   };
 }
 
-/** GET /api/dashboards/[id] — load a dashboard with its full dataset state */
+/** GET /api/dashboards/[id] - load a dashboard with its full dataset state */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -172,7 +172,7 @@ export async function GET(
   });
 }
 
-/** PATCH /api/dashboards/[id] — update dashboard metadata */
+/** PATCH /api/dashboards/[id] - update dashboard metadata */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -210,7 +210,7 @@ export async function PATCH(
   return NextResponse.json({ ok: true });
 }
 
-/** DELETE /api/dashboards/[id] — delete a dashboard */
+/** DELETE /api/dashboards/[id] - delete a dashboard */
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },

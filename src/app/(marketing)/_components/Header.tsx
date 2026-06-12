@@ -47,7 +47,7 @@ export function Header({
 
   return (
     <motion.header
-      // No static border-b class — border colour is driven entirely by animate
+      // No static border-b class - border colour is driven entirely by animate
       // so it's invisible (transparent) when unscrolled and subtle when scrolled.
       className="fixed left-0 right-0 top-0 z-50 border-b border-transparent"
       initial={{ y: -60, opacity: 0 }}

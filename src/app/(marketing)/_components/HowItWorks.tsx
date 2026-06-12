@@ -9,7 +9,7 @@ const steps = [
     step: "01",
     title: "Upload your data",
     description:
-      "Drag and drop any CSV or Excel file. No formatting required — Tada profiles the columns for you.",
+      "Drag and drop any CSV or Excel file. No formatting required - Tada profiles the columns for you.",
   },
   {
     icon: Cpu,
@@ -72,7 +72,7 @@ export function HowItWorks() {
                 key={step.step}
                 className="relative grid items-center gap-8 sm:grid-cols-2 sm:gap-12"
               >
-                {/* Step marker — center on larger screens */}
+                {/* Step marker - center on larger screens */}
                 <div className="absolute left-1/2 top-0 hidden -translate-x-1/2 sm:block">
                   <motion.div
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-base font-bold text-white shadow-glow ring-8 ring-[var(--color-bg)]"
@@ -135,7 +135,7 @@ export function HowItWorks() {
         >
           <FileSpreadsheet className="hidden h-4 w-4 shrink-0 text-primary sm:block" />
           <p className="text-sm leading-6 text-foreground">
-            One upload, one generated dashboard, one conversational loop — kept
+            One upload, one generated dashboard, one conversational loop - kept
             simple on purpose.
           </p>
         </motion.div>

@@ -13,7 +13,7 @@ export type RuleEngineResult = {
 };
 
 // Deterministic BI rule engine. The LLM sees retrieved rules in its prompt,
-// but prompts are advisory — this engine is the enforcement layer. Each check
+// but prompts are advisory - this engine is the enforcement layer. Each check
 // maps to a rule_id in data/bi-rules.json and applies that rule's
 // action_if_fail. Policy by severity: error/warning violations are corrected
 // when a safe transform exists, info violations are only recorded.

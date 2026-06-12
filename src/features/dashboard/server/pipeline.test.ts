@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Integration-style tests of the upload -> generate and chat paths, fully
 // offline: embeddings are mocked and no GROQ_API_KEY is set, so generation
-// exercises the heuristic fallback and the deterministic BI rules engine —
+// exercises the heuristic fallback and the deterministic BI rules engine -
 // exactly the path the app takes when the LLM is unavailable.
 vi.mock("@/shared/lib/ai/embeddings", () => ({
   embedQuery: vi.fn(async () => new Array(384).fill(0.1)),

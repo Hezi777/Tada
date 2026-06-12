@@ -251,7 +251,7 @@ export function Features() {
 
         {/* Bento grid */}
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Hero feature card — spans 2 cols */}
+          {/* Hero feature card - spans 2 cols */}
           <motion.div
             {...reveal(0)}
             className="surface-panel flex flex-col rounded-[20px] border border-white/80 p-6 shadow-soft transition-shadow duration-300 hover:shadow-card sm:p-8 lg:col-span-2"
@@ -264,7 +264,7 @@ export function Features() {
             </h3>
             <p className="mt-2 max-w-md text-base leading-7 text-muted-foreground">
               AI analyzes your data structure and generates the perfect set of
-              charts, KPIs and trends — no setup, no chart-picking.
+              charts, KPIs and trends - no setup, no chart-picking.
             </p>
             <DashboardGraphic />
           </motion.div>
@@ -281,7 +281,7 @@ export function Features() {
               Chat with your data
             </h3>
             <p className="mt-2 text-base leading-7 text-muted-foreground">
-              Ask questions in plain English — &quot;Show me sales by
+              Ask questions in plain English - &quot;Show me sales by
               region&quot; just works.
             </p>
             <ChatGraphic />
@@ -299,13 +299,13 @@ export function Features() {
               Any file format
             </h3>
             <p className="mt-2 text-base leading-7 text-muted-foreground">
-              CSV, Excel, Google Sheets. Just drag and drop — we handle the
+              CSV, Excel, Google Sheets. Just drag and drop - we handle the
               rest.
             </p>
             <FileFormatGraphic />
           </motion.div>
 
-          {/* Small card 2 — spans 2 cols */}
+          {/* Small card 2 - spans 2 cols */}
           <motion.div
             {...reveal(0.26)}
             className="surface-panel flex flex-col rounded-[20px] border border-white/80 p-6 shadow-soft transition-shadow duration-300 hover:shadow-card sm:p-8 lg:col-span-2"
@@ -318,7 +318,7 @@ export function Features() {
             </h3>
             <p className="mt-2 max-w-md text-base leading-7 text-muted-foreground">
               Automatic trend detection, anomaly alerts, and actionable
-              recommendations — surfaced the moment your dashboard is ready.
+              recommendations - surfaced the moment your dashboard is ready.
             </p>
             <InsightsGraphic />
           </motion.div>

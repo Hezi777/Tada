@@ -56,7 +56,7 @@ export default function LoginPage() {
       } else if (!data.session) {
         // Email confirmation is enabled in Supabase: no session until the
         // user clicks the link.
-        setNotice("Check your inbox — we sent you a confirmation link.");
+        setNotice("Check your inbox - we sent you a confirmation link.");
       } else {
         router.push("/dashboard");
         router.refresh();

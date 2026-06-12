@@ -7,7 +7,7 @@ import type { Column } from "./types";
 
 type Row = Record<string, unknown>;
 
-// Automatic data profiling. Pure TS by design — no LLM is needed to count
+// Automatic data profiling. Pure TS by design - no LLM is needed to count
 // nulls. PII detection matters twice: flagged columns are excluded from LLM
 // prompt samples and from the embedded data chunks.
 

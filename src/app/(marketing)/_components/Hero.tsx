@@ -213,7 +213,7 @@ export function Hero({ onGetStarted }: HeroProps) {
   };
 
   return (
-    <section ref={sectionRef} className="relative h-[240vh]" aria-label="Tada — turn spreadsheets into dashboards">
+    <section ref={sectionRef} className="relative h-[240vh]" aria-label="Tada - turn spreadsheets into dashboards">
       <div className="sticky top-0 h-screen overflow-hidden">
         <div className="gradient-glow pointer-events-none absolute inset-0" />
         <div className="editorial-grid pointer-events-none absolute inset-x-8 top-16 bottom-6 opacity-50" />
@@ -229,7 +229,7 @@ export function Hero({ onGetStarted }: HeroProps) {
           </motion.h1>
           <motion.p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground" {...rise(0.2)}>
             Upload any CSV or Excel file and watch a polished dashboard assemble
-            itself — then keep exploring through plain-English questions.
+            itself - then keep exploring through plain-English questions.
           </motion.p>
           <motion.div className="mt-8 flex flex-col items-center gap-4 sm:flex-row" {...rise(0.32)}>
             <Button variant="hero" size="xl" onClick={onGetStarted}>
