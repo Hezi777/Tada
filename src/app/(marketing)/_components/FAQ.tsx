@@ -52,11 +52,7 @@ export function FAQ() {
             transition={{ duration: 0.6, ...easeOut }}
             className="lg:sticky lg:top-32 lg:self-start"
           >
-            <div className="eyebrow mb-5">
-              <span className="h-1.5 w-1.5 rounded-full bg-[linear-gradient(135deg,#00327d,#22c55e)]" />
-              FAQ
-            </div>
-            <h2 className="text-4xl text-foreground sm:text-5xl">
+            <h2 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
               Common questions
             </h2>
             <p className="mt-5 max-w-md text-lg leading-8 text-muted-foreground">

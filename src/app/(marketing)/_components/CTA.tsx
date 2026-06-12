@@ -28,7 +28,7 @@ export function CTA({ onGetStarted }: CTAProps) {
           <div className="absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
 
           <div className="relative z-10 mx-auto flex max-w-2xl flex-col items-center">
-            <motion.h2 className="text-4xl text-white sm:text-5xl" {...rise(0)}>
+            <motion.h2 className="text-4xl font-black tracking-tight text-white sm:text-5xl" {...rise(0)}>
               Ready to understand your data?
             </motion.h2>
 
@@ -47,7 +47,7 @@ export function CTA({ onGetStarted }: CTAProps) {
               <Button
                 size="xl"
                 onClick={onGetStarted}
-                className="bg-white text-primary hover:bg-white/90"
+                className="bg-white bg-none text-primary shadow-none hover:bg-white/90 hover:text-primary"
               >
                 Get started free
                 <ArrowRight className="ms-1 h-5 w-5" />

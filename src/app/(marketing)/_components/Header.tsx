@@ -77,18 +77,13 @@ export function Header({
           className="flex items-center gap-3 transition-opacity hover:opacity-80"
         >
           <TadaLogo className="h-7 w-7 text-[var(--color-accent)]" />
-          <div className="flex flex-col leading-none">
-            <div className="flex items-center gap-1.5">
-              <span className="font-sans text-lg font-semibold text-foreground">
-                Tada
-              </span>
-              {/* Inline beta indicator */}
-              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
-              <span className="text-xs font-medium text-primary">Beta</span>
-            </div>
-            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-primary/80">
-              Instant Insights
+          <div className="flex items-center gap-1.5">
+            <span className="font-sans text-lg font-black tracking-tight text-foreground">
+              Tada
             </span>
+            {/* Inline beta indicator */}
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
+            <span className="text-xs font-medium text-primary">Beta</span>
           </div>
         </Link>
 
