@@ -56,7 +56,7 @@ export function Hero({ onGetStarted }: HeroProps) {
             >
               <Button variant="hero" size="xl" onClick={onGetStarted}>
                 Get started free
-                <ArrowRight className="ml-1 h-5 w-5" />
+                <ArrowRight className="ms-1 h-5 w-5" />
               </Button>
               <Button variant="outline" size="lg" onClick={onGetStarted}>
                 Try with sample data

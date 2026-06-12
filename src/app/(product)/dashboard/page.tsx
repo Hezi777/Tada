@@ -34,6 +34,25 @@ type DashboardPageState =
   | "processing"
   | "loaded";
 
+function DashboardStateHeader({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="flex shrink-0 flex-col gap-1 px-5 pb-4 pt-6">
+      <div className="font-display text-[32px] font-extrabold tracking-[-0.04em] text-[var(--color-text-primary)]">
+        {title}
+      </div>
+      <p className="max-w-[52rem] text-sm text-[var(--color-text-secondary)]">
+        {subtitle}
+      </p>
+    </div>
+  );
+}
+
 function DashboardUploadEmptyState({
   onFileUpload,
   errorMessage,
@@ -44,71 +63,67 @@ function DashboardUploadEmptyState({
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    <div className="flex h-full flex-col bg-[var(--color-bg)] p-6">
-      <div className="flex h-full flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
-        <div className="flex items-center justify-between px-6 py-5">
-          <div>
-            <h1 className="font-display text-2xl text-[var(--color-text-primary)]">
-              Dashboard
-            </h1>
-            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-              Upload a dataset to start building your workspace.
-            </p>
-          </div>
-        </div>
+    <div className="flex h-full flex-col">
+      <DashboardStateHeader
+        title="Overview"
+        subtitle="Upload a dataset to start building your workspace."
+      />
 
-        <div className="flex flex-1 items-center justify-center px-6 py-8">
-          <Card className="w-full max-w-2xl rounded-[24px] border-0 bg-[var(--color-bg)] p-8 shadow-none">
-            <div className="mx-auto flex max-w-xl flex-col items-center text-center">
-              <div className="mb-6 flex justify-center">
-                <Image
-                  src="/tada-logo.svg"
-                  alt="Tada"
-                  width={48}
-                  height={48}
-                  className="h-12 w-auto"
-                />
-              </div>
-              <h2 className="font-display text-3xl text-[var(--color-text-primary)]">
-                Upload your first dataset
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]">
-                Add a CSV, Excel, or PDF file and TADA will profile your data
-                and generate your dashboard, KPIs, and charts.
-              </p>
-
-              {errorMessage ? (
-                <div className="mt-6 w-full rounded-[20px] bg-[var(--color-surface-muted)] px-4 py-3 text-sm font-medium text-[var(--color-text-secondary)]">
-                  {errorMessage}
-                </div>
-              ) : null}
-
-              <Button
-                type="button"
-                size="lg"
-                className="mt-8 rounded-full bg-[var(--color-accent)] px-8 text-white hover:bg-[#0047ab]"
-                onClick={() => inputRef.current?.click()}
-              >
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Choose file
-              </Button>
-
-              <Input
-                ref={inputRef}
-                type="file"
-                accept=".csv,.xlsx,.xls,.pdf"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  event.target.value = "";
-                  if (file) {
-                    onFileUpload(file);
-                  }
-                }}
+      <div className="flex flex-1 items-center justify-center px-5 pb-6">
+        <Card className="w-full max-w-2xl rounded-[24px] border-0 bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
+          <div className="mx-auto flex max-w-xl flex-col items-center text-center">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[20px] bg-[rgba(0,50,125,0.08)]">
+              <Image
+                src="/tada-logo.svg"
+                alt="Tada"
+                width={40}
+                height={40}
+                className="h-9 w-auto"
               />
             </div>
-          </Card>
-        </div>
+            <h2 className="font-display text-3xl text-[var(--color-text-primary)]">
+              Upload your first dataset
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]">
+              Add a CSV, Excel, or PDF file and TADA will profile your data and
+              generate your dashboard, KPIs, and charts.
+            </p>
+
+            {errorMessage ? (
+              <div className="mt-6 w-full rounded-[16px] border border-[rgba(220,38,38,0.2)] bg-[rgba(220,38,38,0.06)] px-4 py-3 text-sm font-medium text-[#dc2626]">
+                {errorMessage}
+              </div>
+            ) : null}
+
+            <Button
+              type="button"
+              size="lg"
+              className="mt-8 rounded-full bg-[var(--color-accent)] px-8 text-white hover:bg-[var(--color-accent-secondary)]"
+              onClick={() => inputRef.current?.click()}
+            >
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Choose file
+            </Button>
+
+            <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
+              CSV, Excel, or PDF · up to 100MB
+            </p>
+
+            <Input
+              ref={inputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls,.pdf"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) {
+                  onFileUpload(file);
+                }
+              }}
+            />
+          </div>
+        </Card>
       </div>
     </div>
   );
@@ -116,20 +131,18 @@ function DashboardUploadEmptyState({
 
 function DashboardLoadingState() {
   return (
-    <div className="flex h-full flex-col bg-[var(--color-bg)] p-6">
-      <div className="flex h-full items-center justify-center rounded-[24px] bg-white shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
-        <div className="flex flex-col items-center text-center">
-          <Image
-            src="/tada-logo.svg"
-            alt="Tada"
-            width={48}
-            height={48}
-            className="h-12 w-auto"
-          />
-          <p className="mt-4 text-sm font-medium text-[var(--color-text-secondary)]">
-            Loading dashboard...
-          </p>
-        </div>
+    <div className="flex h-full flex-col items-center justify-center bg-[var(--color-bg)]">
+      <div className="flex flex-col items-center text-center">
+        <Image
+          src="/tada-logo.svg"
+          alt="Tada"
+          width={48}
+          height={48}
+          className="h-10 w-auto animate-pulse-soft"
+        />
+        <p className="mt-4 text-sm font-medium text-[var(--color-text-secondary)]">
+          Loading your dashboard...
+        </p>
       </div>
     </div>
   );

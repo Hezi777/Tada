@@ -24,17 +24,14 @@ const NAV = [
   },
   {
     header: "Contact",
-    links: [
-      { label: "Schedule a call", href: "#" },
-      { label: "Contact us", href: "#" },
-    ],
+    links: [{ label: "Contact us", href: "mailto:hello@tada.app" }],
   },
 ];
 
 export function Footer() {
   return (
     <motion.footer
-      className="bg-[#F8FAFC] px-4 pb-8 pt-16 sm:px-6"
+      className="bg-secondary/40 px-4 pb-8 pt-16 sm:px-6"
       initial={{ y: 20, opacity: 0 }}
       whileInView={{ y: 0, opacity: 1 }}
       viewport={{ once: true }}
@@ -49,16 +46,16 @@ export function Footer() {
             className="flex items-center gap-3 transition-opacity hover:opacity-80"
           >
             <TadaLogo className="h-10 w-10 text-[var(--color-accent)]" />
-            <span className="ml-2 font-sans text-xl font-bold text-slate-900">
+            <span className="ms-2 font-sans text-xl font-bold text-foreground">
               Tada
             </span>
           </Link>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-muted-foreground">
             Calm analytics for fast-moving teams.
           </p>
           <a
             href="mailto:hello@tada.app"
-            className="mt-1 block text-sm text-slate-500 transition-colors hover:text-slate-900"
+            className="mt-1 block text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             hello@tada.app
           </a>
@@ -67,7 +64,7 @@ export function Footer() {
         {/* Col 2-4: Nav columns */}
         {NAV.map((col) => (
           <div key={col.header}>
-            <p className="mb-4 text-sm font-semibold text-slate-900">
+            <p className="mb-4 text-sm font-semibold text-foreground">
               {col.header}
             </p>
             <ul className="flex flex-col gap-3">
@@ -75,7 +72,7 @@ export function Footer() {
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    className="text-sm text-slate-600 transition-colors duration-200 hover:text-slate-900"
+                    className="text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground"
                   >
                     {link.label}
                   </a>
@@ -87,19 +84,22 @@ export function Footer() {
       </div>
 
       {/* Divider */}
-      <div className="mx-auto mt-12 mb-8 max-w-7xl border-t border-slate-200" />
+      <div className="mx-auto mt-12 mb-8 max-w-7xl border-t border-border" />
 
       {/* Bottom row */}
       <div className="mx-auto flex max-w-7xl items-center justify-between">
-        <p className="text-sm text-slate-400">
-          © 2025 Tada. All rights reserved.
+        <p className="text-sm text-muted-foreground/70">
+          © 2026 Tada. All rights reserved.
         </p>
-        <div className="flex items-center gap-3 text-sm text-slate-400">
-          <a href="/terms" className="transition-colors hover:text-slate-600">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground/70">
+          <a href="/terms" className="transition-colors hover:text-foreground">
             Terms
           </a>
           <span>·</span>
-          <a href="/privacy" className="transition-colors hover:text-slate-600">
+          <a
+            href="/privacy"
+            className="transition-colors hover:text-foreground"
+          >
             Privacy
           </a>
         </div>
@@ -108,7 +108,7 @@ export function Footer() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Twitter / X"
-          className="text-slate-400 transition-colors hover:text-slate-600"
+          className="text-muted-foreground/70 transition-colors hover:text-foreground"
         >
           <svg
             className="h-4 w-4"

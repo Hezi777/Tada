@@ -43,11 +43,11 @@ export function AnimatedDashboardMockup() {
               Q3 Forecast
             </p>
             <div className="mt-1 flex items-baseline gap-1">
-              <span className="text-3xl font-extrabold text-slate-800">
+              <span className="text-3xl font-extrabold text-foreground">
                 ${count}k
               </span>
               <span className="flex items-center text-xs font-semibold text-emerald-500">
-                <TrendingUp className="mr-0.5 h-3 w-3" />
+                <TrendingUp className="me-0.5 h-3 w-3" />
                 +18%
               </span>
             </div>
@@ -58,7 +58,7 @@ export function AnimatedDashboardMockup() {
               Insight
             </p>
             <div className="mt-2 w-full">
-              <p className="animate-typing overflow-hidden whitespace-nowrap border-r-2 border-primary pr-2 text-xs font-medium text-slate-700">
+              <p className="animate-typing overflow-hidden whitespace-nowrap border-e-2 border-primary pe-2 text-xs font-medium text-foreground">
                 Growth is accelerating in EMEA.
               </p>
             </div>
@@ -67,15 +67,15 @@ export function AnimatedDashboardMockup() {
 
         {/* Chart Window */}
         <div className="relative h-48 w-full overflow-hidden rounded-[1.5rem] border border-white/80 bg-white/80 p-4 shadow-sm">
-          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-slate-400">
+          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-muted-foreground">
             Revenue Trajectory
           </p>
 
           <div className="absolute bottom-4 left-4 right-4 top-10">
             {/* Grid lines */}
-            <div className="absolute bottom-0 left-0 right-0 top-0 flex flex-col justify-between border-b border-slate-100">
+            <div className="absolute bottom-0 left-0 right-0 top-0 flex flex-col justify-between border-b border-border">
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="w-full border-t border-slate-100/60" />
+                <div key={i} className="w-full border-t border-border/60" />
               ))}
             </div>
 
@@ -87,8 +87,16 @@ export function AnimatedDashboardMockup() {
             >
               <defs>
                 <linearGradient id="line-gradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+                  <stop
+                    offset="0%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity="0.2"
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity="0"
+                  />
                 </linearGradient>
               </defs>
 
@@ -105,7 +113,7 @@ export function AnimatedDashboardMockup() {
               <motion.path
                 d="M 0 100 C 50 100, 80 80, 120 70 C 160 60, 200 85, 240 50 C 280 15, 320 30, 400 10"
                 fill="none"
-                stroke="#3B82F6"
+                stroke="hsl(var(--primary))"
                 strokeWidth="4"
                 strokeLinecap="round"
                 initial={{ pathLength: 0 }}
@@ -119,7 +127,7 @@ export function AnimatedDashboardMockup() {
                 cy="10"
                 r="6"
                 fill="white"
-                stroke="#3B82F6"
+                stroke="hsl(var(--primary))"
                 strokeWidth="3"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -134,7 +142,7 @@ export function AnimatedDashboardMockup() {
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">
             <Zap className="h-3 w-3" />
           </div>
-          <p className="text-xs font-medium text-slate-500">
+          <p className="text-xs font-medium text-muted-foreground">
             Show me revenue vs trailing 30 days...
           </p>
         </div>

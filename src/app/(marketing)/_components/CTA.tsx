@@ -1,61 +1,61 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Button } from '@/shared/ui/button';
+import { ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { Button } from "@/shared/ui/button";
 
 interface CTAProps {
   onGetStarted: () => void;
 }
 
-const easeOut = { ease: 'easeOut' as const };
+const easeOut = { ease: "easeOut" as const };
 
 export function CTA({ onGetStarted }: CTAProps) {
   return (
-    <section className="relative overflow-hidden bg-white py-32">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#EFF6FF_0%,_transparent_70%)]" />
+    <section className="relative px-4 py-24 sm:px-6">
+      <div className="container">
+        <div className="section-shell relative overflow-hidden px-6 py-16 text-center sm:px-10 sm:py-20">
+          <div className="absolute inset-0 gradient-glow pointer-events-none" />
 
-      <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-4 text-center">
-        <motion.h2
-          className="text-center text-5xl font-bold tracking-tight text-slate-900 md:text-6xl"
-          initial={{ y: 40, opacity: 0 }}
-          whileInView={{ y: 0, opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, ...easeOut }}
-        >
-          Ready to understand your data?
-        </motion.h2>
+          <div className="relative z-10 mx-auto flex max-w-2xl flex-col items-center">
+            <motion.h2
+              className="text-4xl text-foreground sm:text-5xl"
+              initial={{ y: 40, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, ...easeOut }}
+            >
+              Ready to understand your data?
+            </motion.h2>
 
-        <motion.p
-          className="mx-auto mt-6 max-w-xl text-center text-lg text-slate-500"
-          initial={{ y: 40, opacity: 0 }}
-          whileInView={{ y: 0, opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.1, ...easeOut }}
-        >
-          Upload your first file and see Tada in action. It takes 30 seconds to
-          go from spreadsheet to insight.
-        </motion.p>
+            <motion.p
+              className="mx-auto mt-5 max-w-xl text-lg leading-8 text-muted-foreground"
+              initial={{ y: 40, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.1, ...easeOut }}
+            >
+              Upload your first file and see Tada in action. It takes 30 seconds
+              to go from spreadsheet to insight.
+            </motion.p>
 
-        <motion.div
-          className="mt-12 flex flex-col justify-center gap-4 sm:flex-row"
-          initial={{ y: 20, opacity: 0 }}
-          whileInView={{ y: 0, opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.2, ...easeOut }}
-        >
-          <Button
-            onClick={onGetStarted}
-            className="rounded-xl bg-slate-900 px-8 py-6 text-base font-semibold text-white hover:bg-slate-800"
-          >
-            Get started
-          </Button>
-          <Button
-            variant="outline"
-            className="rounded-xl border-slate-300 px-8 py-6 text-base font-semibold text-slate-700"
-          >
-            Schedule a call
-          </Button>
-        </motion.div>
+            <motion.div
+              className="mt-10 flex flex-col justify-center gap-4 sm:flex-row"
+              initial={{ y: 20, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.2, ...easeOut }}
+            >
+              <Button variant="hero" size="xl" onClick={onGetStarted}>
+                Get started free
+                <ArrowRight className="ms-1 h-5 w-5" />
+              </Button>
+              <Button variant="outline" size="xl" onClick={onGetStarted}>
+                Try with sample data
+              </Button>
+            </motion.div>
+          </div>
+        </div>
       </div>
     </section>
   );

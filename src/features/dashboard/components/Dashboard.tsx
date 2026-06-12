@@ -66,7 +66,11 @@ import {
   formatAggregationLabel,
   resolveKpiIcon,
 } from "@/features/dashboard/client/design";
-import { formatILS, looksLikeCurrencyColumn } from "@/shared/lib/format";
+import {
+  formatDateIL,
+  formatILS,
+  looksLikeCurrencyColumn,
+} from "@/shared/lib/format";
 import {
   Sheet,
   SheetContent,
@@ -97,6 +101,29 @@ function formatMetric(
 
 function getKpiIcon(kpi: KPIConfig) {
   return resolveKpiIcon(kpi);
+}
+
+/** Turn "q3_sales_report.xlsx" into "Q3 Sales Report" for default copy. */
+function titleFromFileName(fileName: string): string {
+  const withoutExtension = fileName.replace(/\.[^./\\]+$/, "");
+  const words = withoutExtension
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+
+  if (words.length === 0) {
+    return "Dashboard";
+  }
+
+  return words
+    .map((word) =>
+      /^[A-Za-z]+$/.test(word)
+        ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        : word,
+    )
+    .join(" ");
 }
 
 function deriveFallbackCards(rows: SerializedRow[]): Array<{
@@ -175,12 +202,12 @@ function deriveFallbackCards(rows: SerializedRow[]): Array<{
       .sort((left, right) => left.getTime() - right.getTime());
 
     if (dates.length > 0) {
-      const start = dates[0].toISOString().slice(0, 10);
-      const end = dates[dates.length - 1].toISOString().slice(0, 10);
+      const start = formatDateIL(dates[0]);
+      const end = formatDateIL(dates[dates.length - 1]);
       cards.push({
         id: "date_range",
         icon: CalendarRange,
-        value: start === end ? start : `${start} - ${end}`,
+        value: start === end ? start : `${start} – ${end}`,
         label: "Date Range",
         description: "Coverage span in your dataset",
       });
@@ -196,6 +223,19 @@ function deriveFallbackCards(rows: SerializedRow[]): Array<{
   });
 
   return cards;
+}
+
+// Bidi isolation marks (FSI/PDI/LRI) wrap currency/number values for RTL
+// safety but must not count toward the visible length used for sizing.
+const BIDI_MARKS = /[⁦⁧⁨⁩]/g;
+
+/** Pick a KPI value font size that keeps long values from overflowing. */
+function kpiValueSizeClass(value: string | number): string {
+  const visibleLength = String(value).replace(BIDI_MARKS, "").length;
+  if (visibleLength > 16) return "text-[16px]";
+  if (visibleLength > 12) return "text-[20px]";
+  if (visibleLength > 9) return "text-[26px]";
+  return "text-[34px]";
 }
 
 function KpiCard({
@@ -214,6 +254,8 @@ function KpiCard({
   eyebrow: string;
   isPrimary?: boolean;
 }) {
+  const displayValue = formatMetric(value);
+
   return (
     <Card
       className={`dashboard-hover relative overflow-hidden rounded-[24px] border-0 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] ${
@@ -237,15 +279,11 @@ function KpiCard({
 
         <div className="relative z-10 min-w-0">
           <div
-            className={`font-display font-extrabold leading-tight tracking-[-0.04em] tabular-nums ${
-              String(value).length > 14
-                ? "text-[19px]"
-                : String(value).length > 9
-                  ? "text-[26px]"
-                  : "text-[34px]"
-            } ${isPrimary ? "text-white" : "text-[var(--color-text-primary)]"}`}
+            className={`truncate font-display font-extrabold leading-tight tracking-[-0.04em] tabular-nums ${kpiValueSizeClass(
+              displayValue,
+            )} ${isPrimary ? "text-white" : "text-[var(--color-text-primary)]"}`}
           >
-            {formatMetric(value)}
+            {displayValue}
           </div>
 
           <div className="mt-3 flex items-center gap-2">
@@ -618,10 +656,12 @@ export function Dashboard() {
     const activeDashboardName = useDashboardStore((s) => s.activeDashboardName);
     const activeDashboardIcon = useDashboardStore((s) => s.activeDashboardIcon);
     const allDashboards = useDashboardStore((s) => s.dashboardList);
-    const title = activeDashboardName ?? "Executive Insight Ledger";
+    const title =
+      activeDashboardName ??
+      (fileName ? titleFromFileName(fileName) : "Dashboard");
     const subtitle = fileName
-      ? `Real-time performance analytics generated from ${fileName}`
-      : "Real-time performance analytics for your active workspace";
+      ? `Generated from ${fileName}`
+      : "Upload a dataset to generate charts and KPIs";
 
     const [createOpen, setCreateOpen] = useState(false);
 

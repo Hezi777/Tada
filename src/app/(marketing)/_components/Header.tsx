@@ -57,14 +57,14 @@ export function Header({
               y: 0,
               opacity: 1,
               backgroundColor: "rgba(255,255,255,0.9)",
-              borderColor: "rgba(148,163,184,0.5)",
+              borderColor: "hsla(214, 34%, 88%, 1)",
               backdropFilter: "blur(12px)",
             }
           : {
               y: 0,
               opacity: 1,
               backgroundColor: "rgba(255,255,255,0)",
-              borderColor: "rgba(148,163,184,0)",
+              borderColor: "hsla(214, 34%, 88%, 0)",
               backdropFilter: "blur(0px)",
             }
       }
@@ -83,8 +83,8 @@ export function Header({
                 Tada
               </span>
               {/* Inline beta indicator */}
-              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-500" />
-              <span className="text-xs font-medium text-blue-600">Beta</span>
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
+              <span className="text-xs font-medium text-primary">Beta</span>
             </div>
             <span className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-primary/80">
               Instant Insights

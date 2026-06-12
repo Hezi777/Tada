@@ -166,13 +166,24 @@ export default function LoginPage() {
                 : "Sign in to your workspace."}
             </p>
 
-            <div className="mt-8 space-y-4">
+            <form
+              className="mt-8 space-y-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleSubmit();
+              }}
+            >
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]">
+                <label
+                  htmlFor="login-email"
+                  className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]"
+                >
                   Email
                 </label>
                 <input
+                  id="login-email"
                   type="email"
+                  autoComplete="email"
                   placeholder="you@company.com"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
@@ -181,11 +192,16 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]">
+                <label
+                  htmlFor="login-password"
+                  className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]"
+                >
                   Password
                 </label>
                 <input
+                  id="login-password"
                   type="password"
+                  autoComplete={isSignUp ? "new-password" : "current-password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
@@ -203,7 +219,7 @@ export default function LoginPage() {
               ) : null}
 
               <button
-                onClick={handleSubmit}
+                type="submit"
                 disabled={loading}
                 className="h-12 w-full rounded-[1.1rem] bg-[var(--color-accent)] text-sm font-semibold text-white shadow-[0_18px_40px_-24px_rgba(0,50,125,0.7)] transition-all duration-200 hover:bg-[var(--color-accent-secondary)] active:scale-[0.98] disabled:opacity-50"
               >
@@ -225,13 +241,15 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="flex h-12 w-full items-center justify-center gap-2.5 rounded-[1.1rem] border border-[var(--color-border)] bg-white text-sm font-semibold text-[var(--color-text-primary)] transition-all duration-200 hover:bg-[var(--color-bg)] active:scale-[0.98]"
+                disabled={loading}
+                className="flex h-12 w-full items-center justify-center gap-2.5 rounded-[1.1rem] border border-[var(--color-border)] bg-white text-sm font-semibold text-[var(--color-text-primary)] transition-all duration-200 hover:bg-[var(--color-bg)] active:scale-[0.98] disabled:opacity-50"
               >
                 <GoogleIcon />
                 Continue with Google
               </button>
 
               <button
+                type="button"
                 onClick={() => setIsSignUp(!isSignUp)}
                 className="w-full py-2 text-sm text-[var(--color-text-secondary)] transition-colors duration-150 hover:text-[var(--color-text-primary)]"
               >
@@ -239,7 +257,7 @@ export default function LoginPage() {
                   ? "Already have an account? Sign in"
                   : "Don't have an account? Sign up"}
               </button>
-            </div>
+            </form>
           </div>
         </div>
       </div>
