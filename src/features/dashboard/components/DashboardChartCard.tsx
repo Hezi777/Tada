@@ -25,8 +25,6 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader } from "@/shared/ui/card";
 import {
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig as ChartPrimitiveConfig,
@@ -64,13 +62,17 @@ const CHART_ANIMATION_DURATION = 400;
 const CHART_ANIMATION_EASING = "ease-out";
 
 const donutPalette = [
-  "#00327D",
-  "#1C4D9E",
-  "#2F65B5",
-  "#4A7ACC",
-  "#7395D9",
-  "#9FB4E3",
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+  "#C7D6EE",
 ];
+
+/** Nexus signature: the tallest bar gets the full accent, the rest get a
+ * lighter tint of it so the chart highlights the standout value. */
+const BAR_TINT_COLOR = "#C7D6EE";
 
 type DashboardChartCardProps = {
   chart: LayoutItem;
@@ -249,7 +251,7 @@ function ScatterTooltip({
   const yValue = point.payload?.y;
 
   return (
-    <div className="grid min-w-[10rem] gap-1.5 rounded-[16px] bg-white px-3 py-2 text-xs shadow-[0_18px_40px_-28px_rgba(25,28,30,0.25)]">
+    <div className="grid min-w-[10rem] gap-1.5 rounded-[1.25rem] border border-[var(--color-border)] bg-card/95 px-3 py-2 text-xs shadow-[0_24px_48px_-30px_rgba(0,50,125,0.3)] backdrop-blur">
       <div className="font-medium text-[var(--color-text-primary)]">
         Scatter point
       </div>
@@ -324,7 +326,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
     return (
       <ChartContainer
         config={chartConfig}
-        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-white`}
+        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-card`}
       >
         <AreaChart
           data={series}
@@ -380,7 +382,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             activeDot={{
               r: 5,
               fill: CHART_COLOR,
-              stroke: "#ffffff",
+              stroke: "var(--color-surface)",
               strokeWidth: 3,
             }}
             isAnimationActive
@@ -407,7 +409,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
     return (
       <ChartContainer
         config={chartConfig}
-        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-white`}
+        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-card`}
       >
         <ScatterChart margin={{ top: 12, right: 12, left: 0, bottom: 4 }}>
           <CartesianGrid
@@ -479,97 +481,113 @@ const DashboardChartContent = memo(function DashboardChartContent({
       chart.aggregation === "count" || chart.aggregation === null
         ? "Total Count"
         : `Total ${metricLabel(chart)}`;
+    const donutIsCurrency = isCurrencyMetric(chart);
 
     return (
-      <ChartContainer
-        config={chartConfig}
-        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-white`}
-      >
-        <PieChart>
-          <Pie
-            data={series}
-            dataKey="value"
-            nameKey="label"
-            paddingAngle={4}
-            innerRadius="62%"
-            outerRadius="82%"
-            activeIndex={activeSlice}
-            onMouseEnter={(_: unknown, index: number) => setActiveSlice(index)}
-            onMouseLeave={() => setActiveSlice(undefined)}
-            activeShape={(props: { outerRadius?: number | string }) => (
-              <Sector {...props} outerRadius={Number(props.outerRadius) + 4} />
-            )}
-            isAnimationActive
-            animationDuration={CHART_ANIMATION_DURATION}
-            animationEasing={CHART_ANIMATION_EASING}
-          >
-            {series.map((_entry, index) => (
-              <Cell
-                key={`${chart.id}-slice-${index}`}
-                fill={donutPalette[index % donutPalette.length]}
-                stroke="#ffffff"
-                strokeWidth={2}
-              />
-            ))}
-            <Label
-              position="center"
-              content={() => {
-                const totalText = formatAxisValue(
-                  total,
-                  isCurrencyMetric(chart),
-                );
-                // Long abbreviated totals (e.g. "₪1.2M") need a smaller
-                // font so they stay inside the donut's inner radius.
-                const valueFontSize = totalText.length > 7 ? "16px" : "20px";
+      <div className="flex flex-col gap-3">
+        <ChartContainer
+          config={chartConfig}
+          className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-card`}
+        >
+          <PieChart>
+            <Pie
+              data={series}
+              dataKey="value"
+              nameKey="label"
+              paddingAngle={3}
+              innerRadius="58%"
+              outerRadius="85%"
+              activeIndex={activeSlice}
+              onMouseEnter={(_: unknown, index: number) =>
+                setActiveSlice(index)
+              }
+              onMouseLeave={() => setActiveSlice(undefined)}
+              activeShape={(props: { outerRadius?: number | string }) => (
+                <Sector
+                  {...props}
+                  outerRadius={Number(props.outerRadius) + 4}
+                />
+              )}
+              isAnimationActive
+              animationDuration={CHART_ANIMATION_DURATION}
+              animationEasing={CHART_ANIMATION_EASING}
+            >
+              {series.map((_entry, index) => (
+                <Cell
+                  key={`${chart.id}-slice-${index}`}
+                  fill={donutPalette[index % donutPalette.length]}
+                  stroke="var(--color-surface)"
+                  strokeWidth={2}
+                />
+              ))}
+              <Label
+                position="center"
+                content={() => {
+                  const totalText = formatAxisValue(total, donutIsCurrency);
+                  // Long abbreviated totals (e.g. "₪1.2M") need a smaller
+                  // font so they stay inside the donut's inner radius.
+                  const valueFontSize = totalText.length > 7 ? "16px" : "20px";
 
-                return (
-                  <text
-                    x="50%"
-                    y="50%"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                  >
-                    <tspan
+                  return (
+                    <text
                       x="50%"
-                      dy="-0.3em"
-                      className="fill-[var(--color-text-primary)] font-bold"
-                      style={{ fontSize: valueFontSize }}
+                      y="50%"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
                     >
-                      {totalText}
-                    </tspan>
-                    <tspan
-                      x="50%"
-                      dy="1.5em"
-                      className="fill-[var(--color-text-muted)] text-[10px] font-semibold uppercase tracking-[0.14em]"
-                    >
-                      {totalLabel}
-                    </tspan>
-                  </text>
-                );
-              }}
-            />
-          </Pie>
-          <ChartTooltip content={<ChartTooltipContent labelKey="label" />} />
-          <ChartLegend
-            content={
-              <ChartLegendContent
-                verticalAlign="bottom"
-                nameKey="label"
-                className="mt-3 flex-wrap justify-center gap-x-3 gap-y-2 text-[11px] text-[var(--color-text-muted)]"
+                      <tspan
+                        x="50%"
+                        dy="-0.3em"
+                        className="fill-[var(--color-text-primary)] font-bold"
+                        style={{ fontSize: valueFontSize }}
+                      >
+                        {totalText}
+                      </tspan>
+                      <tspan
+                        x="50%"
+                        dy="1.5em"
+                        className="fill-[var(--color-text-muted)] text-[10px] font-semibold uppercase tracking-[0.14em]"
+                      >
+                        {totalLabel}
+                      </tspan>
+                    </text>
+                  );
+                }}
               />
-            }
-          />
-        </PieChart>
-      </ChartContainer>
+            </Pie>
+            <ChartTooltip content={<ChartTooltipContent labelKey="label" />} />
+          </PieChart>
+        </ChartContainer>
+        <div className="flex flex-wrap justify-center gap-2">
+          {series.map((entry, index) => (
+            <div
+              key={`${chart.id}-legend-${entry.label}`}
+              className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] px-2.5 py-1 text-[11px]"
+            >
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{
+                  backgroundColor: donutPalette[index % donutPalette.length],
+                }}
+              />
+              <span className="text-[var(--color-text-secondary)]">
+                {truncateLabel(entry.label, 16)}
+              </span>
+              <span className="font-medium tabular-nums text-[var(--color-text-primary)]">
+                {formatMetric(entry.value, donutIsCurrency)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
   const chartConfig = buildValueChartConfig(metricLabel(chart));
   const isHorizontal = chart.orientation === "horizontal";
   const isCurrency = isCurrencyMetric(chart);
-  const barGradientId = `bar-gradient-${chart.id}`;
-  const barFill = `url(#${barGradientId})`;
   const barActiveFill = DASHBOARD_COLORS.secondary;
+  const maxValue = Math.max(...series.map((entry) => entry.value));
 
   if (isHorizontal) {
     // Long category labels read better on horizontal bars (BI rule
@@ -577,19 +595,13 @@ const DashboardChartContent = memo(function DashboardChartContent({
     return (
       <ChartContainer
         config={chartConfig}
-        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-white`}
+        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-card`}
       >
         <BarChart
           data={series}
           layout="vertical"
           margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
         >
-          <defs>
-            <linearGradient id={barGradientId} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor={CHART_COLOR} stopOpacity={0.75} />
-              <stop offset="100%" stopColor={CHART_COLOR} stopOpacity={1} />
-            </linearGradient>
-          </defs>
           <CartesianGrid
             horizontal={false}
             stroke={CHART_GRID_COLOR}
@@ -618,7 +630,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             stroke={CHART_AXIS_COLOR}
           />
           <ChartTooltip
-            cursor={{ fill: "#E6E8EA" }}
+            cursor={{ fill: "var(--color-accent-light)" }}
             content={
               <ChartTooltipContent
                 formatter={isCurrency ? currencyTooltipFormatter : undefined}
@@ -627,13 +639,19 @@ const DashboardChartContent = memo(function DashboardChartContent({
           />
           <Bar
             dataKey="value"
-            fill={barFill}
             radius={[0, 10, 10, 0]}
             activeBar={{ fill: barActiveFill }}
             isAnimationActive
             animationDuration={CHART_ANIMATION_DURATION}
             animationEasing={CHART_ANIMATION_EASING}
-          />
+          >
+            {series.map((entry, index) => (
+              <Cell
+                key={`${chart.id}-bar-${index}`}
+                fill={entry.value === maxValue ? CHART_COLOR : BAR_TINT_COLOR}
+              />
+            ))}
+          </Bar>
         </BarChart>
       </ChartContainer>
     );
@@ -642,18 +660,12 @@ const DashboardChartContent = memo(function DashboardChartContent({
   return (
     <ChartContainer
       config={chartConfig}
-      className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-white`}
+      className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-card`}
     >
       <BarChart
         data={series}
         margin={{ top: 12, right: 12, left: 0, bottom: 4 }}
       >
-        <defs>
-          <linearGradient id={barGradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={CHART_COLOR} stopOpacity={1} />
-            <stop offset="100%" stopColor={CHART_COLOR} stopOpacity={0.75} />
-          </linearGradient>
-        </defs>
         <CartesianGrid
           vertical={false}
           stroke={CHART_GRID_COLOR}
@@ -679,7 +691,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
           stroke={CHART_AXIS_COLOR}
         />
         <ChartTooltip
-          cursor={{ fill: "#E6E8EA" }}
+          cursor={{ fill: "var(--color-accent-light)" }}
           content={
             <ChartTooltipContent
               formatter={isCurrency ? currencyTooltipFormatter : undefined}
@@ -688,13 +700,19 @@ const DashboardChartContent = memo(function DashboardChartContent({
         />
         <Bar
           dataKey="value"
-          fill={barFill}
           radius={[10, 10, 0, 0]}
           activeBar={{ fill: barActiveFill }}
           isAnimationActive
           animationDuration={CHART_ANIMATION_DURATION}
           animationEasing={CHART_ANIMATION_EASING}
-        />
+        >
+          {series.map((entry, index) => (
+            <Cell
+              key={`${chart.id}-bar-${index}`}
+              fill={entry.value === maxValue ? CHART_COLOR : BAR_TINT_COLOR}
+            />
+          ))}
+        </Bar>
       </BarChart>
     </ChartContainer>
   );
@@ -726,27 +744,27 @@ const DashboardChartCard = memo(function DashboardChartCard({
       <Card
         ref={setNodeRef}
         style={style}
-        className={`overflow-hidden rounded-[24px] border-0 bg-white p-0 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_28px_60px_-34px_rgba(25,28,30,0.2)] ${getCardMinHeightClass(
+        className={`overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card p-0 shadow-[0_1px_2px_rgba(25,28,30,0.04)] transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-24px_rgba(25,28,30,0.18)] ${getCardMinHeightClass(
           chart,
         )} ${isDragging ? "opacity-75" : ""}`}
         data-chart-card={chart.id}
       >
-        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-8 pb-0 pt-8">
+        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-6 pb-0 pt-6">
           <div className="min-w-0">
-            <h3 className="truncate font-display text-[18px] font-bold tracking-[-0.02em] text-[var(--color-text-primary)]">
+            <h3 className="truncate font-display text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-text-primary)]">
               {chart.title}
             </h3>
             <p className="mt-1 line-clamp-1 text-[12px] text-[var(--color-text-secondary)]">
               {chart.insight}
             </p>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             {chart.pinned ? (
               <Badge className="rounded-full border-0 bg-[var(--color-surface-muted)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]">
                 pinned
               </Badge>
             ) : null}
-            <Badge className="rounded-full border-0 bg-[#e6e8ea] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-secondary)] hover:bg-[#e6e8ea]">
+            <Badge className="rounded-full border border-[var(--color-border)] bg-transparent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)] hover:bg-transparent">
               {chart.type}
             </Badge>
             <ShadTooltip>
@@ -756,7 +774,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
                   size="icon"
                   type="button"
                   aria-label={`Resize ${chart.title} (currently ${chart.size})`}
-                  className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
+                  className="h-7 w-7 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
                   onClick={() => {
                     const nextSize =
                       chart.size === "small"
@@ -780,7 +798,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
                   size="icon"
                   type="button"
                   aria-label={`Drag to reorder ${chart.title}`}
-                  className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
+                  className="h-7 w-7 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
                   {...attributes}
                   {...listeners}
                 >
@@ -791,7 +809,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
             </ShadTooltip>
           </div>
         </CardHeader>
-        <CardContent className="px-8 pb-8 pt-4">
+        <CardContent className="px-6 pb-6 pt-4">
           <DashboardChartContent chart={chart} rows={rows} />
         </CardContent>
       </Card>
