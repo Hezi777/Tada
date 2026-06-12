@@ -453,3 +453,88 @@
     pointer-events: none;
   }
 }
+
+/* ── v2 premium system: subtle mesh-gradient cards, depth, bold display type ── */
+@layer utilities {
+  /* Soft pastel mesh surfaces for KPI / feature cards (light). */
+  .mesh-blue {
+    background:
+      radial-gradient(at 0% 0%, rgba(47, 109, 246, 0.14), transparent 55%),
+      radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.12), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(0, 50, 125, 0.08), transparent 55%),
+      #ffffff;
+  }
+  .mesh-teal {
+    background:
+      radial-gradient(at 0% 0%, rgba(20, 184, 166, 0.16), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.12), transparent 55%),
+      #ffffff;
+  }
+  .mesh-violet {
+    background:
+      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.16), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.12), transparent 55%),
+      #ffffff;
+  }
+  /* Deep navy mesh for the primary/anchor card. */
+  .mesh-navy {
+    background:
+      radial-gradient(at 0% 0%, #0a4aa0, transparent 60%),
+      radial-gradient(at 100% 100%, #001f4d, transparent 65%),
+      linear-gradient(135deg, #00327d 0%, #001b45 100%);
+  }
+
+  .dark .mesh-blue {
+    background:
+      radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(0, 50, 125, 0.28), transparent 60%),
+      var(--color-surface);
+  }
+  .dark .mesh-teal {
+    background:
+      radial-gradient(at 0% 0%, rgba(20, 184, 166, 0.14), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.12), transparent 60%),
+      var(--color-surface);
+  }
+  .dark .mesh-violet {
+    background:
+      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.16), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.12), transparent 60%),
+      var(--color-surface);
+  }
+  .dark .mesh-navy {
+    background:
+      radial-gradient(at 0% 0%, #0c4aa0, transparent 60%),
+      radial-gradient(at 100% 100%, #001225, transparent 65%),
+      linear-gradient(135deg, #013a8f 0%, #00132f 100%);
+  }
+
+  /* Blue→teal gradient text for hero numbers / accent words. */
+  .text-gradient-brand {
+    background: linear-gradient(120deg, #00327d 0%, #1466b8 45%, #14b8a6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Layered soft depth for premium cards. */
+  .shadow-premium {
+    box-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.04),
+      0 14px 36px -18px rgba(16, 24, 40, 0.2);
+  }
+  .dark .shadow-premium {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      0 16px 44px -18px rgba(0, 0, 0, 0.65);
+  }
+
+  /* Bold, tight, tabular display numbers (uses the Satoshi variable font). */
+  .display-number {
+    font-family: var(--font-satoshi), var(--font-assistant), sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+}
