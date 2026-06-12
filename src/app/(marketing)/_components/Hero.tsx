@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, type ReactNode } from "react";
-import { ArrowRight, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowRight, TrendingUp, Wallet, BarChart3 } from "lucide-react";
 import {
   motion,
   useReducedMotion,
@@ -17,47 +17,47 @@ interface HeroProps {
 
 const easeOut = { ease: "easeOut" } as const;
 
-/**
- * A single dashboard fragment. It is laid out at its FINAL (assembled) slot via
- * `className`, then offset/rotated outward by a scroll-driven transform so that
- * at scroll progress 0 it sits scattered across the canvas, and at progress 1 it
- * snaps into place — assembling a clean dashboard as you scroll.
- */
-function Fragment({
+/** Design canvas for the assembled dashboard (px). Centered + scaled on small screens. */
+const FRAME_W = 1000;
+
+type Slot = { l: number; t: number; w: number; h: number };
+type Scatter = { x: number; y: number; r: number };
+
+/** One real-looking dashboard tile. Sits at its assembled slot, offset out by scroll. */
+function Tile({
   progress,
-  sx,
-  sy,
-  sr,
-  delayIn,
+  slot,
+  scatter,
+  reduce,
   className,
   children,
-  reduce,
 }: {
   progress: MotionValue<number>;
-  sx: number;
-  sy: number;
-  sr: number;
-  delayIn: number;
+  slot: Slot;
+  scatter: Scatter;
+  reduce: boolean;
   className: string;
   children: ReactNode;
-  reduce: boolean;
 }) {
-  const x = useTransform(progress, [0, 1], [sx, 0]);
-  const y = useTransform(progress, [0, 1], [sy, 0]);
-  const rotate = useTransform(progress, [0, 1], [sr, 0]);
-  const scale = useTransform(progress, [0, 1], [0.82, 1]);
-  const opacity = useTransform(
-    progress,
-    [0, delayIn, Math.min(delayIn + 0.25, 1)],
-    [0, 0, 1],
-  );
+  const x = useTransform(progress, [0, 1], [scatter.x, 0]);
+  const y = useTransform(progress, [0, 1], [scatter.y, 0]);
+  const rotate = useTransform(progress, [0, 1], [scatter.r, 0]);
+  const scale = useTransform(progress, [0, 1], [0.92, 1]);
 
-  if (reduce) {
-    return <div className={className}>{children}</div>;
-  }
+  const style = reduce
+    ? {}
+    : { x, y, rotate, scale };
+
   return (
     <motion.div
-      style={{ x, y, rotate, scale, opacity }}
+      style={{
+        position: "absolute",
+        left: slot.l,
+        top: slot.t,
+        width: slot.w,
+        height: slot.h,
+        ...style,
+      }}
       className={className}
     >
       {children}
@@ -67,101 +67,108 @@ function Fragment({
 
 function MiniArea() {
   return (
-    <svg viewBox="0 0 200 90" className="h-full w-full" aria-hidden>
+    <svg viewBox="0 0 320 120" preserveAspectRatio="none" className="h-full w-full" aria-hidden>
       <defs>
-        <linearGradient id="hero-area-stroke" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id="h-area-s" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#00327d" />
           <stop offset="100%" stopColor="#14b8a6" />
         </linearGradient>
-        <linearGradient id="hero-area-fill" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="h-area-f" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#2f6df6" stopOpacity="0.22" />
           <stop offset="100%" stopColor="#2f6df6" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path
-        d="M0 70 C30 70 35 40 60 42 C90 44 95 18 125 24 C155 30 170 12 200 8 L200 90 L0 90 Z"
-        fill="url(#hero-area-fill)"
-      />
-      <path
-        d="M0 70 C30 70 35 40 60 42 C90 44 95 18 125 24 C155 30 170 12 200 8"
-        fill="none"
-        stroke="url(#hero-area-stroke)"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
+      <path d="M0 96 C50 96 60 50 100 56 C150 64 160 22 210 30 C260 38 290 14 320 10 L320 120 L0 120 Z" fill="url(#h-area-f)" />
+      <path d="M0 96 C50 96 60 50 100 56 C150 64 160 22 210 30 C260 38 290 14 320 10" fill="none" stroke="url(#h-area-s)" strokeWidth="3.5" strokeLinecap="round" />
     </svg>
   );
 }
 
 function MiniBars() {
-  const bars = [38, 56, 30, 68, 46];
+  const bars = [42, 60, 34, 72, 50, 64];
   const max = Math.max(...bars);
   return (
-    <svg viewBox="0 0 200 90" className="h-full w-full" aria-hidden>
+    <svg viewBox="0 0 320 120" preserveAspectRatio="none" className="h-full w-full" aria-hidden>
       <defs>
-        <linearGradient id="hero-bar" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="h-bar" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#2f6df6" />
           <stop offset="100%" stopColor="#00327d" />
         </linearGradient>
-        <linearGradient id="hero-bar-hi" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="h-bar-hi" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#14b8a6" />
           <stop offset="100%" stopColor="#22c55e" />
         </linearGradient>
       </defs>
       {bars.map((b, i) => {
-        const h = (b / 100) * 78;
-        const x = 12 + i * 38;
+        const h = (b / 100) * 104;
+        const x = 14 + i * 52;
         const hi = b === max;
-        return (
-          <rect
-            key={i}
-            x={x}
-            y={84 - h}
-            width="22"
-            height={h}
-            rx="6"
-            fill={hi ? "url(#hero-bar-hi)" : "url(#hero-bar)"}
-            opacity={hi ? 1 : 0.85}
-          />
-        );
+        return <rect key={i} x={x} y={112 - h} width="34" height={h} rx="7" fill={hi ? "url(#h-bar-hi)" : "url(#h-bar)"} opacity={hi ? 1 : 0.9} />;
       })}
     </svg>
   );
 }
 
 function MiniDonut() {
-  const r = 30;
+  const r = 34;
   const c = 2 * Math.PI * r;
   const segs = [
     { frac: 0.42, color: "#00327d" },
     { frac: 0.3, color: "#14b8a6" },
     { frac: 0.28, color: "#22c55e" },
   ];
-  let offset = 0;
+  let off = 0;
   return (
-    <svg viewBox="0 0 90 90" className="h-full w-full" aria-hidden>
-      <circle cx="45" cy="45" r={r} fill="none" stroke="#eef2f7" strokeWidth="12" />
+    <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden>
+      <circle cx="50" cy="50" r={r} fill="none" stroke="#eef2f7" strokeWidth="13" />
       {segs.map((s, i) => {
         const len = s.frac * c;
         const el = (
-          <circle
-            key={i}
-            cx="45"
-            cy="45"
-            r={r}
-            fill="none"
-            stroke={s.color}
-            strokeWidth="12"
-            strokeLinecap="round"
-            strokeDasharray={`${len} ${c - len}`}
-            strokeDashoffset={-offset}
-            transform="rotate(-90 45 45)"
-          />
+          <circle key={i} cx="50" cy="50" r={r} fill="none" stroke={s.color} strokeWidth="13" strokeLinecap="round" strokeDasharray={`${len} ${c - len}`} strokeDashoffset={-off} transform="rotate(-90 50 50)" />
         );
-        offset += len;
+        off += len;
         return el;
       })}
     </svg>
+  );
+}
+
+function KpiTile({
+  meshClass,
+  label,
+  value,
+  icon,
+  dark,
+}: {
+  meshClass: string;
+  label: string;
+  value: string;
+  icon: ReactNode;
+  dark?: boolean;
+}) {
+  return (
+    <div className={`flex h-full w-full flex-col justify-between rounded-2xl ${meshClass} p-4 shadow-premium`}>
+      <div className="flex items-center justify-between">
+        <span className={`text-[11px] font-semibold uppercase tracking-wide ${dark ? "text-white/70" : "text-[var(--color-text-secondary)]"}`}>
+          {label}
+        </span>
+        <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${dark ? "bg-white/15 text-white" : "bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]"}`}>
+          {icon}
+        </span>
+      </div>
+      <span className={`display-number text-2xl ${dark ? "text-white" : "text-[var(--color-text-primary)]"}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function ChartTile({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="flex h-full w-full flex-col rounded-2xl border border-[var(--color-border)] bg-card p-4 shadow-premium">
+      <p className="text-xs font-bold text-[var(--color-text-primary)]">{title}</p>
+      <div className="mt-2 min-h-0 flex-1">{children}</div>
+    </div>
   );
 }
 
@@ -173,179 +180,119 @@ export function Hero({ onGetStarted }: HeroProps) {
     offset: ["start start", "end end"],
   });
 
-  // The dashboard frame fades in as the fragments converge.
-  const frameOpacity = useTransform(scrollYProgress, [0.15, 0.55], [0, 1]);
-  const textShift = useTransform(scrollYProgress, [0, 1], [0, -28]);
-  const hintOpacity = useTransform(scrollYProgress, [0, 0.25], [1, 0]);
+  // Frame rises from peeking-at-the-bottom into full view.
+  const frameY = useTransform(scrollYProgress, [0, 1], [340, 0]);
+  // Empty placeholder slots fade as the real tiles land in them.
+  const slotsOpacity = useTransform(scrollYProgress, [0.4, 0.85], [1, 0]);
+  // Headline recedes as the dashboard fills.
+  const textY = useTransform(scrollYProgress, [0, 1], [0, -150]);
+  const textOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0.12]);
+  const textScale = useTransform(scrollYProgress, [0, 1], [1, 0.86]);
 
   const rise = (delay: number) => ({
-    initial: reduce ? { opacity: 0 } : { y: 40, opacity: 0 },
+    initial: reduce ? { opacity: 0 } : { y: 30, opacity: 0 },
     animate: reduce ? { opacity: 1 } : { y: 0, opacity: 1 },
-    transition: { duration: 0.8, delay, ...easeOut },
+    transition: { duration: 0.7, delay, ...easeOut },
   });
 
+  // Assembled slots inside the FRAME_W canvas.
+  const pad = 28;
+  const kpiW = (FRAME_W - pad * 2 - 3 * 16) / 4;
+  const kpiT = 92;
+  const kpiH = 104;
+  const chartsT = 212;
+  const chartsH = 250;
+  const slots = {
+    k0: { l: pad, t: kpiT, w: kpiW, h: kpiH },
+    k1: { l: pad + (kpiW + 16), t: kpiT, w: kpiW, h: kpiH },
+    k2: { l: pad + 2 * (kpiW + 16), t: kpiT, w: kpiW, h: kpiH },
+    k3: { l: pad + 3 * (kpiW + 16), t: kpiT, w: kpiW, h: kpiH },
+    area: { l: pad, t: chartsT, w: 560, h: chartsH },
+    bars: { l: pad + 560 + 16, t: chartsT, w: FRAME_W - pad * 2 - 560 - 16, h: 117 },
+    donut: { l: pad + 560 + 16, t: chartsT + 133, w: FRAME_W - pad * 2 - 560 - 16, h: 117 },
+  };
+
   return (
-    <section
-      ref={sectionRef}
-      className="relative h-[200vh]"
-      aria-label="Tada — turn spreadsheets into dashboards"
-    >
-      <div className="sticky top-0 flex h-screen items-center overflow-hidden px-4 sm:px-6">
+    <section ref={sectionRef} className="relative h-[240vh]" aria-label="Tada — turn spreadsheets into dashboards">
+      <div className="sticky top-0 h-screen overflow-hidden">
         <div className="gradient-glow pointer-events-none absolute inset-0" />
-        <div className="editorial-grid pointer-events-none absolute inset-x-8 top-16 bottom-6 opacity-60" />
+        <div className="editorial-grid pointer-events-none absolute inset-x-8 top-16 bottom-6 opacity-50" />
 
-        <div className="container relative z-10">
-          <div className="grid items-center gap-10 lg:grid-cols-[1fr_1fr] lg:gap-12">
-            {/* Left: copy */}
-            <motion.div className="max-w-2xl" style={{ y: reduce ? 0 : textShift }}>
-              <motion.div className="eyebrow mb-6" {...rise(0)}>
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[linear-gradient(135deg,#00327d,#22c55e)]">
-                  <Sparkles className="h-3 w-3 text-white" />
-                </span>
-                AI-generated dashboards
+        {/* Centered hero copy */}
+        <motion.div
+          style={reduce ? undefined : { y: textY, opacity: textOpacity, scale: textScale }}
+          className="absolute inset-x-0 top-[17vh] z-20 flex flex-col items-center px-4 text-center"
+        >
+          <motion.h1 className="max-w-4xl text-5xl font-black leading-[0.95] tracking-tight text-foreground sm:text-6xl lg:text-7xl" {...rise(0.08)}>
+            Turn raw spreadsheets into a{" "}
+            <span className="text-gradient-brand">clear, living story</span>
+          </motion.h1>
+          <motion.p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground" {...rise(0.2)}>
+            Upload any CSV or Excel file and watch a polished dashboard assemble
+            itself — then keep exploring through plain-English questions.
+          </motion.p>
+          <motion.div className="mt-8 flex flex-col items-center gap-4 sm:flex-row" {...rise(0.32)}>
+            <Button variant="hero" size="xl" onClick={onGetStarted}>
+              Get started free
+              <ArrowRight className="ms-1 h-5 w-5" />
+            </Button>
+            <Button variant="outline" size="lg" onClick={onGetStarted}>
+              Try with sample data
+            </Button>
+          </motion.div>
+        </motion.div>
+
+        {/* Dashboard frame that rises + fills with the scattered tiles */}
+        <div className="absolute inset-x-0 top-[42vh] z-10 flex justify-center px-4">
+          <motion.div
+            style={reduce ? undefined : { y: frameY }}
+            className="relative w-[1000px] max-w-full origin-top scale-[0.62] sm:scale-75 lg:scale-100"
+          >
+            <div className="relative h-[500px] w-full rounded-[28px] border border-[var(--color-border)] bg-card shadow-premium">
+              {/* header chrome */}
+              <div className="flex items-center justify-between px-7 pt-6">
+                <div>
+                  <p className="text-lg font-black tracking-tight text-[var(--color-text-primary)]">Sales Overview</p>
+                  <p className="text-xs text-[var(--color-text-secondary)]">Generated from your data</p>
+                </div>
+                <div className="h-8 w-28 rounded-full bg-[var(--color-surface-muted)]" />
+              </div>
+
+              {/* empty placeholder slots (fade out as tiles land) */}
+              <motion.div style={reduce ? { opacity: 0 } : { opacity: slotsOpacity }}>
+                {Object.values(slots).map((s, i) => (
+                  <div
+                    key={i}
+                    style={{ position: "absolute", left: s.l, top: s.t, width: s.w, height: s.h }}
+                    className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-muted)]/40"
+                  />
+                ))}
               </motion.div>
 
-              <motion.h1
-                className="text-5xl font-black leading-[0.95] tracking-tight text-foreground sm:text-6xl lg:text-7xl"
-                {...rise(0.08)}
-              >
-                Turn raw spreadsheets into a{" "}
-                <span className="text-gradient-brand">clear, living story</span>{" "}
-                for your team.
-              </motion.h1>
-
-              <motion.p
-                className="mt-7 max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl"
-                {...rise(0.2)}
-              >
-                Upload any CSV or Excel file and watch a polished dashboard
-                assemble itself — then keep exploring through plain-English
-                questions.
-              </motion.p>
-
-              <motion.div
-                className="mt-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center"
-                {...rise(0.32)}
-              >
-                <Button variant="hero" size="xl" onClick={onGetStarted}>
-                  Get started free
-                  <ArrowRight className="ms-1 h-5 w-5" />
-                </Button>
-                <Button variant="outline" size="lg" onClick={onGetStarted}>
-                  Try with sample data
-                </Button>
-              </motion.div>
-
-              {!reduce && (
-                <motion.p
-                  className="mt-8 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground/70"
-                  style={{ opacity: hintOpacity }}
-                >
-                  Scroll to build the dashboard ↓
-                </motion.p>
-              )}
-            </motion.div>
-
-            {/* Right: scatter → assemble stage */}
-            <div className="relative mx-auto hidden h-[460px] w-full max-w-[520px] lg:block">
-              {/* assembled frame backdrop */}
-              <motion.div
-                style={{ opacity: reduce ? 1 : frameOpacity }}
-                className="absolute inset-0 rounded-[24px] border border-[var(--color-border)] bg-card/70 shadow-premium backdrop-blur-sm"
-              />
-
-              {/* KPI — navy primary */}
-              <Fragment
-                progress={scrollYProgress}
-                sx={-260}
-                sy={-150}
-                sr={-12}
-                delayIn={0.1}
-                reduce={reduce}
-                className="absolute left-5 top-5 h-[112px] w-[176px] rounded-2xl mesh-navy p-4 text-white shadow-premium"
-              >
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
-                  Total Sales
-                </p>
-                <p className="display-number mt-3 text-3xl text-white">₪68k</p>
-              </Fragment>
-
-              {/* KPI — teal */}
-              <Fragment
-                progress={scrollYProgress}
-                sx={250}
-                sy={-180}
-                sr={11}
-                delayIn={0.18}
-                reduce={reduce}
-                className="absolute right-5 top-5 flex h-[112px] w-[176px] flex-col justify-between rounded-2xl mesh-teal p-4 shadow-premium"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-secondary)]">
-                    Growth
-                  </p>
-                  <TrendingUp className="h-4 w-4 text-emerald-600" />
-                </div>
-                <p className="display-number text-3xl text-[var(--color-text-primary)]">
-                  +18%
-                </p>
-              </Fragment>
-
-              {/* Area chart — wide */}
-              <Fragment
-                progress={scrollYProgress}
-                sx={0}
-                sy={220}
-                sr={-6}
-                delayIn={0.26}
-                reduce={reduce}
-                className="absolute left-5 right-5 top-[140px] h-[150px] rounded-2xl border border-[var(--color-border)] bg-card p-4 shadow-premium"
-              >
-                <p className="text-xs font-bold text-[var(--color-text-primary)]">
-                  Revenue trajectory
-                </p>
-                <div className="mt-1 h-[100px]">
-                  <MiniArea />
-                </div>
-              </Fragment>
-
-              {/* Bars */}
-              <Fragment
-                progress={scrollYProgress}
-                sx={-300}
-                sy={140}
-                sr={14}
-                delayIn={0.34}
-                reduce={reduce}
-                className="absolute bottom-5 left-5 h-[120px] w-[210px] rounded-2xl border border-[var(--color-border)] bg-card p-4 shadow-premium"
-              >
-                <p className="text-xs font-bold text-[var(--color-text-primary)]">
-                  By category
-                </p>
-                <div className="mt-1 h-[74px]">
-                  <MiniBars />
-                </div>
-              </Fragment>
-
-              {/* Donut */}
-              <Fragment
-                progress={scrollYProgress}
-                sx={300}
-                sy={150}
-                sr={-12}
-                delayIn={0.42}
-                reduce={reduce}
-                className="absolute bottom-5 right-5 flex h-[120px] w-[140px] flex-col rounded-2xl border border-[var(--color-border)] bg-card p-4 shadow-premium"
-              >
-                <p className="text-xs font-bold text-[var(--color-text-primary)]">
-                  By region
-                </p>
-                <div className="mx-auto mt-1 h-[74px] w-[74px]">
-                  <MiniDonut />
-                </div>
-              </Fragment>
+              {/* real tiles */}
+              <Tile progress={scrollYProgress} slot={slots.k0} scatter={{ x: -470, y: -520, r: -10 }} reduce={reduce} className="">
+                <KpiTile meshClass="mesh-navy" dark label="Total Sales" value="₪68k" icon={<Wallet className="h-3.5 w-3.5" />} />
+              </Tile>
+              <Tile progress={scrollYProgress} slot={slots.k1} scatter={{ x: -540, y: -250, r: 7 }} reduce={reduce} className="">
+                <KpiTile meshClass="mesh-blue" label="Profit" value="₪12k" icon={<TrendingUp className="h-3.5 w-3.5" />} />
+              </Tile>
+              <Tile progress={scrollYProgress} slot={slots.k2} scatter={{ x: 540, y: -250, r: -7 }} reduce={reduce} className="">
+                <KpiTile meshClass="mesh-teal" label="Avg Order" value="₪1.4k" icon={<BarChart3 className="h-3.5 w-3.5" />} />
+              </Tile>
+              <Tile progress={scrollYProgress} slot={slots.k3} scatter={{ x: 470, y: -520, r: 10 }} reduce={reduce} className="">
+                <KpiTile meshClass="mesh-violet" label="Avg Profit" value="₪257" icon={<TrendingUp className="h-3.5 w-3.5" />} />
+              </Tile>
+              <Tile progress={scrollYProgress} slot={slots.area} scatter={{ x: -460, y: -90, r: -5 }} reduce={reduce} className="">
+                <ChartTile title="Revenue trajectory"><MiniArea /></ChartTile>
+              </Tile>
+              <Tile progress={scrollYProgress} slot={slots.bars} scatter={{ x: 540, y: -430, r: 8 }} reduce={reduce} className="">
+                <ChartTile title="By category"><MiniBars /></ChartTile>
+              </Tile>
+              <Tile progress={scrollYProgress} slot={slots.donut} scatter={{ x: 520, y: -80, r: -9 }} reduce={reduce} className="">
+                <ChartTile title="By region"><MiniDonut /></ChartTile>
+              </Tile>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

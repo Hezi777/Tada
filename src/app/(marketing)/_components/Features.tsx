@@ -240,11 +240,7 @@ export function Features() {
       <div className="container">
         {/* Heading */}
         <div className="mb-14 max-w-2xl">
-          <div className="eyebrow mb-5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[linear-gradient(135deg,#00327d,#22c55e)]" />
-            Features
-          </div>
-          <h2 className="text-4xl text-foreground sm:text-5xl">
+          <h2 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
             Zero friction. Pure insight.
           </h2>
           <p className="mt-5 text-lg leading-8 text-muted-foreground">
