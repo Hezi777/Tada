@@ -4,7 +4,9 @@ import { type Key, useCallback, useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   CalendarRange,
+  Check,
   Eye,
+  Pencil,
   EyeOff,
   Hash,
   LayoutPanelLeft,
@@ -611,6 +613,7 @@ export function Dashboard() {
   const kpiConfigs = useDashboardStore((snapshot) => snapshot.kpis);
   const fileName = useDashboardStore((snapshot) => snapshot.fileName);
   const [isManageViewsOpen, setIsManageViewsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -782,6 +785,30 @@ export function Dashboard() {
 
             <Button
               type="button"
+              onClick={() => setIsEditing((current) => !current)}
+              variant="outline"
+              aria-pressed={isEditing}
+              className={`h-10 rounded-full border px-4 text-sm font-semibold transition ${
+                isEditing
+                  ? "border-[var(--color-accent)] bg-[var(--color-accent-light)] text-[var(--color-accent)]"
+                  : "border-[var(--color-border)] bg-card text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
+              }`}
+            >
+              {isEditing ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Done
+                </>
+              ) : (
+                <>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </>
+              )}
+            </Button>
+
+            <Button
+              type="button"
               onClick={() => setManageViewsOpen((current) => !current)}
               className={`h-10 rounded-full px-4 text-sm font-semibold text-white transition ${
                 manageViewsOpen
@@ -943,7 +970,11 @@ export function Dashboard() {
                                 : "md:col-span-1 xl:col-span-4"
                         }
                       >
-                        <DashboardChartCard chart={chart} rows={rows} />
+                        <DashboardChartCard
+                          chart={chart}
+                          rows={rows}
+                          isEditing={isEditing}
+                        />
                       </div>
                     ))}
                   </div>

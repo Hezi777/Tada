@@ -125,6 +125,7 @@ function VerticalGradient({
 type DashboardChartCardProps = {
   chart: LayoutItem;
   rows: SerializedRow[];
+  isEditing?: boolean;
 };
 
 type ChartTooltipPoint = {
@@ -868,6 +869,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
 const DashboardChartCard = memo(function DashboardChartCard({
   chart,
   rows,
+  isEditing = false,
 }: DashboardChartCardProps) {
   const {
     attributes,
@@ -891,9 +893,13 @@ const DashboardChartCard = memo(function DashboardChartCard({
       <Card
         ref={setNodeRef}
         style={style}
-        className={`overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card p-0 shadow-premium transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-24px_rgba(25,28,30,0.18)] ${getCardMinHeightClass(
+        className={`overflow-hidden rounded-[20px] border bg-card p-0 shadow-premium transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-24px_rgba(25,28,30,0.18)] ${getCardMinHeightClass(
           chart,
-        )} ${isDragging ? "opacity-75" : ""}`}
+        )} ${
+          isEditing
+            ? "border-dashed border-[var(--color-accent)]/40"
+            : "border-[var(--color-border)]"
+        } ${isDragging ? "opacity-75" : ""}`}
         data-chart-card={chart.id}
       >
         <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-6 pb-0 pt-6">
@@ -914,46 +920,50 @@ const DashboardChartCard = memo(function DashboardChartCard({
             <Badge className="rounded-full border border-[var(--color-border)] bg-transparent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)] hover:bg-transparent">
               {chart.type}
             </Badge>
-            <ShadTooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                  aria-label={`Resize ${chart.title} (currently ${chart.size})`}
-                  className="h-7 w-7 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
-                  onClick={() => {
-                    const nextSize =
-                      chart.size === "small"
-                        ? "medium"
-                        : chart.size === "medium"
-                          ? "large"
-                          : "small";
-                    updateChart(chart.id, { size: nextSize });
-                  }}
-                >
-                  <Scaling className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Resize chart ({chart.size})</TooltipContent>
-            </ShadTooltip>
-            <ShadTooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  ref={setActivatorNodeRef}
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                  aria-label={`Drag to reorder ${chart.title}`}
-                  className="h-7 w-7 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
-                  {...attributes}
-                  {...listeners}
-                >
-                  <GripVertical className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Drag to reorder</TooltipContent>
-            </ShadTooltip>
+            {isEditing ? (
+              <>
+                <ShadTooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      type="button"
+                      aria-label={`Resize ${chart.title} (currently ${chart.size})`}
+                      className="h-7 w-7 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
+                      onClick={() => {
+                        const nextSize =
+                          chart.size === "small"
+                            ? "medium"
+                            : chart.size === "medium"
+                              ? "large"
+                              : "small";
+                        updateChart(chart.id, { size: nextSize });
+                      }}
+                    >
+                      <Scaling className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Resize chart ({chart.size})</TooltipContent>
+                </ShadTooltip>
+                <ShadTooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      ref={setActivatorNodeRef}
+                      variant="ghost"
+                      size="icon"
+                      type="button"
+                      aria-label={`Drag to reorder ${chart.title}`}
+                      className="h-7 w-7 cursor-grab rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] active:cursor-grabbing"
+                      {...attributes}
+                      {...listeners}
+                    >
+                      <GripVertical className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Drag to reorder</TooltipContent>
+                </ShadTooltip>
+              </>
+            ) : null}
           </div>
         </CardHeader>
         <CardContent className="px-6 pb-6 pt-4">
