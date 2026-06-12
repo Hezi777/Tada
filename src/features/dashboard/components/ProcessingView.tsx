@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { Check, Lightbulb, Loader2 } from "lucide-react";
 import { Card } from "@/shared/ui/card";
@@ -52,7 +54,7 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
   return (
     <div className="flex h-full flex-col items-center justify-center px-5 py-6">
       <div className="mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-        <Card className="rounded-[24px] border-0 bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
+        <Card className="rounded-[24px] border-0 bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
           <div className="inline-flex rounded-full bg-[rgba(0,50,125,0.08)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
             Generating Dashboard
           </div>
@@ -82,7 +84,7 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
           </Card>
         </Card>
 
-        <Card className="rounded-[24px] border-0 bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
+        <Card className="rounded-[24px] border-0 bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
           <div className="mb-8 flex items-center justify-center">
             <div className="relative inline-flex h-28 w-28 items-center justify-center">
               <div className="absolute inset-0 rounded-full bg-[rgba(0,50,125,0.08)]" />
@@ -103,7 +105,7 @@ export function ProcessingView({ onComplete, isReady }: ProcessingViewProps) {
                     : "bg-[var(--color-surface-muted)]"
                 } ${completedSteps.includes(index) ? "opacity-75" : ""} ${index > currentStep ? "opacity-50" : ""}`}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-card">
                   {completedSteps.includes(index) ? (
                     <Check className="h-4 w-4 text-[var(--color-accent)]" />
                   ) : index === currentStep ? (

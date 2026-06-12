@@ -26,6 +26,10 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { createClient } from "@/shared/lib/supabase/client";
 import { listDashboards } from "@/shared/lib/api";
+import {
+  languageCodeFromLabel,
+  persistLanguageCode,
+} from "@/features/dashboard/client/locale";
 
 type ThemeMode = "system" | "light" | "dark";
 type SettingsSection = "account" | "appearance" | "billing";
@@ -179,7 +183,7 @@ function ThemeOption({
       onClick={onClick}
       className={`relative rounded-[20px] border-2 p-3 text-left transition-all ${
         active
-          ? "border-[var(--color-accent)] bg-white shadow-[0_18px_40px_-30px_rgba(0,50,125,0.35)]"
+          ? "border-[var(--color-accent)] bg-card shadow-[0_18px_40px_-30px_rgba(0,50,125,0.35)]"
           : "border-transparent bg-[var(--color-surface-muted)] hover:border-[rgba(25,28,30,0.12)]"
       }`}
     >
@@ -281,12 +285,13 @@ export function SettingsPanel() {
       setUserMetadata(metadata);
       setFirstName(derivedName.firstName);
       setLastName(derivedName.lastName);
-      setLanguagePreference(
+      const storedLanguage =
         typeof metadata.language_preference === "string" &&
-          LANGUAGE_OPTIONS.includes(metadata.language_preference)
+        LANGUAGE_OPTIONS.includes(metadata.language_preference)
           ? metadata.language_preference
-          : LANGUAGE_OPTIONS[0],
-      );
+          : LANGUAGE_OPTIONS[0];
+      setLanguagePreference(storedLanguage);
+      persistLanguageCode(languageCodeFromLabel(storedLanguage));
       setAvatarUrl(
         typeof metadata.avatar_url === "string" ? metadata.avatar_url : null,
       );
@@ -475,7 +480,7 @@ export function SettingsPanel() {
         <div className="flex-1 space-y-8">
           <section
             ref={accountRef}
-            className="rounded-[24px] bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            className="rounded-[24px] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
           >
             <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -550,7 +555,7 @@ export function SettingsPanel() {
                 <Input
                   value={firstName}
                   onChange={(event) => setFirstName(event.target.value)}
-                  className="h-11 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-white px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
+                  className="h-11 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-card px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
                 />
               </div>
 
@@ -561,7 +566,7 @@ export function SettingsPanel() {
                 <Input
                   value={lastName}
                   onChange={(event) => setLastName(event.target.value)}
-                  className="h-11 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-white px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
+                  className="h-11 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-card px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
                 />
               </div>
 
@@ -582,10 +587,12 @@ export function SettingsPanel() {
                 </label>
                 <select
                   value={languagePreference}
-                  onChange={(event) =>
-                    setLanguagePreference(event.target.value)
-                  }
-                  className="h-11 w-full rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-white px-4 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(0,50,125,0.12)]"
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    setLanguagePreference(next);
+                    persistLanguageCode(languageCodeFromLabel(next));
+                  }}
+                  className="h-11 w-full rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-card px-4 text-sm text-foreground outline-none transition focus-visible:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(0,50,125,0.12)]"
                 >
                   {LANGUAGE_OPTIONS.map((option) => (
                     <option key={option} value={option}>
@@ -628,7 +635,7 @@ export function SettingsPanel() {
                   variant="outline"
                   onClick={() => setDeleteDialogOpen(true)}
                   disabled={isDeleting}
-                  className="h-10 rounded-full border border-transparent bg-white px-5 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
+                  className="h-10 rounded-full border border-transparent bg-card px-5 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
                 >
                   <Trash2 className="h-4 w-4" />
                   Delete account
@@ -639,7 +646,7 @@ export function SettingsPanel() {
 
           <section
             ref={appearanceRef}
-            className="rounded-[24px] bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            className="rounded-[24px] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
           >
             <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
               <Paintbrush className="h-5 w-5 text-[var(--color-accent)]" />
@@ -688,7 +695,7 @@ export function SettingsPanel() {
 
           <section
             ref={billingRef}
-            className="rounded-[24px] bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            className="rounded-[24px] bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>

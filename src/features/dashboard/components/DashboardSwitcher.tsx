@@ -67,13 +67,13 @@ export function DashboardSwitcher({
           variant="outline"
           disabled={disabled}
           className={cn(
-            "h-9 max-w-[240px] gap-2 rounded-full border border-transparent bg-[var(--color-surface-muted)] px-3 text-[12px] font-medium text-[var(--color-text-secondary)] shadow-none transition-colors hover:text-[var(--color-text-primary)] data-[state=open]:bg-white data-[state=open]:text-[var(--color-text-primary)]",
+            "h-9 max-w-[240px] gap-2 rounded-full border border-transparent bg-[var(--color-surface-muted)] px-3 text-[12px] font-medium text-[var(--color-text-secondary)] shadow-none transition-colors hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 data-[state=open]:bg-card data-[state=open]:text-[var(--color-text-primary)]",
             className,
             triggerClassName,
           )}
         >
           {activeDashboardIcon ? (
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white text-[var(--color-accent)]">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-card text-[var(--color-accent)]">
               {React.createElement(getIconComponent(activeDashboardIcon), {
                 className: "h-3.5 w-3.5",
               })}
@@ -91,7 +91,7 @@ export function DashboardSwitcher({
         align="end"
         sideOffset={8}
         className={cn(
-          "w-[340px] rounded-[20px] border border-transparent bg-white p-0 shadow-[0_32px_64px_-42px_rgba(25,28,30,0.18)]",
+          "w-[340px] rounded-[20px] border border-transparent bg-card p-0 shadow-[0_32px_64px_-42px_rgba(25,28,30,0.18)]",
           contentClassName,
         )}
       >

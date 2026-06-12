@@ -46,7 +46,7 @@ export function ConfirmGenerationStep({
 
   return (
     <div className="flex h-full flex-col items-center justify-center overflow-y-auto px-5 py-6">
-      <Card className="w-full max-w-xl rounded-[24px] border-0 bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
+      <Card className="w-full max-w-xl rounded-[24px] border-0 bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(0,50,125,0.1)]">
             <FileSpreadsheet className="h-5 w-5 text-[var(--color-accent)]" />

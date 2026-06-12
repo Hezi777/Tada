@@ -26,6 +26,7 @@ import {
 } from "@/shared/lib/api";
 import { ConfirmGenerationStep } from "@/features/dashboard/components/ConfirmGenerationStep";
 import type { DatasetTopic, UploadProfileResponse } from "@/shared/contracts";
+import { useToast } from "@/shared/hooks/use-toast";
 
 type DashboardPageState =
   | "loading"
@@ -58,7 +59,7 @@ function DashboardUploadEmptyState({
   errorMessage,
 }: {
   onFileUpload: (file: File) => void;
-  errorMessage: string | null;
+  errorMessage?: string | null;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -70,7 +71,15 @@ function DashboardUploadEmptyState({
       />
 
       <div className="flex flex-1 items-center justify-center px-5 pb-6">
-        <Card className="w-full max-w-2xl rounded-[24px] border-0 bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
+        <Card className="w-full max-w-2xl rounded-[24px] border-0 bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
+          {errorMessage ? (
+            <div
+              role="alert"
+              className="mx-auto mb-6 w-full max-w-xl rounded-2xl bg-destructive/10 px-4 py-3 text-center text-sm font-medium capitalize text-destructive"
+            >
+              {errorMessage}
+            </div>
+          ) : null}
           <div className="mx-auto flex max-w-xl flex-col items-center text-center">
             <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[20px] bg-[rgba(0,50,125,0.08)]">
               <Image
@@ -85,15 +94,9 @@ function DashboardUploadEmptyState({
               Upload your first dataset
             </h2>
             <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]">
-              Add a CSV, Excel, or PDF file and TADA will profile your data and
+              Add a CSV, Excel, or PDF file and Tada will profile your data and
               generate your dashboard, KPIs, and charts.
             </p>
-
-            {errorMessage ? (
-              <div className="mt-6 w-full rounded-[16px] border border-[rgba(220,38,38,0.2)] bg-[rgba(220,38,38,0.06)] px-4 py-3 text-sm font-medium text-[#dc2626]">
-                {errorMessage}
-              </div>
-            ) : null}
 
             <Button
               type="button"
@@ -149,13 +152,14 @@ function DashboardLoadingState() {
 }
 
 export default function DashboardPage() {
+  const { toast } = useToast();
   const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
   const charts = useDashboardStore((snapshot) => snapshot.charts);
   const activeDashboardId = useDashboardStore((s) => s.activeDashboardId);
   const [pageState, setPageState] = useState<DashboardPageState>("loading");
   const [isUploadReady, setIsUploadReady] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const lastPersistedChartsRef = useRef<string | null>(null);
   const isHydratingRef = useRef(false);
 
@@ -198,11 +202,16 @@ export default function DashboardPage() {
         setPageState("empty");
       } catch (error) {
         if (cancelled) return;
-        setLoadError(
+        const message =
           error instanceof Error && error.message
             ? error.message.replace(/_/g, " ")
-            : "Unable to load your dashboard.",
-        );
+            : "Unable to load your dashboard.";
+        setLoadError(message);
+        toast({
+          variant: "destructive",
+          title: "Couldn't load dashboard",
+          description: message,
+        });
         clearActiveDashboard();
         resetDashboardStore();
         setPageState("empty");
@@ -216,7 +225,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (!datasetId) {
@@ -273,15 +282,20 @@ export default function DashboardPage() {
         setPageState("confirm");
       } catch (error) {
         resetDashboardStore();
-        setUploadError(
+        const message =
           error instanceof Error && error.message
             ? error.message.replace(/_/g, " ")
-            : "Upload failed. Check the API server and try again.",
-        );
+            : "Upload failed. Check the API server and try again.";
+        setUploadError(message);
+        toast({
+          variant: "destructive",
+          title: "Upload failed",
+          description: message,
+        });
         setPageState("empty");
       }
     },
-    [activeDashboardId],
+    [activeDashboardId, toast],
   );
 
   const handleConfirmGeneration = useCallback(
@@ -305,18 +319,23 @@ export default function DashboardPage() {
         setIsUploadReady(true);
       } catch (error) {
         resetDashboardStore();
-        setUploadError(
+        const message =
           error instanceof Error && error.message
             ? error.message.replace(/_/g, " ")
-            : "Dashboard generation failed. Try again.",
-        );
+            : "Dashboard generation failed. Try again.";
+        setUploadError(message);
+        toast({
+          variant: "destructive",
+          title: "Generation failed",
+          description: message,
+        });
         setPageState("empty");
       } finally {
         isHydratingRef.current = false;
         setIsGenerating(false);
       }
     },
-    [profiledUpload],
+    [profiledUpload, toast],
   );
 
   const dashboardContent = useMemo(() => {
