@@ -14,11 +14,11 @@ const buttonVariants = cva(
         destructive:
           "border border-[rgba(220,38,38,0.3)] bg-[rgba(220,38,38,0.08)] text-[#dc2626] hover:bg-[rgba(220,38,38,0.12)]",
         outline:
-          "border border-[rgba(25,28,30,0.12)] bg-white text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]",
+          "border border-border bg-card text-foreground hover:bg-[var(--color-surface-muted)] hover:text-foreground",
         secondary:
-          "bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-subtle)]",
+          "bg-[var(--color-surface-muted)] text-foreground hover:bg-[var(--color-surface-subtle)]",
         ghost:
-          "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]",
+          "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         hero: "gradient-primary text-primary-foreground shadow-glow hover:-translate-y-0.5 hover:shadow-[0_24px_64px_-28px_hsl(var(--primary)/0.52)] active:translate-y-0 active:scale-[0.99]",
       },
