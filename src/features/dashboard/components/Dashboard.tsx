@@ -235,11 +235,18 @@ const BIDI_MARKS = /[⁦⁧⁨⁩]/g;
 /** Pick a KPI value font size that keeps long values from overflowing. */
 function kpiValueSizeClass(value: string | number): string {
   const visibleLength = String(value).replace(BIDI_MARKS, "").length;
-  if (visibleLength > 16) return "text-[16px]";
-  if (visibleLength > 12) return "text-[20px]";
-  if (visibleLength > 9) return "text-[26px]";
-  return "text-[34px]";
+  if (visibleLength > 16) return "text-xl sm:text-2xl";
+  if (visibleLength > 12) return "text-2xl sm:text-3xl";
+  if (visibleLength > 9) return "text-3xl sm:text-4xl";
+  return "text-4xl sm:text-5xl";
 }
+
+/** Non-primary KPI cards cycle through these soft mesh surfaces. */
+const SECONDARY_MESH_CLASSES = [
+  "mesh-blue",
+  "mesh-teal",
+  "mesh-violet",
+] as const;
 
 function KpiCard({
   icon: Icon,
@@ -248,6 +255,7 @@ function KpiCard({
   description,
   eyebrow,
   isPrimary = false,
+  meshClassName,
 }: {
   key?: Key;
   icon: LucideIcon;
@@ -256,30 +264,31 @@ function KpiCard({
   description: string;
   eyebrow: string;
   isPrimary?: boolean;
+  meshClassName: string;
 }) {
   const displayValue = formatMetric(value);
 
   return (
     <Card
-      className={`dashboard-hover relative overflow-hidden rounded-[20px] ${
+      className={`dashboard-hover relative overflow-hidden rounded-[20px] border-0 shadow-premium ${meshClassName} ${
         isPrimary
-          ? "border-0 bg-[var(--color-accent)] text-white"
-          : "border border-[var(--color-border)] bg-card"
+          ? "text-white"
+          : "border border-[var(--color-border)] text-[var(--color-text-primary)]"
       }`}
     >
-      <CardContent className="relative flex min-h-[176px] flex-col justify-between overflow-hidden p-6">
+      <CardContent className="relative flex min-h-[184px] flex-col justify-between overflow-hidden p-6">
         <div className="flex items-start justify-between gap-4">
           <div
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
               isPrimary
                 ? "bg-white/10 text-white"
-                : "bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]"
+                : "bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)] dark:bg-white/10"
             }`}
           >
-            <Icon className="h-5 w-5" strokeWidth={2} />
+            <Icon className="h-5 w-5" strokeWidth={2.25} />
           </div>
           <p
-            className={`truncate text-sm font-medium ${
+            className={`truncate text-sm font-semibold ${
               isPrimary ? "text-white/70" : "text-[var(--color-text-secondary)]"
             }`}
           >
@@ -289,7 +298,7 @@ function KpiCard({
 
         <div className="relative z-10 mt-4 min-w-0">
           <div
-            className={`truncate font-display font-extrabold leading-tight tracking-[-0.04em] tabular-nums ${kpiValueSizeClass(
+            className={`display-number truncate ${kpiValueSizeClass(
               displayValue,
             )} ${isPrimary ? "text-white" : "text-[var(--color-text-primary)]"}`}
           >
@@ -320,7 +329,9 @@ function KpiCard({
         <Icon
           strokeWidth={1.5}
           className={`pointer-events-none absolute -bottom-5 -right-5 h-24 w-24 ${
-            isPrimary ? "text-white/10" : "text-[rgba(0,50,125,0.05)]"
+            isPrimary
+              ? "text-white/10"
+              : "text-[rgba(0,50,125,0.06)] dark:text-white/[0.04]"
           }`}
         />
       </CardContent>
@@ -739,10 +750,10 @@ export function Dashboard() {
       <>
         <div className="flex shrink-0 flex-col gap-4 px-5 pb-5 pt-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
-            <div className="font-display text-[28px] font-extrabold tracking-[-0.04em] text-[var(--color-text-primary)]">
+            <div className="font-display text-[32px] font-black tracking-[-0.045em] text-[var(--color-text-primary)] sm:text-[36px]">
               {title}
             </div>
-            <p className="mt-1 max-w-[52rem] truncate text-sm text-[var(--color-text-secondary)]">
+            <p className="mt-1.5 max-w-[52rem] truncate text-sm text-[var(--color-text-secondary)]">
               {subtitle}
             </p>
           </div>
@@ -841,7 +852,7 @@ export function Dashboard() {
           />
 
           <div className="grid shrink-0 grid-cols-1 gap-5 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-4">
-            {kpiCards.map((card) => (
+            {kpiCards.map((card, index) => (
               <KpiCard
                 key={card.id}
                 icon={card.icon}
@@ -850,6 +861,13 @@ export function Dashboard() {
                 description={card.description}
                 eyebrow={card.eyebrow}
                 isPrimary={card.isPrimary}
+                meshClassName={
+                  card.isPrimary
+                    ? "mesh-navy"
+                    : SECONDARY_MESH_CLASSES[
+                        index % SECONDARY_MESH_CLASSES.length
+                      ]
+                }
               />
             ))}
           </div>
