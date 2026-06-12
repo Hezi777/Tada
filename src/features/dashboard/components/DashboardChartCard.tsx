@@ -58,6 +58,11 @@ const CHART_COLOR = DASHBOARD_COLORS.primary;
 const CHART_GRID_COLOR = DASHBOARD_COLORS.chartGrid;
 const CHART_AXIS_COLOR = DASHBOARD_COLORS.chartAxis;
 
+/** Shared cartesian axis treatment so margins/width line up across charts. */
+const Y_AXIS_WIDTH = 60;
+const CHART_ANIMATION_DURATION = 400;
+const CHART_ANIMATION_EASING = "ease-out";
+
 const donutPalette = [
   "#00327D",
   "#1C4D9E",
@@ -351,7 +356,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             tickLine={false}
             fontSize={11}
             tickMargin={10}
-            width={60}
+            width={Y_AXIS_WIDTH}
             tickFormatter={(value: number) =>
               formatAxisValue(value, isCurrency)
             }
@@ -378,6 +383,9 @@ const DashboardChartContent = memo(function DashboardChartContent({
               stroke: "#ffffff",
               strokeWidth: 3,
             }}
+            isAnimationActive
+            animationDuration={CHART_ANIMATION_DURATION}
+            animationEasing={CHART_ANIMATION_EASING}
           />
         </AreaChart>
       </ChartContainer>
@@ -415,7 +423,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             tickLine={false}
             fontSize={11}
             tickMargin={10}
-            width={60}
+            width={Y_AXIS_WIDTH}
             tickFormatter={(value: number) =>
               formatAxisValue(value, xIsCurrency)
             }
@@ -429,7 +437,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             tickLine={false}
             fontSize={11}
             tickMargin={10}
-            width={60}
+            width={Y_AXIS_WIDTH}
             tickFormatter={(value: number) =>
               formatAxisValue(value, yIsCurrency)
             }
@@ -446,7 +454,14 @@ const DashboardChartContent = memo(function DashboardChartContent({
               />
             }
           />
-          <Scatter data={series} fill={CHART_COLOR} fillOpacity={0.84} />
+          <Scatter
+            data={series}
+            fill={CHART_COLOR}
+            fillOpacity={0.84}
+            isAnimationActive
+            animationDuration={CHART_ANIMATION_DURATION}
+            animationEasing={CHART_ANIMATION_EASING}
+          />
         </ScatterChart>
       </ChartContainer>
     );
@@ -484,6 +499,9 @@ const DashboardChartContent = memo(function DashboardChartContent({
             activeShape={(props: { outerRadius?: number | string }) => (
               <Sector {...props} outerRadius={Number(props.outerRadius) + 4} />
             )}
+            isAnimationActive
+            animationDuration={CHART_ANIMATION_DURATION}
+            animationEasing={CHART_ANIMATION_EASING}
           >
             {series.map((_entry, index) => (
               <Cell
@@ -495,29 +513,40 @@ const DashboardChartContent = memo(function DashboardChartContent({
             ))}
             <Label
               position="center"
-              content={() => (
-                <text
-                  x="50%"
-                  y="50%"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                >
-                  <tspan
+              content={() => {
+                const totalText = formatAxisValue(
+                  total,
+                  isCurrencyMetric(chart),
+                );
+                // Long abbreviated totals (e.g. "₪1.2M") need a smaller
+                // font so they stay inside the donut's inner radius.
+                const valueFontSize = totalText.length > 7 ? "16px" : "20px";
+
+                return (
+                  <text
                     x="50%"
-                    dy="-0.3em"
-                    className="fill-[var(--color-text-primary)] text-[20px] font-bold"
+                    y="50%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
                   >
-                    {formatMetric(total, isCurrencyMetric(chart))}
-                  </tspan>
-                  <tspan
-                    x="50%"
-                    dy="1.5em"
-                    className="fill-[var(--color-text-muted)] text-[10px] font-semibold uppercase tracking-[0.14em]"
-                  >
-                    {totalLabel}
-                  </tspan>
-                </text>
-              )}
+                    <tspan
+                      x="50%"
+                      dy="-0.3em"
+                      className="fill-[var(--color-text-primary)] font-bold"
+                      style={{ fontSize: valueFontSize }}
+                    >
+                      {totalText}
+                    </tspan>
+                    <tspan
+                      x="50%"
+                      dy="1.5em"
+                      className="fill-[var(--color-text-muted)] text-[10px] font-semibold uppercase tracking-[0.14em]"
+                    >
+                      {totalLabel}
+                    </tspan>
+                  </text>
+                );
+              }}
             />
           </Pie>
           <ChartTooltip content={<ChartTooltipContent labelKey="label" />} />
@@ -601,6 +630,9 @@ const DashboardChartContent = memo(function DashboardChartContent({
             fill={barFill}
             radius={[0, 10, 10, 0]}
             activeBar={{ fill: barActiveFill }}
+            isAnimationActive
+            animationDuration={CHART_ANIMATION_DURATION}
+            animationEasing={CHART_ANIMATION_EASING}
           />
         </BarChart>
       </ChartContainer>
@@ -642,7 +674,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
           tickLine={false}
           fontSize={11}
           tickMargin={10}
-          width={44}
+          width={Y_AXIS_WIDTH}
           tickFormatter={(value: number) => formatAxisValue(value, isCurrency)}
           stroke={CHART_AXIS_COLOR}
         />
@@ -659,6 +691,9 @@ const DashboardChartContent = memo(function DashboardChartContent({
           fill={barFill}
           radius={[10, 10, 0, 0]}
           activeBar={{ fill: barActiveFill }}
+          isAnimationActive
+          animationDuration={CHART_ANIMATION_DURATION}
+          animationEasing={CHART_ANIMATION_EASING}
         />
       </BarChart>
     </ChartContainer>
