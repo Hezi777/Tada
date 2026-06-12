@@ -575,6 +575,27 @@ const DashboardChartContent = memo(function DashboardChartContent({
                 />
               ))}
             </defs>
+            {/* Faint full "track" ring behind the segments, so the donut
+                always reads as a complete circle (Panze-style). */}
+            <Pie
+              data={[{ value: 1 }]}
+              dataKey="value"
+              nameKey="label"
+              cornerRadius={6}
+              innerRadius="58%"
+              outerRadius="85%"
+              startAngle={90}
+              endAngle={450}
+              isAnimationActive={false}
+              legendType="none"
+              tooltipType="none"
+            >
+              <Cell
+                fill="var(--color-surface-muted)"
+                stroke="none"
+                className="pointer-events-none"
+              />
+            </Pie>
             <Pie
               data={series}
               dataKey="value"
@@ -624,7 +645,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
                       <tspan
                         x="50%"
                         dy="-0.3em"
-                        className="fill-[var(--color-text-primary)] font-bold"
+                        className="display-number fill-[var(--color-text-primary)]"
                         style={{ fontSize: valueFontSize }}
                       >
                         {totalText}
@@ -870,14 +891,14 @@ const DashboardChartCard = memo(function DashboardChartCard({
       <Card
         ref={setNodeRef}
         style={style}
-        className={`overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card p-0 shadow-[0_1px_2px_rgba(25,28,30,0.04)] transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-24px_rgba(25,28,30,0.18)] ${getCardMinHeightClass(
+        className={`overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card p-0 shadow-premium transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-24px_rgba(25,28,30,0.18)] ${getCardMinHeightClass(
           chart,
         )} ${isDragging ? "opacity-75" : ""}`}
         data-chart-card={chart.id}
       >
         <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-6 pb-0 pt-6">
           <div className="min-w-0">
-            <h3 className="truncate font-display text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-text-primary)]">
+            <h3 className="truncate font-display text-[17px] font-extrabold tracking-[-0.01em] text-[var(--color-text-primary)]">
               {chart.title}
             </h3>
             <p className="mt-1 line-clamp-1 text-[12px] text-[var(--color-text-secondary)]">
