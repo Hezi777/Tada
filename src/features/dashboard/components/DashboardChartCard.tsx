@@ -61,18 +61,66 @@ const Y_AXIS_WIDTH = 60;
 const CHART_ANIMATION_DURATION = 400;
 const CHART_ANIMATION_EASING = "ease-out";
 
-const donutPalette = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-  "#C7D6EE",
+/** Royal-Blue brand gradient (top brighter, bottom deeper). */
+const GRADIENT_PRIMARY_STOPS: [string, string] = ["#2f6df6", "#00327d"];
+
+/** Teal -> green "positive highlight" gradient for the standout bar / area. */
+const GRADIENT_HIGHLIGHT_STOPS: [string, string] = ["#14b8a6", "#22c55e"];
+
+/** Multi-series order for donuts and grouped bars, each rendered as a soft
+ * vertical gradient (brighter top -> deeper bottom of the same hue). */
+const MULTI_SERIES_STOPS: Array<[string, string]> = [
+  ["#2f6df6", "#00327d"],
+  ["#5eead4", "#14b8a6"],
+  ["#86efac", "#22c55e"],
+  ["#a5b4fc", "#6366f1"],
+  ["#7dd3fc", "#38bdf8"],
 ];
 
-/** Nexus signature: the tallest bar gets the full accent, the rest get a
- * lighter tint of it so the chart highlights the standout value. */
-const BAR_TINT_COLOR = "#C7D6EE";
+const donutPalette = MULTI_SERIES_STOPS.map(([, base]) => base);
+
+/** Nexus signature: the tallest/standout series gets a rich gradient + glow,
+ * the rest render as light "ghost" siblings. Uses the theme-aware accent
+ * tint so it stays subtle in both light and dark mode. */
+const BAR_TINT_COLOR = "var(--color-accent-light)";
+
+/** Builds a stable, chart-scoped gradient/filter id so multiple charts on
+ * the same page never collide (SVG ids are global to the document). */
+function gradientId(chartId: string, name: string): string {
+  return `chart-${chartId}-${name}`;
+}
+
+/** Soft drop-shadow glow filter, reusable behind highlighted bars, the area
+ * stroke, and scatter dots. Kept subtle so it reads on light + dark cards. */
+function GlowFilter({ id, color }: { id: string; color: string }) {
+  return (
+    <filter id={id} x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow
+        dx="0"
+        dy="0"
+        stdDeviation="4"
+        floodColor={color}
+        floodOpacity="0.45"
+      />
+    </filter>
+  );
+}
+
+/** Vertical linear gradient, brighter stop on top. */
+function VerticalGradient({
+  id,
+  stops,
+}: {
+  id: string;
+  stops: [string, string];
+}) {
+  return (
+    <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor={stops[0]} />
+      <stop offset="100%" stopColor={stops[1]} />
+    </linearGradient>
+  );
+}
 
 type DashboardChartCardProps = {
   chart: LayoutItem;
@@ -322,6 +370,9 @@ const DashboardChartContent = memo(function DashboardChartContent({
 
     const chartConfig = buildValueChartConfig(metricLabel(chart));
     const isCurrency = isCurrencyMetric(chart);
+    const fillGradientId = gradientId(chart.id, "area-fill");
+    const strokeGradientId = gradientId(chart.id, "area-stroke");
+    const glowId = gradientId(chart.id, "area-glow");
 
     return (
       <ChartContainer
@@ -333,10 +384,23 @@ const DashboardChartContent = memo(function DashboardChartContent({
           margin={{ top: 12, right: 12, left: 0, bottom: 4 }}
         >
           <defs>
-            <linearGradient id={`area-${chart.id}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={CHART_COLOR} stopOpacity={0.18} />
-              <stop offset="100%" stopColor={CHART_COLOR} stopOpacity={0} />
+            <linearGradient id={fillGradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop
+                offset="0%"
+                stopColor={GRADIENT_HIGHLIGHT_STOPS[1]}
+                stopOpacity={0.22}
+              />
+              <stop
+                offset="100%"
+                stopColor={GRADIENT_PRIMARY_STOPS[0]}
+                stopOpacity={0}
+              />
             </linearGradient>
+            <linearGradient id={strokeGradientId} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={GRADIENT_PRIMARY_STOPS[0]} />
+              <stop offset="100%" stopColor={GRADIENT_HIGHLIGHT_STOPS[1]} />
+            </linearGradient>
+            <GlowFilter id={glowId} color={GRADIENT_HIGHLIGHT_STOPS[1]} />
           </defs>
           <CartesianGrid
             vertical={false}
@@ -375,13 +439,14 @@ const DashboardChartContent = memo(function DashboardChartContent({
           <Area
             type="monotone"
             dataKey="value"
-            stroke={CHART_COLOR}
+            stroke={`url(#${strokeGradientId})`}
             strokeWidth={3}
-            fill={`url(#area-${chart.id})`}
+            filter={`url(#${glowId})`}
+            fill={`url(#${fillGradientId})`}
             dot={false}
             activeDot={{
               r: 5,
-              fill: CHART_COLOR,
+              fill: GRADIENT_HIGHLIGHT_STOPS[1],
               stroke: "var(--color-surface)",
               strokeWidth: 3,
             }}
@@ -405,6 +470,8 @@ const DashboardChartContent = memo(function DashboardChartContent({
     const yLabel = chart.columns[1] ?? "Y";
     const xIsCurrency = looksLikeCurrencyColumn(xLabel);
     const yIsCurrency = looksLikeCurrencyColumn(yLabel);
+    const dotGradientId = gradientId(chart.id, "scatter-dot");
+    const glowId = gradientId(chart.id, "scatter-glow");
 
     return (
       <ChartContainer
@@ -412,6 +479,13 @@ const DashboardChartContent = memo(function DashboardChartContent({
         className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-card`}
       >
         <ScatterChart margin={{ top: 12, right: 12, left: 0, bottom: 4 }}>
+          <defs>
+            <radialGradient id={dotGradientId} cx="35%" cy="35%" r="65%">
+              <stop offset="0%" stopColor={GRADIENT_PRIMARY_STOPS[0]} />
+              <stop offset="100%" stopColor={GRADIENT_PRIMARY_STOPS[1]} />
+            </radialGradient>
+            <GlowFilter id={glowId} color={GRADIENT_PRIMARY_STOPS[0]} />
+          </defs>
           <CartesianGrid
             vertical={false}
             stroke={CHART_GRID_COLOR}
@@ -458,8 +532,10 @@ const DashboardChartContent = memo(function DashboardChartContent({
           />
           <Scatter
             data={series}
-            fill={CHART_COLOR}
-            fillOpacity={0.84}
+            fill={`url(#${dotGradientId})`}
+            stroke="var(--color-surface)"
+            strokeWidth={1}
+            filter={`url(#${glowId})`}
             isAnimationActive
             animationDuration={CHART_ANIMATION_DURATION}
             animationEasing={CHART_ANIMATION_EASING}
@@ -490,11 +566,21 @@ const DashboardChartContent = memo(function DashboardChartContent({
           className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-card`}
         >
           <PieChart>
+            <defs>
+              {MULTI_SERIES_STOPS.map((stops, index) => (
+                <VerticalGradient
+                  key={`${chart.id}-donut-gradient-${index}`}
+                  id={gradientId(chart.id, `donut-${index}`)}
+                  stops={stops}
+                />
+              ))}
+            </defs>
             <Pie
               data={series}
               dataKey="value"
               nameKey="label"
               paddingAngle={3}
+              cornerRadius={6}
               innerRadius="58%"
               outerRadius="85%"
               activeIndex={activeSlice}
@@ -515,7 +601,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
               {series.map((_entry, index) => (
                 <Cell
                   key={`${chart.id}-slice-${index}`}
-                  fill={donutPalette[index % donutPalette.length]}
+                  fill={`url(#${gradientId(chart.id, `donut-${index % MULTI_SERIES_STOPS.length}`)})`}
                   stroke="var(--color-surface)"
                   strokeWidth={2}
                 />
@@ -567,7 +653,11 @@ const DashboardChartContent = memo(function DashboardChartContent({
               <span
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{
-                  backgroundColor: donutPalette[index % donutPalette.length],
+                  background: `linear-gradient(180deg, ${
+                    MULTI_SERIES_STOPS[index % MULTI_SERIES_STOPS.length][0]
+                  }, ${
+                    MULTI_SERIES_STOPS[index % MULTI_SERIES_STOPS.length][1]
+                  })`,
                 }}
               />
               <span className="text-[var(--color-text-secondary)]">
@@ -588,6 +678,8 @@ const DashboardChartContent = memo(function DashboardChartContent({
   const isCurrency = isCurrencyMetric(chart);
   const barActiveFill = DASHBOARD_COLORS.secondary;
   const maxValue = Math.max(...series.map((entry) => entry.value));
+  const highlightGradientId = gradientId(chart.id, "bar-highlight");
+  const highlightGlowId = gradientId(chart.id, "bar-glow");
 
   if (isHorizontal) {
     // Long category labels read better on horizontal bars (BI rule
@@ -602,6 +694,22 @@ const DashboardChartContent = memo(function DashboardChartContent({
           layout="vertical"
           margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
         >
+          <defs>
+            <linearGradient
+              id={highlightGradientId}
+              x1="0"
+              y1="0"
+              x2="1"
+              y2="0"
+            >
+              <stop offset="0%" stopColor={GRADIENT_HIGHLIGHT_STOPS[1]} />
+              <stop offset="100%" stopColor={GRADIENT_HIGHLIGHT_STOPS[0]} />
+            </linearGradient>
+            <GlowFilter
+              id={highlightGlowId}
+              color={GRADIENT_HIGHLIGHT_STOPS[0]}
+            />
+          </defs>
           <CartesianGrid
             horizontal={false}
             stroke={CHART_GRID_COLOR}
@@ -645,12 +753,16 @@ const DashboardChartContent = memo(function DashboardChartContent({
             animationDuration={CHART_ANIMATION_DURATION}
             animationEasing={CHART_ANIMATION_EASING}
           >
-            {series.map((entry, index) => (
-              <Cell
-                key={`${chart.id}-bar-${index}`}
-                fill={entry.value === maxValue ? CHART_COLOR : BAR_TINT_COLOR}
-              />
-            ))}
+            {series.map((entry, index) => {
+              const isMax = entry.value === maxValue;
+              return (
+                <Cell
+                  key={`${chart.id}-bar-${index}`}
+                  fill={isMax ? `url(#${highlightGradientId})` : BAR_TINT_COLOR}
+                  filter={isMax ? `url(#${highlightGlowId})` : undefined}
+                />
+              );
+            })}
           </Bar>
         </BarChart>
       </ChartContainer>
@@ -666,6 +778,16 @@ const DashboardChartContent = memo(function DashboardChartContent({
         data={series}
         margin={{ top: 12, right: 12, left: 0, bottom: 4 }}
       >
+        <defs>
+          <linearGradient id={highlightGradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={GRADIENT_HIGHLIGHT_STOPS[0]} />
+            <stop offset="100%" stopColor={GRADIENT_HIGHLIGHT_STOPS[1]} />
+          </linearGradient>
+          <GlowFilter
+            id={highlightGlowId}
+            color={GRADIENT_HIGHLIGHT_STOPS[0]}
+          />
+        </defs>
         <CartesianGrid
           vertical={false}
           stroke={CHART_GRID_COLOR}
@@ -706,12 +828,16 @@ const DashboardChartContent = memo(function DashboardChartContent({
           animationDuration={CHART_ANIMATION_DURATION}
           animationEasing={CHART_ANIMATION_EASING}
         >
-          {series.map((entry, index) => (
-            <Cell
-              key={`${chart.id}-bar-${index}`}
-              fill={entry.value === maxValue ? CHART_COLOR : BAR_TINT_COLOR}
-            />
-          ))}
+          {series.map((entry, index) => {
+            const isMax = entry.value === maxValue;
+            return (
+              <Cell
+                key={`${chart.id}-bar-${index}`}
+                fill={isMax ? `url(#${highlightGradientId})` : BAR_TINT_COLOR}
+                filter={isMax ? `url(#${highlightGlowId})` : undefined}
+              />
+            );
+          })}
         </Bar>
       </BarChart>
     </ChartContainer>
