@@ -351,7 +351,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             tickLine={false}
             fontSize={11}
             tickMargin={10}
-            width={44}
+            width={60}
             tickFormatter={(value: number) =>
               formatAxisValue(value, isCurrency)
             }
@@ -415,7 +415,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             tickLine={false}
             fontSize={11}
             tickMargin={10}
-            width={44}
+            width={60}
             tickFormatter={(value: number) =>
               formatAxisValue(value, xIsCurrency)
             }
@@ -429,7 +429,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             tickLine={false}
             fontSize={11}
             tickMargin={10}
-            width={44}
+            width={60}
             tickFormatter={(value: number) =>
               formatAxisValue(value, yIsCurrency)
             }
