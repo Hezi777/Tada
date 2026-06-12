@@ -72,17 +72,25 @@ After generation, the dataset is distilled into compact text chunks (overview, p
 
 ## Screenshots
 
+### Dashboard
+
+![Dashboard: left sidebar navigation, KPI cards, and a bento grid of charts on a light canvas](docs/screenshots/05-dashboard.png)
+
+### Dashboard - Dark Mode
+
+![The same dashboard in dark mode, fully tokenized across sidebar, cards, and charts](docs/screenshots/06-dashboard-dark.png)
+
 ### Landing Page - Hero
 
-![Landing hero: headline, CTA buttons, and an animated dashboard mockup on the right](docs/screenshots/01-landing-hero.png)
+![Landing hero: left-aligned headline, CTA buttons, and a framed dashboard preview on the right](docs/screenshots/01-landing-hero.png)
 
 ### Landing Page - Features Section
 
-![Features section: "Zero friction. Pure insight." heading with scroll-stacked feature cards](docs/screenshots/02-landing-features.png)
+![Features section: "Zero friction. Pure insight." heading over an asymmetric bento grid of feature cards](docs/screenshots/02-landing-features.png)
 
-### Landing Page - How it Works & Smart Insights
+### Landing Page - How it Works
 
-![Smart Insights feature card with trend line and anomaly badge, transitioning into the three-step How It Works section](docs/screenshots/03-landing-how-it-works.png)
+![Three-step "How it works" section with numbered markers on a connecting line](docs/screenshots/03-landing-how-it-works.png)
 
 ### Authentication - Sign In
 
