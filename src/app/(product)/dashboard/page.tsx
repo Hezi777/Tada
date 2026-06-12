@@ -106,7 +106,7 @@ function DashboardUploadEmptyState({
             </Button>
 
             <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
-              CSV, Excel, or PDF · up to 100MB
+              CSV, Excel, or PDF · up to 10MB
             </p>
 
             <Input
