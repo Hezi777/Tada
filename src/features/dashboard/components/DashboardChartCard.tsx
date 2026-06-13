@@ -182,7 +182,7 @@ function formatAxisValue(
     return ltrIsolate(`${month}/${year.slice(2)}`);
   }
 
-  return truncateLabel(value, 13);
+  return truncateLabel(value, 18);
 }
 
 function buildValueChartConfig(label: string): ChartPrimitiveConfig {
@@ -688,7 +688,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
                 }}
               />
               <span className="text-[var(--color-text-secondary)]">
-                {truncateLabel(entry.label, 16)}
+                {truncateLabel(entry.label, 22)}
               </span>
               <span className="font-medium tabular-nums text-[var(--color-text-primary)]">
                 {formatMetric(entry.value, donutCurrency)}
@@ -760,8 +760,8 @@ const DashboardChartContent = memo(function DashboardChartContent({
             tickLine={false}
             fontSize={11}
             tickMargin={8}
-            width={104}
-            tickFormatter={(value: string) => truncateLabel(value, 16)}
+            width={128}
+            tickFormatter={(value: string) => truncateLabel(value, 22)}
             stroke={CHART_AXIS_COLOR}
           />
           <ChartTooltip
@@ -946,10 +946,10 @@ const DashboardChartCard = memo(function DashboardChartCard({
       >
         <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-6 pb-0 pt-6">
           <div className="min-w-0">
-            <h3 className="truncate font-display text-[17px] font-extrabold tracking-[-0.01em] text-[var(--color-text-primary)]">
+            <h3 className="line-clamp-2 font-display text-[17px] font-extrabold leading-snug tracking-[-0.01em] text-[var(--color-text-primary)]">
               {chart.title}
             </h3>
-            <p className="mt-1 line-clamp-1 text-[12px] text-[var(--color-text-secondary)]">
+            <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-[var(--color-text-secondary)]">
               {chart.insight}
             </p>
           </div>
