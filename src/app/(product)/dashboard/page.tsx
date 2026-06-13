@@ -3,11 +3,13 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileSpreadsheet } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { AppShell } from "@/features/dashboard/components/AppShell";
 import { ProcessingView } from "@/features/dashboard/components/ProcessingView";
 import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
+import { Skeleton } from "@/shared/ui/skeleton";
 import {
   clearActiveDashboard,
   getDashboardStoreState,
@@ -135,21 +137,38 @@ function DashboardUploadEmptyState({
 
 function DashboardLoadingState() {
   const { t } = useTranslation();
+  const prefersReducedMotion = useReducedMotion();
+
   return (
-    <div className="flex h-full flex-col items-center justify-center bg-[var(--color-bg)]">
-      <div className="flex flex-col items-center text-center">
-        <Image
-          src="/tada-logo.svg"
-          alt="Tada"
-          width={48}
-          height={48}
-          className="h-10 w-auto animate-pulse-soft"
-        />
-        <p className="mt-4 text-sm font-medium text-[var(--color-text-secondary)]">
-          {t("dash.loading")}
-        </p>
+    <motion.div
+      initial={prefersReducedMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
+      className="flex h-full flex-col"
+      aria-busy="true"
+      aria-label={t("dash.loading")}
+    >
+      {/* Header skeleton */}
+      <div className="flex shrink-0 flex-col gap-2 px-5 pb-4 pt-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-72" />
       </div>
-    </div>
+
+      {/* KPI row skeleton */}
+      <div className="grid grid-cols-1 gap-5 px-5 py-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={index} className="h-28 rounded-[20px]" />
+        ))}
+      </div>
+
+      {/* Chart grid skeleton */}
+      <div className="grid flex-1 grid-cols-1 gap-5 px-5 pb-6 md:grid-cols-2 xl:grid-cols-12 xl:gap-6">
+        <Skeleton className="min-h-[280px] rounded-[24px] xl:col-span-7" />
+        <Skeleton className="min-h-[280px] rounded-[24px] xl:col-span-5" />
+        <Skeleton className="min-h-[280px] rounded-[24px] xl:col-span-6" />
+        <Skeleton className="min-h-[280px] rounded-[24px] xl:col-span-6" />
+      </div>
+    </motion.div>
   );
 }
 
