@@ -117,7 +117,7 @@ export default function LoginPage() {
 
         <div className="relative z-10 max-w-md">
           <h2 className="font-display text-4xl leading-tight text-white">
-            Instant dashboards
+            AI dashboards
             <br />
             from your data.
           </h2>

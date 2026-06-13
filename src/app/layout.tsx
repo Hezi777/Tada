@@ -17,7 +17,7 @@ const assistant = Assistant({
 
 export const metadata: Metadata = {
   metadataBase: new URL("http://localhost:3000"),
-  title: "Tada - Instant AI Dashboards from Your Data",
+  title: "Tada - AI Dashboards from Your Data",
   description:
     "Upload any CSV or Excel file and get an AI-generated dashboard in seconds. Ask questions, get insights, no setup required.",
   icons: {

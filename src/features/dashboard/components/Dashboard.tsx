@@ -262,7 +262,6 @@ function KpiCard({
   icon: Icon,
   value,
   label,
-  description,
   eyebrow,
   isPrimary = false,
   meshClassName,
@@ -271,7 +270,6 @@ function KpiCard({
   icon: LucideIcon;
   value: string | number;
   label: string;
-  description: string;
   eyebrow: string;
   isPrimary?: boolean;
   meshClassName: string;
@@ -297,16 +295,18 @@ function KpiCard({
           >
             <Icon className="h-5 w-5" strokeWidth={2.25} />
           </div>
-          <p
-            className={`truncate text-sm font-semibold ${
-              isPrimary ? "text-white/70" : "text-[var(--color-text-secondary)]"
+          <span
+            className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+              isPrimary
+                ? "bg-white/10 text-white"
+                : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
             }`}
           >
-            {label}
-          </p>
+            {eyebrow}
+          </span>
         </div>
 
-        <div className="relative z-10 mt-4 min-w-0">
+        <div className="relative z-10 mt-5 min-w-0">
           <div
             className={`display-number whitespace-nowrap ${kpiValueSizeClass(
               displayValue,
@@ -315,24 +315,12 @@ function KpiCard({
             {displayValue}
           </div>
 
-          <div className="mt-3 flex items-center gap-2">
-            <span
-              className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                isPrimary
-                  ? "bg-white/10 text-white"
-                  : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
-              }`}
-            >
-              {eyebrow}
-            </span>
-          </div>
-
           <p
-            className={`mt-3 line-clamp-2 max-w-[16rem] text-[12px] leading-5 ${
+            className={`mt-2 truncate text-sm font-semibold ${
               isPrimary ? "text-white/70" : "text-[var(--color-text-secondary)]"
             }`}
           >
-            {description}
+            {label}
           </p>
         </div>
 
@@ -897,7 +885,6 @@ export function Dashboard() {
                 icon={card.icon}
                 value={card.value}
                 label={card.label}
-                description={card.description}
                 eyebrow={card.eyebrow}
                 isPrimary={card.isPrimary}
                 meshClassName={
