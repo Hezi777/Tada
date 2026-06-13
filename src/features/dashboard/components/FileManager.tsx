@@ -65,6 +65,7 @@ import { useTranslation } from "@/shared/i18n";
 import {
   clearActiveDashboard,
   getCachedDashboard,
+  getDashboardStoreState,
   initializeDashboardStore,
   resetDashboardStore,
   setActiveDashboard,
@@ -449,16 +450,21 @@ export default function FileManager() {
     }
 
     try {
-      const deletingActiveDashboard = activeDash?.id === deleteConfirmId;
+      const deletingLocalActiveDashboard = activeDash?.id === deleteConfirmId;
+      const deletingGlobalActiveDashboard =
+        getDashboardStoreState().activeDashboardId === deleteConfirmId;
       await deleteDashboard(deleteConfirmId);
       setDashboards((prev) =>
         prev.filter((item) => item.id !== deleteConfirmId),
       );
 
-      if (deletingActiveDashboard) {
+      if (deletingLocalActiveDashboard) {
         setView("dashboards");
         setActiveDash(null);
         setScopedFiles([]);
+      }
+
+      if (deletingLocalActiveDashboard || deletingGlobalActiveDashboard) {
         clearActiveDashboard();
         resetDashboardStore();
       }
@@ -699,6 +705,24 @@ export default function FileManager() {
                 <Skeleton key={index} className="aspect-[3/2] rounded-[20px]" />
               ))}
             </div>
+          ) : sortedDashboards.length === 0 ? (
+            <EmptyState
+              className="min-h-[420px] justify-center rounded-[20px] border border-[var(--color-border)] bg-card px-6 py-10 shadow-card"
+              icon={<LayoutGrid className="h-8 w-8" />}
+              title="No dashboards yet"
+              description="Upload a CSV, Excel, or PDF file above to create your first dashboard."
+              action={
+                <Button
+                  type="button"
+                  variant="primary-accent"
+                  onClick={() => setCreateOpen(true)}
+                  className="h-10 px-6 text-sm font-semibold"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("files.new")}
+                </Button>
+              }
+            />
           ) : (
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
               {pagedDashboards.map((dashboard, index) => {
@@ -911,55 +935,61 @@ export default function FileManager() {
           )}
         </div>
 
-        <footer className="mt-14 flex flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-sm font-medium text-[var(--color-text-secondary)]">
-            Showing {bidiIsolate(String(pagedDashboards.length))} of{" "}
-            {bidiIsolate(String(sortedDashboards.length))} dashboards
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              className="h-9 w-9 rounded-full"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            {Array.from({ length: totalPages }).map((_, pageIndex) => {
-              const page = pageIndex + 1;
-              const active = page === currentPage;
-
-              return (
-                <button
-                  key={page}
+        {sortedDashboards.length > 0 ? (
+          <footer className="mt-14 flex flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+              Showing {bidiIsolate(String(pagedDashboards.length))} of{" "}
+              {bidiIsolate(String(sortedDashboards.length))} dashboards
+            </span>
+            {totalPages > 1 ? (
+              <div className="flex items-center gap-2">
+                <Button
                   type="button"
-                  onClick={() => setCurrentPage(page)}
-                  className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
-                    active
-                      ? "bg-[var(--color-accent)] text-white"
-                      : "text-[var(--color-text-secondary)] hover:bg-card"
-                  }`}
+                  variant="ghost"
+                  size="icon"
+                  disabled={currentPage === 1}
+                  onClick={() =>
+                    setCurrentPage((page) => Math.max(1, page - 1))
+                  }
+                  className="h-9 w-9 rounded-full"
                 >
-                  {page}
-                </button>
-              );
-            })}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={currentPage === totalPages}
-              onClick={() =>
-                setCurrentPage((page) => Math.min(totalPages, page + 1))
-              }
-              className="h-9 w-9 rounded-full"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </footer>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: totalPages }).map((_, pageIndex) => {
+                  const page = pageIndex + 1;
+                  const active = page === currentPage;
+
+                  return (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(page)}
+                      className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+                        active
+                          ? "bg-[var(--color-accent)] text-white"
+                          : "text-[var(--color-text-secondary)] hover:bg-card"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  disabled={currentPage === totalPages}
+                  onClick={() =>
+                    setCurrentPage((page) => Math.min(totalPages, page + 1))
+                  }
+                  className="h-9 w-9 rounded-full"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : null}
+          </footer>
+        ) : null}
 
         <CreateDashboardModal
           open={createOpen}
