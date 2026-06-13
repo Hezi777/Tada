@@ -1,4 +1,10 @@
-import { memo, useState, type CSSProperties } from "react";
+import {
+  memo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { GripVertical, Scaling } from "lucide-react";
 import { CSS } from "@dnd-kit/utilities";
 import { useSortable } from "@dnd-kit/sortable";
@@ -337,6 +343,8 @@ function ScatterTooltip({
     </div>
   );
 }
+
+const CHART_SIZES = ["small", "medium", "large"] as const;
 
 /** Card min-height mirrors the chart area so larger sizes visibly grow. */
 function getCardMinHeightClass(chart: LayoutItem): string {
@@ -885,12 +893,49 @@ const DashboardChartCard = memo(function DashboardChartCard({
     transition,
   } as CSSProperties;
 
+  // Drag the corner handle to resize: horizontal drag steps through the chart
+  // sizes (each ~110px of travel = one step), which the grid re-packs.
+  const resizeStartRef = useRef<{ x: number; index: number } | null>(null);
+
+  const handleResizeDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeStartRef.current = {
+      x: event.clientX,
+      index: CHART_SIZES.indexOf(chart.size),
+    };
+  };
+
+  const handleResizeMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const start = resizeStartRef.current;
+    if (!start) {
+      return;
+    }
+    const steps = Math.round((event.clientX - start.x) / 110);
+    const nextIndex = Math.min(
+      CHART_SIZES.length - 1,
+      Math.max(0, start.index + steps),
+    );
+    const nextSize = CHART_SIZES[nextIndex];
+    if (nextSize !== chart.size) {
+      updateChart(chart.id, { size: nextSize });
+    }
+  };
+
+  const handleResizeUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    resizeStartRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
   return (
     <TooltipProvider delayDuration={150}>
       <Card
         ref={setNodeRef}
         style={style}
-        className={`flex h-full flex-col overflow-hidden rounded-[20px] border bg-card p-0 shadow-premium ${getCardMinHeightClass(
+        className={`relative flex h-full flex-col overflow-hidden rounded-[20px] border bg-card p-0 shadow-premium ${getCardMinHeightClass(
           chart,
         )} ${
           isEditing
@@ -966,6 +1011,50 @@ const DashboardChartCard = memo(function DashboardChartCard({
         <CardContent className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-4">
           <DashboardChartContent chart={chart} rows={rows} />
         </CardContent>
+        {isEditing ? (
+          <div
+            role="slider"
+            tabIndex={0}
+            aria-label={`Resize ${chart.title}`}
+            aria-valuetext={chart.size}
+            aria-valuemin={0}
+            aria-valuemax={CHART_SIZES.length - 1}
+            aria-valuenow={CHART_SIZES.indexOf(chart.size)}
+            onPointerDown={handleResizeDown}
+            onPointerMove={handleResizeMove}
+            onPointerUp={handleResizeUp}
+            onKeyDown={(event) => {
+              const current = CHART_SIZES.indexOf(chart.size);
+              if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+                event.preventDefault();
+                const next = CHART_SIZES[Math.min(CHART_SIZES.length - 1, current + 1)];
+                if (next !== chart.size) updateChart(chart.id, { size: next });
+              } else if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+                event.preventDefault();
+                const next = CHART_SIZES[Math.max(0, current - 1)];
+                if (next !== chart.size) updateChart(chart.id, { size: next });
+              }
+            }}
+            className="absolute bottom-1.5 right-1.5 z-10 flex h-6 w-6 touch-none items-center justify-center rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
+            style={{ cursor: "nwse-resize" }}
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              aria-hidden="true"
+              className="opacity-70"
+            >
+              <path
+                d="M11 4 L4 11 M11 8 L8 11"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                fill="none"
+              />
+            </svg>
+          </div>
+        ) : null}
       </Card>
     </TooltipProvider>
   );
