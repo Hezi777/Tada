@@ -11,8 +11,10 @@ const buttonVariants = cva(
       variant: {
         default:
           "bg-[linear-gradient(135deg,#00327d,#0047ab)] text-primary-foreground hover:bg-[linear-gradient(135deg,#0047ab,#00327d)]",
+        "primary-accent":
+          "bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-secondary)]",
         destructive:
-          "border border-[rgba(220,38,38,0.3)] bg-[rgba(220,38,38,0.08)] text-[#dc2626] hover:bg-[rgba(220,38,38,0.12)]",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
           "border border-border bg-card text-foreground hover:bg-[var(--color-surface-muted)] hover:text-foreground",
         secondary:
