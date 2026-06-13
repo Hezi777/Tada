@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
 import { Badge } from "@/shared/ui/badge";
-import { Button, buttonVariants } from "@/shared/ui/button";
+import { Button } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 import {
   DropdownMenu,
@@ -983,7 +983,7 @@ export default function FileManager() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => void handleDeleteDashboard()}
-                className={buttonVariants({ variant: "destructive" })}
+                variant="destructive"
               >
                 Delete
               </AlertDialogAction>
@@ -1214,7 +1214,7 @@ export default function FileManager() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void handleRemoveFile()}
-              className={buttonVariants({ variant: "destructive" })}
+              variant="destructive"
             >
               Remove
             </AlertDialogAction>
