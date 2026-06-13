@@ -64,6 +64,8 @@ import {
 import CreateDashboardModal from "@/features/dashboard/components/CreateDashboardModal";
 import { DashboardSwitcher } from "@/features/dashboard/components/DashboardSwitcher";
 import { DashboardChartCard } from "@/features/dashboard/components/DashboardChartCard";
+import { GeneratingChartCard } from "@/features/dashboard/components/GeneratingChartCard";
+import { onChartGenerating } from "@/features/dashboard/client/chart-effects";
 import { useTranslation } from "@/shared/i18n";
 import type { DashboardListItem } from "@/shared/contracts";
 import { BI_RULE_LIMITS } from "@/shared/contracts";
@@ -620,6 +622,9 @@ export function Dashboard() {
   const fileName = useDashboardStore((snapshot) => snapshot.fileName);
   const [isManageViewsOpen, setIsManageViewsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isGeneratingChart, setIsGeneratingChart] = useState(false);
+
+  useEffect(() => onChartGenerating(setIsGeneratingChart), []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -983,6 +988,11 @@ export function Dashboard() {
                         />
                       </div>
                     ))}
+                    {isGeneratingChart ? (
+                      <div className="md:col-span-1 xl:col-span-4">
+                        <GeneratingChartCard />
+                      </div>
+                    ) : null}
                   </div>
                 </SortableContext>
               </DndContext>

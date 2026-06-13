@@ -29,6 +29,10 @@ import {
   applyChatbotPatch,
   useDashboardStore,
 } from "@/features/dashboard/client/store";
+import {
+  emitChartGenerating,
+  emitChartReveal,
+} from "@/features/dashboard/client/chart-effects";
 
 interface Message {
   id: string;
@@ -44,16 +48,11 @@ const SUGGESTION_KEYS = [
   "chat.suggest.compare",
 ] as const;
 
-function emitChartPulse(chartId: string | undefined): void {
-  if (!chartId || typeof window === "undefined") {
-    return;
-  }
-  window.dispatchEvent(
-    new CustomEvent("tada:chart-pulse", {
-      detail: { chartId },
-    }),
-  );
-}
+/** Brief flourish (ms) so an AI-created chart feels conjured rather than
+ * popping in instantly: glowing placeholder -> chart materializes in place. */
+const GENERATE_FLOURISH_MS = 1300;
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function FloatingChat() {
   const { t } = useTranslation();
@@ -134,14 +133,20 @@ export function FloatingChat() {
         kpis: liveKpis,
       });
       if (response.patch) {
-        applyChatbotPatch(response.patch);
-        emitChartPulse(
-          response.patch.action === "add"
-            ? response.patch.config.id
-            : response.patch.action === "remove"
-              ? response.patch.chartId
-              : response.patch.chartId,
-        );
+        if (response.patch.action === "add") {
+          // Show the glowing placeholder, then materialize the chart in place.
+          const newChartId = response.patch.config.id;
+          emitChartGenerating(true);
+          await wait(GENERATE_FLOURISH_MS);
+          applyChatbotPatch(response.patch);
+          emitChartGenerating(false);
+          // Let the new card mount (and register its reveal listener) first.
+          await wait(60);
+          emitChartReveal(newChartId);
+        } else {
+          applyChatbotPatch(response.patch);
+          emitChartReveal(response.patch.chartId);
+        }
       }
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
@@ -219,7 +224,9 @@ export function FloatingChat() {
     }
 
     applyChartProposal(proposal, action);
-    emitChartPulse(proposal.targetChartId ?? proposal.incomingConfig.id);
+    const revealId = proposal.targetChartId ?? proposal.incomingConfig.id;
+    // Defer so a newly-mounted card registers its reveal listener first.
+    window.setTimeout(() => emitChartReveal(revealId), 60);
     setMessages((prev) =>
       prev.map((message) =>
         message.id === messageId

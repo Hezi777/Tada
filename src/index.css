@@ -537,4 +537,79 @@
     font-variant-numeric: tabular-nums;
     line-height: 1;
   }
+
+  /* AI "magic" gradient ring — brand blue -> teal -> green -> violet. Used for
+     the generating placeholder and the one-time reveal glow on new charts. */
+  .ai-glow-ring {
+    background: conic-gradient(
+      from var(--tada-glow-angle),
+      #2f6df6,
+      #14b8a6,
+      #22c55e,
+      #7c6cff,
+      #2f6df6
+    );
+    animation: tada-glow-spin 4s linear infinite;
+  }
+  .ai-glow-ring-soft {
+    background: conic-gradient(
+      from var(--tada-glow-angle),
+      #2f6df6,
+      #14b8a6,
+      #22c55e,
+      #7c6cff,
+      #2f6df6
+    );
+    animation:
+      tada-glow-spin 4s linear infinite,
+      tada-glow-breathe 3s ease-in-out infinite;
+  }
+  /* Border-only mask, for drawing the ring as an overlay on top of a card. */
+  .ai-glow-ring-mask {
+    padding: 1.5px;
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ai-glow-ring,
+    .ai-glow-ring-soft {
+      animation: none;
+    }
+  }
+}
+
+/* Animatable angle for the conic gradient. Browsers without @property simply
+   render a static brand gradient (graceful, still on-brand). */
+@property --tada-glow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes tada-glow-spin {
+  to {
+    --tada-glow-angle: 360deg;
+  }
+}
+@keyframes tada-glow-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+@keyframes tada-reveal-fade {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
