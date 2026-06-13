@@ -32,6 +32,10 @@ export const translations = {
     "dash.empty.hint": "CSV, Excel, or PDF · up to 10MB",
     "dash.overview": "Overview",
     "dash.generatedFrom": "Generated from",
+    "dash.addChart": "Add chart",
+    "dash.addChart.hint": "Describe it and AI builds it for you.",
+    "dash.addChart.placeholder": "e.g. Sales by region as a bar chart",
+    "dash.addChart.create": "Create",
 
     // Chart card
     "chart.resize": "Resize chart",
@@ -119,6 +123,10 @@ export const translations = {
     "dash.empty.hint": "CSV, Excel או PDF · עד 10MB",
     "dash.overview": "סקירה",
     "dash.generatedFrom": "נוצר מתוך",
+    "dash.addChart": "הוסף תרשים",
+    "dash.addChart.hint": "תאר אותו והבינה תבנה אותו עבורך.",
+    "dash.addChart.placeholder": "לדוגמה: מכירות לפי אזור כתרשים עמודות",
+    "dash.addChart.create": "צור",
 
     // Chart card
     "chart.resize": "שינוי גודל גרף",
