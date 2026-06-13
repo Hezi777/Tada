@@ -233,8 +233,9 @@ export default function CreateDashboardModal({
             </Button>
             <Button
               type="submit"
+              variant="primary-accent"
               disabled={!name.trim()}
-              className="h-10 rounded-full bg-[var(--color-accent)] px-5 text-sm font-semibold text-white shadow-none transition-colors hover:bg-[var(--color-accent-secondary)] disabled:opacity-50"
+              className="h-10 px-5 text-sm font-semibold shadow-none disabled:opacity-50"
             >
               Create Dashboard
             </Button>
