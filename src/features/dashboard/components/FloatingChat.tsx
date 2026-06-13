@@ -257,16 +257,17 @@ export function FloatingChat() {
             }
           }}
           placeholder={t("chat.placeholder")}
-          className="max-h-32 min-h-[44px] flex-1 resize-none rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus-visible:ring-[var(--color-accent)]"
+          className="max-h-32 min-h-[44px] flex-1 resize-none border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus-visible:ring-[var(--color-accent)]"
           aria-label="Type your message"
           disabled={!canChat || isSending}
           rows={1}
         />
         <Button
           size="icon"
+          variant="primary-accent"
           onClick={handleSend}
           disabled={!canChat || isSending || !input.trim()}
-          className="h-11 w-11 shrink-0 rounded-full border-0 bg-[linear-gradient(135deg,var(--color-accent)_0%,var(--color-accent-secondary)_100%)] text-white shadow-[0_10px_24px_-12px_rgba(0,50,125,0.6)] transition-transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+          className="transition-ui h-11 w-11 shrink-0 border-0 shadow-[0_10px_24px_-12px_rgba(0,50,125,0.6)] hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
           aria-label="Send message"
         >
           {isSending ? (
@@ -340,7 +341,8 @@ export function FloatingChat() {
                       <Button
                         type="button"
                         size="sm"
-                        className="h-8 rounded-full bg-[var(--color-accent)] px-3 text-xs text-white hover:bg-[var(--color-accent-secondary)]"
+                        variant="primary-accent"
+                        className="transition-ui h-8 px-3 text-xs"
                         onClick={() =>
                           handleProposalAction(message.id, "replace")
                         }
@@ -419,8 +421,9 @@ export function FloatingChat() {
         )}
         <Button
           type="button"
+          variant="primary-accent"
           onClick={() => setIsOpen((current) => !current)}
-          className="relative h-[52px] w-[52px] rounded-full border-0 bg-[linear-gradient(135deg,var(--color-accent)_0%,var(--color-accent-secondary)_100%)] text-white shadow-[0_18px_36px_-18px_rgba(0,50,125,0.55)] transition-all duration-200 ease-in-out hover:scale-105 hover:shadow-[0_22px_40px_-18px_rgba(0,50,125,0.65)]"
+          className="transition-ui relative h-[52px] w-[52px] border-0 shadow-[0_18px_36px_-18px_rgba(0,50,125,0.55)] hover:scale-105 hover:shadow-[0_22px_40px_-18px_rgba(0,50,125,0.65)]"
           aria-label={isOpen ? "Close Tada Wiz" : "Open Tada Wiz"}
           aria-expanded={isOpen}
         >
