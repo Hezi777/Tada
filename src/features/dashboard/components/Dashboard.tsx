@@ -73,8 +73,9 @@ import {
   resolveKpiIcon,
 } from "@/features/dashboard/client/design";
 import {
+  detectCurrencySymbol,
+  formatCurrency,
   formatDateIL,
-  formatILS,
   looksLikeCurrencyColumn,
 } from "@/shared/lib/format";
 import {
@@ -97,9 +98,11 @@ function formatMetric(
     return "-";
   }
 
-  // Shekel formatting for money-like KPI columns (₪ before the number).
+  // Currency formatting for money-like KPI columns. The symbol comes from the
+  // column name (e.g. "(₪)", "USD"); defaults to $ when none is stated.
   if (columnName && looksLikeCurrencyColumn(columnName)) {
-    return formatILS(value, Math.abs(value) >= 100_000);
+    const symbol = detectCurrencySymbol(columnName) ?? "$";
+    return formatCurrency(value, symbol, Math.abs(value) >= 100_000);
   }
 
   return legacyFormatNumber(value) ?? value;
