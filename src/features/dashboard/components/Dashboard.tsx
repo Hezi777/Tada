@@ -35,6 +35,7 @@ import type { ChartConfig, KPIConfig, SerializedRow } from "@/shared/contracts";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
+import { EmptyState } from "@/shared/ui/empty-state";
 import { Skeleton } from "@/shared/ui/skeleton";
 import {
   computeKpiValue,
@@ -241,14 +242,20 @@ function deriveFallbackCards(rows: SerializedRow[]): Array<{
 // safety but must not count toward the visible length used for sizing.
 const BIDI_MARKS = /[⁦⁧⁨⁩]/g;
 
-/** Pick a KPI value font size that keeps long values from overflowing. */
-function kpiValueSizeClass(value: string | number): string {
+/**
+ * Pick a KPI value font size by ROLE (primary vs secondary), not string
+ * length. The primary KPI is the largest (top-left, F-pattern); secondary
+ * KPIs are smaller. Very long values still step down a size so they don't
+ * overflow the card.
+ */
+function kpiValueSizeClass(value: string | number, isPrimary: boolean): string {
   const visibleLength = String(value).replace(BIDI_MARKS, "").length;
-  if (visibleLength > 14) return "text-lg sm:text-xl";
-  if (visibleLength > 11) return "text-xl sm:text-2xl";
-  if (visibleLength > 8) return "text-2xl sm:text-3xl";
-  if (visibleLength > 6) return "text-3xl sm:text-4xl";
-  return "text-4xl sm:text-5xl";
+  if (isPrimary) {
+    return visibleLength > 11
+      ? "display-number t-display text-3xl sm:text-4xl"
+      : "display-number t-display";
+  }
+  return visibleLength > 11 ? "t-metric text-2xl sm:text-3xl" : "t-metric";
 }
 
 /** Non-primary KPI cards cycle through these soft mesh surfaces. */
@@ -308,8 +315,9 @@ function KpiCard({
 
         <div className="relative z-10 mt-5 min-w-0">
           <div
-            className={`display-number whitespace-nowrap ${kpiValueSizeClass(
+            className={`whitespace-nowrap ${kpiValueSizeClass(
               displayValue,
+              isPrimary,
             )} ${isPrimary ? "text-white" : "text-[var(--color-text-primary)]"}`}
           >
             {displayValue}
@@ -415,25 +423,29 @@ function ManageViewsSection({
                     <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                       {String(index + 1).padStart(2, "0")}
                     </span>
-                    <Badge className="rounded-full border-0 bg-[#e6e8ea] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text-secondary)] hover:bg-[#e6e8ea]">
+                    <Badge variant="secondary" className="text-[10px]">
                       {chart.type}
                     </Badge>
                     <Badge
-                      className={`rounded-full border-0 px-2 py-0.5 text-[10px] font-semibold ${
+                      variant="secondary"
+                      className={`text-[10px] ${
                         visible
-                          ? "bg-[rgba(0,50,125,0.12)] text-[var(--color-accent)] hover:bg-[rgba(0,50,125,0.12)]"
-                          : "bg-[#e6e8ea] text-[var(--color-text-secondary)] hover:bg-[#e6e8ea]"
+                          ? "bg-[var(--color-accent-light)] text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]"
+                          : ""
                       }`}
                     >
                       {visible ? "visible" : "hidden"}
                     </Badge>
                     {chart.pinned ? (
-                      <Badge className="rounded-full border-0 bg-[#e6e8ea] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text-secondary)] hover:bg-[#e6e8ea]">
+                      <Badge variant="secondary" className="text-[10px]">
                         pinned
                       </Badge>
                     ) : null}
                     {chart.chatbotGenerated ? (
-                      <Badge className="rounded-full border-0 bg-[rgba(0,50,125,0.12)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[rgba(0,50,125,0.12)]">
+                      <Badge
+                        variant="secondary"
+                        className="bg-[var(--color-accent-light)] text-[10px] text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]"
+                      >
                         suggested
                       </Badge>
                     ) : null}
@@ -838,25 +850,22 @@ export function Dashboard() {
   if (!datasetId) {
     return (
       <div className="flex h-full items-center justify-center bg-[var(--color-bg)] p-8">
-        <Card className="flex flex-col items-center rounded-[24px] border-0 bg-card px-10 py-12 text-center shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
-          <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
-            <LayoutPanelLeft className="h-7 w-7" />
-          </div>
-          <h1 className="mt-6 font-display text-3xl font-bold text-[var(--color-text-primary)]">
-            Upload a dataset to begin
-          </h1>
-          <p className="mt-3 max-w-sm text-base text-[var(--color-text-secondary)]">
-            Your dashboard will render directly from centralized chart and KPI
-            state.
-          </p>
-          <Button
-            className="mt-8 rounded-full bg-[var(--color-accent)] px-5 hover:bg-[#0047ab]"
-            onClick={() => {
-              window.location.href = "/";
-            }}
-          >
-            Choose a file
-          </Button>
+        <Card className="transition-ui px-10 py-12 hover:shadow-premium">
+          <EmptyState
+            icon={<LayoutPanelLeft className="h-7 w-7" />}
+            title="Upload a dataset to begin"
+            description="Your dashboard will render directly from centralized chart and KPI state."
+            action={
+              <Button
+                variant="primary-accent"
+                onClick={() => {
+                  window.location.href = "/";
+                }}
+              >
+                Choose a file
+              </Button>
+            }
+          />
         </Card>
       </div>
     );
@@ -900,27 +909,24 @@ export function Dashboard() {
 
           <div className="px-5 pb-6">
             {layoutItems.length === 0 ? (
-              <Card className="flex h-full min-h-[320px] items-center justify-center rounded-[24px] border-0 bg-card shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
-                <div className="flex flex-col items-center px-6 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
-                    <LayoutPanelLeft className="h-7 w-7" />
-                  </div>
-                  <h2 className="mt-6 font-display text-2xl font-bold text-[var(--color-text-primary)]">
-                    No visible charts
-                  </h2>
-                  <p className="mt-2 max-w-sm text-sm text-[var(--color-text-secondary)]">
-                    Re-enable a hidden chart to bring the dashboard back into
-                    view.
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={() => setIsManageViewsOpen((current) => !current)}
-                    className="mt-6 h-10 rounded-full bg-[var(--color-accent)] px-5 text-sm font-semibold text-white hover:bg-[#0047ab]"
-                  >
-                    <LayoutPanelLeft className="mr-2 h-4 w-4" />
-                    Manage Views
-                  </Button>
-                </div>
+              <Card className="transition-ui flex h-full min-h-[320px] items-center justify-center px-6 hover:shadow-premium">
+                <EmptyState
+                  icon={<LayoutPanelLeft className="h-7 w-7" />}
+                  title="No visible charts"
+                  description="Re-enable a hidden chart to bring the dashboard back into view."
+                  action={
+                    <Button
+                      type="button"
+                      variant="primary-accent"
+                      onClick={() =>
+                        setIsManageViewsOpen((current) => !current)
+                      }
+                    >
+                      <LayoutPanelLeft className="mr-2 h-4 w-4" />
+                      Manage Views
+                    </Button>
+                  }
+                />
               </Card>
             ) : (
               <DndContext
@@ -955,7 +961,7 @@ export function Dashboard() {
                   items={layoutItems.map((chart) => chart.id)}
                   strategy={rectSortingStrategy}
                 >
-                  <div className="grid h-full grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12 xl:gap-6">
+                  <div className="grid h-full grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-12">
                     {layoutItems.map((chart) => (
                       <div
                         key={chart.id}
