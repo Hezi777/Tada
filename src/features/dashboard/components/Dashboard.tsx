@@ -241,9 +241,10 @@ const BIDI_MARKS = /[⁦⁧⁨⁩]/g;
 /** Pick a KPI value font size that keeps long values from overflowing. */
 function kpiValueSizeClass(value: string | number): string {
   const visibleLength = String(value).replace(BIDI_MARKS, "").length;
-  if (visibleLength > 16) return "text-xl sm:text-2xl";
-  if (visibleLength > 12) return "text-2xl sm:text-3xl";
-  if (visibleLength > 9) return "text-3xl sm:text-4xl";
+  if (visibleLength > 14) return "text-lg sm:text-xl";
+  if (visibleLength > 11) return "text-xl sm:text-2xl";
+  if (visibleLength > 8) return "text-2xl sm:text-3xl";
+  if (visibleLength > 6) return "text-3xl sm:text-4xl";
   return "text-4xl sm:text-5xl";
 }
 
@@ -304,7 +305,7 @@ function KpiCard({
 
         <div className="relative z-10 mt-4 min-w-0">
           <div
-            className={`display-number truncate ${kpiValueSizeClass(
+            className={`display-number whitespace-nowrap ${kpiValueSizeClass(
               displayValue,
             )} ${isPrimary ? "text-white" : "text-[var(--color-text-primary)]"}`}
           >
