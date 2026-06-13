@@ -10,6 +10,9 @@ function baseColSpan(size: ChartConfig["size"]): number {
   if (size === "large") {
     return 8;
   }
+  if (size === "medium") {
+    return 6;
+  }
   return 4;
 }
 

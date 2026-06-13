@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { GripVertical, Scaling } from "lucide-react";
@@ -895,26 +896,35 @@ const DashboardChartCard = memo(function DashboardChartCard({
     transition,
   } as CSSProperties;
 
-  // Drag the corner handle to resize: horizontal drag steps through the chart
-  // sizes (each ~110px of travel = one step), which the grid re-packs.
-  const resizeStartRef = useRef<{ x: number; index: number } | null>(null);
+  // Drag an edge handle to resize (Apple-widget style): the right edge changes
+  // width, the bottom edge changes height. ~90px of travel = one size step,
+  // and the grid re-packs around the new size.
+  const resizeStartRef = useRef<{
+    pos: number;
+    index: number;
+    axis: "x" | "y";
+  } | null>(null);
 
-  const handleResizeDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    resizeStartRef.current = {
-      x: event.clientX,
-      index: CHART_SIZES.indexOf(chart.size),
+  const beginResize =
+    (axis: "x" | "y") => (event: ReactPointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.currentTarget.setPointerCapture(event.pointerId);
+      resizeStartRef.current = {
+        pos: axis === "x" ? event.clientX : event.clientY,
+        index: CHART_SIZES.indexOf(chart.size),
+        axis,
+      };
     };
-  };
 
   const handleResizeMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const start = resizeStartRef.current;
     if (!start) {
       return;
     }
-    const steps = Math.round((event.clientX - start.x) / 110);
+    const delta =
+      (start.axis === "x" ? event.clientX : event.clientY) - start.pos;
+    const steps = Math.round(delta / 90);
     const nextIndex = Math.min(
       CHART_SIZES.length - 1,
       Math.max(0, start.index + steps),
@@ -931,6 +941,22 @@ const DashboardChartCard = memo(function DashboardChartCard({
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
   };
+
+  const resizeKeyDown =
+    (axis: "x" | "y") => (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      const current = CHART_SIZES.indexOf(chart.size);
+      const grow = axis === "x" ? "ArrowRight" : "ArrowDown";
+      const shrink = axis === "x" ? "ArrowLeft" : "ArrowUp";
+      if (event.key === grow) {
+        event.preventDefault();
+        const next = CHART_SIZES[Math.min(CHART_SIZES.length - 1, current + 1)];
+        if (next !== chart.size) updateChart(chart.id, { size: next });
+      } else if (event.key === shrink) {
+        event.preventDefault();
+        const next = CHART_SIZES[Math.max(0, current - 1)];
+        if (next !== chart.size) updateChart(chart.id, { size: next });
+      }
+    };
 
   // One-time "magic" reveal glow when this chart is freshly created by the AI.
   const [isRevealing, setIsRevealing] = useState(false);
@@ -1046,48 +1072,44 @@ const DashboardChartCard = memo(function DashboardChartCard({
           />
         ) : null}
         {isEditing ? (
-          <div
-            role="slider"
-            tabIndex={0}
-            aria-label={`Resize ${chart.title}`}
-            aria-valuetext={chart.size}
-            aria-valuemin={0}
-            aria-valuemax={CHART_SIZES.length - 1}
-            aria-valuenow={CHART_SIZES.indexOf(chart.size)}
-            onPointerDown={handleResizeDown}
-            onPointerMove={handleResizeMove}
-            onPointerUp={handleResizeUp}
-            onKeyDown={(event) => {
-              const current = CHART_SIZES.indexOf(chart.size);
-              if (event.key === "ArrowRight" || event.key === "ArrowUp") {
-                event.preventDefault();
-                const next = CHART_SIZES[Math.min(CHART_SIZES.length - 1, current + 1)];
-                if (next !== chart.size) updateChart(chart.id, { size: next });
-              } else if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
-                event.preventDefault();
-                const next = CHART_SIZES[Math.max(0, current - 1)];
-                if (next !== chart.size) updateChart(chart.id, { size: next });
-              }
-            }}
-            className="absolute bottom-1.5 right-1.5 z-10 flex h-6 w-6 touch-none items-center justify-center rounded-md text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]"
-            style={{ cursor: "nwse-resize" }}
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              aria-hidden="true"
-              className="opacity-70"
+          <>
+            {/* Right edge — drag to change width */}
+            <div
+              role="slider"
+              tabIndex={0}
+              aria-label={`Resize ${chart.title} width`}
+              aria-valuetext={chart.size}
+              aria-valuemin={0}
+              aria-valuemax={CHART_SIZES.length - 1}
+              aria-valuenow={CHART_SIZES.indexOf(chart.size)}
+              onPointerDown={beginResize("x")}
+              onPointerMove={handleResizeMove}
+              onPointerUp={handleResizeUp}
+              onKeyDown={resizeKeyDown("x")}
+              className="group absolute right-0 top-1/2 z-10 flex h-16 w-3 -translate-y-1/2 touch-none items-center justify-center focus-visible:outline-none"
+              style={{ cursor: "ew-resize" }}
             >
-              <path
-                d="M11 4 L4 11 M11 8 L8 11"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                fill="none"
-              />
-            </svg>
-          </div>
+              <span className="h-12 w-1.5 rounded-full bg-[var(--color-border)] transition group-hover:h-14 group-hover:bg-[var(--color-accent)] group-focus-visible:bg-[var(--color-accent)]" />
+            </div>
+            {/* Bottom edge — drag to change height */}
+            <div
+              role="slider"
+              tabIndex={0}
+              aria-label={`Resize ${chart.title} height`}
+              aria-valuetext={chart.size}
+              aria-valuemin={0}
+              aria-valuemax={CHART_SIZES.length - 1}
+              aria-valuenow={CHART_SIZES.indexOf(chart.size)}
+              onPointerDown={beginResize("y")}
+              onPointerMove={handleResizeMove}
+              onPointerUp={handleResizeUp}
+              onKeyDown={resizeKeyDown("y")}
+              className="group absolute bottom-0 left-1/2 z-10 flex h-3 w-16 -translate-x-1/2 touch-none items-center justify-center focus-visible:outline-none"
+              style={{ cursor: "ns-resize" }}
+            >
+              <span className="h-1.5 w-12 rounded-full bg-[var(--color-border)] transition group-hover:w-14 group-hover:bg-[var(--color-accent)] group-focus-visible:bg-[var(--color-accent)]" />
+            </div>
+          </>
         ) : null}
       </Card>
     </TooltipProvider>

@@ -65,6 +65,7 @@ import CreateDashboardModal from "@/features/dashboard/components/CreateDashboar
 import { DashboardSwitcher } from "@/features/dashboard/components/DashboardSwitcher";
 import { DashboardChartCard } from "@/features/dashboard/components/DashboardChartCard";
 import { GeneratingChartCard } from "@/features/dashboard/components/GeneratingChartCard";
+import { AddChartTile } from "@/features/dashboard/components/AddChartTile";
 import { onChartGenerating } from "@/features/dashboard/client/chart-effects";
 import { useTranslation } from "@/shared/i18n";
 import type { DashboardListItem } from "@/shared/contracts";
@@ -991,6 +992,11 @@ export function Dashboard() {
                     {isGeneratingChart ? (
                       <div className="md:col-span-1 xl:col-span-4">
                         <GeneratingChartCard />
+                      </div>
+                    ) : null}
+                    {isEditing && !isGeneratingChart ? (
+                      <div className="md:col-span-1 xl:col-span-4">
+                        <AddChartTile />
                       </div>
                     ) : null}
                   </div>
