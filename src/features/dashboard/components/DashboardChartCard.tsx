@@ -43,7 +43,8 @@ import {
 } from "@/features/dashboard/client/runtime";
 import {
   abbreviateNumber,
-  formatILS,
+  detectCurrencySymbol,
+  formatCurrency,
   looksLikeCurrencyColumn,
   ltrIsolate,
   truncateLabel,
@@ -139,7 +140,7 @@ type ChartTooltipPoint = {
 
 function formatMetric(
   value: string | number,
-  isCurrency = false,
+  currency: string | null = null,
 ): string | number {
   if (typeof value === "string") {
     return value.trim() ? value : "-";
@@ -149,16 +150,19 @@ function formatMetric(
     return "-";
   }
 
-  if (isCurrency) {
-    return formatILS(value, Math.abs(value) >= 100_000);
+  if (currency) {
+    return formatCurrency(value, currency, Math.abs(value) >= 100_000);
   }
 
   return legacyFormatNumber(value) ?? value;
 }
 
-function formatAxisValue(value: string | number, isCurrency = false): string {
+function formatAxisValue(
+  value: string | number,
+  currency: string | null = null,
+): string {
   if (typeof value === "number") {
-    return isCurrency ? formatILS(value, true) : abbreviateNumber(value);
+    return currency ? formatCurrency(value, currency, true) : abbreviateNumber(value);
   }
 
   // Israeli date convention: DD/MM, never US month-first.
@@ -199,16 +203,28 @@ function metricLabel(chart: LayoutItem): string {
   return measure ?? "Value";
 }
 
-/** Whether the chart's aggregated measure column looks like currency. */
-function isCurrencyMetric(chart: LayoutItem): boolean {
+/** The currency symbol for the chart's aggregated measure, or null when the
+ * measure isn't money. Symbol comes from the column name; defaults to $. */
+function chartCurrency(chart: LayoutItem): string | null {
   const measure =
     chart.columns.find(
       (column) => column !== chart.groupBy && column !== chart.timeColumn,
     ) ?? null;
   if (!measure || chart.aggregation === "count") {
-    return false;
+    return null;
   }
-  return looksLikeCurrencyColumn(measure);
+  if (!looksLikeCurrencyColumn(measure)) {
+    return null;
+  }
+  return detectCurrencySymbol(measure) ?? "$";
+}
+
+/** Currency symbol for an axis column by name, or null when it isn't money. */
+function columnCurrency(name: string): string | null {
+  if (!looksLikeCurrencyColumn(name)) {
+    return null;
+  }
+  return detectCurrencySymbol(name) ?? "$";
 }
 
 function buildScatterChartConfig(chart: LayoutItem): ChartPrimitiveConfig {
@@ -241,29 +257,31 @@ function buildDonutChartConfig(
 
 /** Mirrors ChartTooltipContent's default row layout, but formats the value
  * as currency when the underlying column looks like money. */
-function currencyTooltipFormatter(
-  value: number | string,
-  name: string,
-  item: { color?: string; payload?: Record<string, unknown> },
-) {
-  const fill = item.payload?.fill;
-  const indicatorColor =
-    (typeof fill === "string" ? fill : undefined) || item.color;
+function makeCurrencyTooltipFormatter(currency: string) {
+  return function currencyTooltipFormatter(
+    value: number | string,
+    name: string,
+    item: { color?: string; payload?: Record<string, unknown> },
+  ) {
+    const fill = item.payload?.fill;
+    const indicatorColor =
+      (typeof fill === "string" ? fill : undefined) || item.color;
 
-  return (
-    <div className="flex w-full flex-1 items-center justify-between gap-2 leading-none">
-      <div className="flex items-center gap-1.5">
-        <div
-          className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
-          style={{ backgroundColor: indicatorColor }}
-        />
-        <span className="text-muted-foreground">{name}</span>
+    return (
+      <div className="flex w-full flex-1 items-center justify-between gap-2 leading-none">
+        <div className="flex items-center gap-1.5">
+          <div
+            className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+            style={{ backgroundColor: indicatorColor }}
+          />
+          <span className="text-muted-foreground">{name}</span>
+        </div>
+        <span className="font-mono font-medium tabular-nums text-foreground">
+          {formatMetric(Number(value), currency)}
+        </span>
       </div>
-      <span className="font-mono font-medium tabular-nums text-foreground">
-        {formatMetric(Number(value), true)}
-      </span>
-    </div>
-  );
+    );
+  };
 }
 
 function ChartEmptyState() {
@@ -281,15 +299,15 @@ function ScatterTooltip({
   payload,
   xLabel,
   yLabel,
-  xIsCurrency,
-  yIsCurrency,
+  xCurrency,
+  yCurrency,
 }: {
   active?: boolean;
   payload?: ChartTooltipPoint[];
   xLabel: string;
   yLabel: string;
-  xIsCurrency: boolean;
-  yIsCurrency: boolean;
+  xCurrency: string | null;
+  yCurrency: string | null;
 }) {
   if (!active || !payload?.length) {
     return null;
@@ -307,13 +325,13 @@ function ScatterTooltip({
       <div className="flex items-center justify-between gap-4">
         <span className="text-[var(--color-text-secondary)]">{xLabel}</span>
         <span className="font-display font-semibold tabular-nums text-[var(--color-text-primary)]">
-          {formatMetric(xValue ?? 0, xIsCurrency)}
+          {formatMetric(xValue ?? 0, xCurrency)}
         </span>
       </div>
       <div className="flex items-center justify-between gap-4">
         <span className="text-[var(--color-text-secondary)]">{yLabel}</span>
         <span className="font-display font-semibold tabular-nums text-[var(--color-text-primary)]">
-          {formatMetric(yValue ?? 0, yIsCurrency)}
+          {formatMetric(yValue ?? 0, yCurrency)}
         </span>
       </div>
     </div>
@@ -349,7 +367,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
     }
 
     const chartConfig = buildValueChartConfig(metricLabel(chart));
-    const isCurrency = isCurrencyMetric(chart);
+    const currency = chartCurrency(chart);
     const fillGradientId = gradientId(chart.id, "area-fill");
     const strokeGradientId = gradientId(chart.id, "area-stroke");
     const glowId = gradientId(chart.id, "area-glow");
@@ -404,7 +422,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             tickMargin={10}
             width={Y_AXIS_WIDTH}
             tickFormatter={(value: number) =>
-              formatAxisValue(value, isCurrency)
+              formatAxisValue(value, currency)
             }
             stroke={CHART_AXIS_COLOR}
           />
@@ -412,7 +430,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             cursor={false}
             content={
               <ChartTooltipContent
-                formatter={isCurrency ? currencyTooltipFormatter : undefined}
+                formatter={currency ? makeCurrencyTooltipFormatter(currency) : undefined}
               />
             }
           />
@@ -448,8 +466,8 @@ const DashboardChartContent = memo(function DashboardChartContent({
     const chartConfig = buildScatterChartConfig(chart);
     const xLabel = chart.columns[0] ?? "X";
     const yLabel = chart.columns[1] ?? "Y";
-    const xIsCurrency = looksLikeCurrencyColumn(xLabel);
-    const yIsCurrency = looksLikeCurrencyColumn(yLabel);
+    const xCurrency = columnCurrency(xLabel);
+    const yCurrency = columnCurrency(yLabel);
     const dotGradientId = gradientId(chart.id, "scatter-dot");
     const glowId = gradientId(chart.id, "scatter-glow");
 
@@ -481,7 +499,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             tickMargin={10}
             width={Y_AXIS_WIDTH}
             tickFormatter={(value: number) =>
-              formatAxisValue(value, xIsCurrency)
+              formatAxisValue(value, xCurrency)
             }
             stroke={CHART_AXIS_COLOR}
           />
@@ -495,7 +513,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             tickMargin={10}
             width={Y_AXIS_WIDTH}
             tickFormatter={(value: number) =>
-              formatAxisValue(value, yIsCurrency)
+              formatAxisValue(value, yCurrency)
             }
             stroke={CHART_AXIS_COLOR}
           />
@@ -505,8 +523,8 @@ const DashboardChartContent = memo(function DashboardChartContent({
               <ScatterTooltip
                 xLabel={xLabel}
                 yLabel={yLabel}
-                xIsCurrency={xIsCurrency}
-                yIsCurrency={yIsCurrency}
+                xCurrency={xCurrency}
+                yCurrency={yCurrency}
               />
             }
           />
@@ -537,7 +555,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
       chart.aggregation === "count" || chart.aggregation === null
         ? "Total Count"
         : `Total ${metricLabel(chart)}`;
-    const donutIsCurrency = isCurrencyMetric(chart);
+    const donutCurrency = chartCurrency(chart);
 
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
@@ -610,7 +628,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
               <Label
                 position="center"
                 content={() => {
-                  const totalText = formatAxisValue(total, donutIsCurrency);
+                  const totalText = formatAxisValue(total, donutCurrency);
                   // Long abbreviated totals (e.g. "₪1.2M") need a smaller
                   // font so they stay inside the donut's inner radius.
                   const valueFontSize = totalText.length > 7 ? "16px" : "20px";
@@ -665,7 +683,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
                 {truncateLabel(entry.label, 16)}
               </span>
               <span className="font-medium tabular-nums text-[var(--color-text-primary)]">
-                {formatMetric(entry.value, donutIsCurrency)}
+                {formatMetric(entry.value, donutCurrency)}
               </span>
             </div>
           ))}
@@ -676,7 +694,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
 
   const chartConfig = buildValueChartConfig(metricLabel(chart));
   const isHorizontal = chart.orientation === "horizontal";
-  const isCurrency = isCurrencyMetric(chart);
+  const currency = chartCurrency(chart);
   const barActiveFill = DASHBOARD_COLORS.secondary;
   const maxValue = Math.max(...series.map((entry) => entry.value));
   const highlightGradientId = gradientId(chart.id, "bar-highlight");
@@ -723,7 +741,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             fontSize={11}
             tickMargin={8}
             tickFormatter={(value: number) =>
-              formatAxisValue(value, isCurrency)
+              formatAxisValue(value, currency)
             }
             stroke={CHART_AXIS_COLOR}
           />
@@ -742,7 +760,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             cursor={{ fill: "var(--color-accent-light)" }}
             content={
               <ChartTooltipContent
-                formatter={isCurrency ? currencyTooltipFormatter : undefined}
+                formatter={currency ? makeCurrencyTooltipFormatter(currency) : undefined}
               />
             }
           />
@@ -810,14 +828,14 @@ const DashboardChartContent = memo(function DashboardChartContent({
           fontSize={11}
           tickMargin={10}
           width={Y_AXIS_WIDTH}
-          tickFormatter={(value: number) => formatAxisValue(value, isCurrency)}
+          tickFormatter={(value: number) => formatAxisValue(value, currency)}
           stroke={CHART_AXIS_COLOR}
         />
         <ChartTooltip
           cursor={{ fill: "var(--color-accent-light)" }}
           content={
             <ChartTooltipContent
-              formatter={isCurrency ? currencyTooltipFormatter : undefined}
+              formatter={currency ? makeCurrencyTooltipFormatter(currency) : undefined}
             />
           }
         />

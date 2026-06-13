@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   abbreviateNumber,
   containsHebrew,
+  detectCurrencySymbol,
+  formatCurrency,
   formatDateIL,
   formatILS,
   formatNumber,
@@ -31,6 +33,35 @@ describe("formatILS", () => {
     const formatted = formatILS(50);
     expect(formatted.startsWith("⁦")).toBe(true);
     expect(formatted.endsWith("⁩")).toBe(true);
+  });
+});
+
+describe("formatCurrency", () => {
+  it("defaults to a dollar sign before the amount", () => {
+    expect(formatCurrency(1234.5)).toContain("$1,234.5");
+  });
+
+  it("uses the given symbol", () => {
+    expect(formatCurrency(1234.5, "₪")).toContain("₪1,234.5");
+    expect(formatCurrency(2_000_000, "€", true)).toContain("€2M");
+  });
+});
+
+describe("detectCurrencySymbol", () => {
+  it("reads an explicit currency from the column name", () => {
+    expect(detectCurrencySymbol("Price (USD)")).toBe("$");
+    expect(detectCurrencySymbol("Revenue ₪")).toBe("₪");
+    expect(detectCurrencySymbol("Amount (EUR)")).toBe("€");
+    expect(detectCurrencySymbol("Cost in GBP")).toBe("£");
+  });
+
+  it("returns null when no currency is stated (caller defaults to $)", () => {
+    expect(detectCurrencySymbol("Sales")).toBeNull();
+    expect(detectCurrencySymbol("Total Revenue")).toBeNull();
+  });
+
+  it("does not false-positive on lookalike words", () => {
+    expect(detectCurrencySymbol("European Revenue")).toBeNull();
   });
 });
 

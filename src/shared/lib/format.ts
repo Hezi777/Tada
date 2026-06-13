@@ -42,10 +42,42 @@ export function formatNumber(value: number): string {
   return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
+/** Currency symbol before the number, no space, bidi-isolated. Defaults to $. */
+export function formatCurrency(
+  value: number,
+  symbol = "$",
+  abbreviate = false,
+): string {
+  const amount = abbreviate ? abbreviateNumber(value) : formatNumber(value);
+  return ltrIsolate(`${symbol}${amount}`);
+}
+
 /** ₪ before the number, no space (Academy of the Hebrew Language). */
 export function formatILS(value: number, abbreviate = false): string {
-  const amount = abbreviate ? abbreviateNumber(value) : formatNumber(value);
-  return ltrIsolate(`₪${amount}`);
+  return formatCurrency(value, "₪", abbreviate);
+}
+
+// Currency the column name explicitly states. Symbols match anywhere; codes
+// and words use boundaries so "Europe"/"poundage" don't false-positive.
+const CURRENCY_SYMBOL_PATTERNS: ReadonlyArray<{
+  pattern: RegExp;
+  symbol: string;
+}> = [
+  { pattern: /₪|\bils\b|\bnis\b|shekels?|שקל/i, symbol: "₪" },
+  { pattern: /€|\beuros?\b|\beur\b/i, symbol: "€" },
+  { pattern: /£|\bgbp\b|\bpounds?\b/i, symbol: "£" },
+  { pattern: /\$|\busd\b|\bdollars?\b/i, symbol: "$" },
+];
+
+/** The currency a column name explicitly states (e.g. "Price (₪)" -> "₪"),
+ * or null when it reads like money but names no currency. Callers default to $. */
+export function detectCurrencySymbol(name: string): string | null {
+  for (const { pattern, symbol } of CURRENCY_SYMBOL_PATTERNS) {
+    if (pattern.test(name)) {
+      return symbol;
+    }
+  }
+  return null;
 }
 
 /** DD/MM/YYYY, the Israeli display convention. Accepts Date or ISO string. */
