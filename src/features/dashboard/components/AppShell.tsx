@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useTranslation } from "@/shared/i18n";
+import { useLanguage, useTranslation } from "@/shared/i18n";
 import {
   CircleUserRound,
   FolderClosed,
@@ -24,6 +24,7 @@ import { SettingsPanel } from "./SettingsPanel";
 import { FloatingChat } from "./FloatingChat";
 import { logout } from "@/features/auth/server/actions";
 import { createClient } from "@/shared/lib/supabase/client";
+import { useDashboardStore } from "@/features/dashboard/client/store";
 
 interface AppShellProps {
   dashboardContent?: ReactNode;
@@ -124,12 +125,15 @@ export function AppShell({
   showFloatingChat = true,
 }: AppShellProps) {
   const { t } = useTranslation();
+  const lang = useLanguage();
+  const isRtl = lang === "he";
   const [themeMode, setThemeMode] = useState<ThemeMode>(readThemeMode);
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion();
+  const activeDashboardId = useDashboardStore((s) => s.activeDashboardId);
 
   useEffect(() => {
     let mounted = true;
@@ -307,7 +311,13 @@ export function AppShell({
   return (
     <div className="h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text-primary)]">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] border-r border-[var(--color-border)] bg-card lg:block">
+      <aside
+        className={`fixed inset-y-0 z-30 hidden w-[248px] bg-card lg:block ${
+          isRtl
+            ? "right-0 border-l border-[var(--color-border)]"
+            : "left-0 border-r border-[var(--color-border)]"
+        }`}
+      >
         {sidebarContent}
       </aside>
 
@@ -327,16 +337,28 @@ export function AppShell({
             />
             <motion.aside
               key="sidebar-drawer"
-              initial={prefersReducedMotion ? { opacity: 0 } : { x: "-100%" }}
+              initial={
+                prefersReducedMotion
+                  ? { opacity: 0 }
+                  : { x: isRtl ? "100%" : "-100%" }
+              }
               animate={prefersReducedMotion ? { opacity: 1 } : { x: 0 }}
-              exit={prefersReducedMotion ? { opacity: 0 } : { x: "-100%" }}
+              exit={
+                prefersReducedMotion
+                  ? { opacity: 0 }
+                  : { x: isRtl ? "100%" : "-100%" }
+              }
               transition={{
                 duration: prefersReducedMotion ? 0.12 : 0.22,
                 ease: "easeOut",
               }}
-              className="fixed inset-y-0 left-0 z-50 w-[248px] border-r border-[var(--color-border)] bg-card lg:hidden"
+              className={`fixed inset-y-0 z-50 w-[248px] bg-card lg:hidden ${
+                isRtl
+                  ? "right-0 border-l border-[var(--color-border)]"
+                  : "left-0 border-r border-[var(--color-border)]"
+              }`}
             >
-              <div className="absolute right-3 top-3">
+              <div className={`absolute top-3 ${isRtl ? "left-3" : "right-3"}`}>
                 <Button
                   type="button"
                   variant="ghost"
@@ -354,7 +376,9 @@ export function AppShell({
         ) : null}
       </AnimatePresence>
 
-      <div className="flex h-full flex-col lg:pl-[248px]">
+      <div
+        className={`flex h-full flex-col ${isRtl ? "lg:pr-[248px]" : "lg:pl-[248px]"}`}
+      >
         {/* Top bar */}
         <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between bg-[var(--color-bg)] px-4 sm:px-6">
           <Button
@@ -377,11 +401,11 @@ export function AppShell({
         <main className="flex-1 overflow-y-auto px-4 pb-6 sm:px-6">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
-              key={activeTab}
+              key={`${activeTab}:${activeDashboardId ?? "none"}`}
               initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
               className="h-full"
             >
               {activeTab === "settings" ? (
