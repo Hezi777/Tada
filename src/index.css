@@ -555,7 +555,7 @@
     position: absolute;
     inset: 0;
     border-radius: 9999px;
-    border: 2px solid #00327d;
+    border: 2px solid var(--color-accent);
     animation: fab-ring-pulse 2.5s ease-in-out infinite;
     pointer-events: none;
   }

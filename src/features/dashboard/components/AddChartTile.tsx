@@ -5,10 +5,12 @@ import { Plus, Sparkles, CornerDownLeft } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Textarea } from "@/shared/ui/textarea";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/shared/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/shared/ui/dialog";
 import { generateChartFromPrompt } from "@/features/dashboard/client/generate-chart";
 import { useToast } from "@/shared/hooks/use-toast";
 import { useTranslation } from "@/shared/i18n";
@@ -53,14 +55,14 @@ export function AddChartTile() {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         <button
           type="button"
           disabled={isBusy}
-          className="group flex h-full min-h-[260px] w-full flex-col items-center justify-center gap-3 rounded-[20px] border-2 border-dashed border-[var(--color-border)] bg-transparent text-[var(--color-text-secondary)] transition hover:border-[var(--color-accent)]/50 hover:bg-[var(--color-surface-muted)]/40 hover:text-[var(--color-accent)] disabled:opacity-60"
+          className="transition-ui group flex h-full min-h-[260px] w-full flex-col items-center justify-center gap-3 rounded-[20px] border-2 border-dashed border-[var(--color-border)] bg-transparent text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]/50 hover:bg-[var(--color-surface-muted)]/40 hover:text-[var(--color-accent)] disabled:opacity-60"
         >
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-surface-muted)] text-[var(--color-accent)] transition group-hover:scale-105">
+          <span className="transition-ui flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-surface-muted)] text-[var(--color-accent)] group-hover:scale-105">
             <Plus className="h-6 w-6" />
           </span>
           <span className="text-sm font-semibold">{t("dash.addChart")}</span>
@@ -68,15 +70,14 @@ export function AddChartTile() {
             {t("dash.addChart.hint")}
           </span>
         </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="center"
-        className="w-80 rounded-2xl border-[var(--color-border)] p-4"
-      >
-        <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
-          <Sparkles className="h-4 w-4 text-[var(--color-accent)]" />
-          {t("dash.addChart")}
-        </div>
+      </DialogTrigger>
+      <DialogContent className="w-80 rounded-2xl p-4 sm:max-w-[20rem]">
+        <DialogHeader className="mb-2">
+          <DialogTitle className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
+            <Sparkles className="h-4 w-4 text-[var(--color-accent)]" />
+            {t("dash.addChart")}
+          </DialogTitle>
+        </DialogHeader>
         <Textarea
           autoFocus
           value={prompt}
@@ -88,7 +89,7 @@ export function AddChartTile() {
             }
           }}
           placeholder={t("dash.addChart.placeholder")}
-          className="min-h-[84px] resize-none rounded-xl text-sm"
+          className="min-h-[84px] resize-none text-sm"
         />
         <div className="mt-3 flex items-center justify-between">
           <span className="flex items-center gap-1 text-[11px] text-[var(--color-text-muted)]">
@@ -98,14 +99,15 @@ export function AddChartTile() {
           <Button
             type="button"
             size="sm"
+            variant="primary-accent"
             disabled={!prompt.trim() || isBusy}
             onClick={() => void submit()}
-            className="rounded-full bg-[var(--color-accent)] px-4 text-white hover:bg-[var(--color-accent-secondary)]"
+            className="transition-ui px-4"
           >
             {t("dash.addChart.create")}
           </Button>
         </div>
-      </PopoverContent>
-    </Popover>
+      </DialogContent>
+    </Dialog>
   );
 }
