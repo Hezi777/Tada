@@ -8,6 +8,7 @@ import {
   ChevronDown,
   TrendingUp,
   AlertTriangle,
+  Lightbulb,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 
@@ -19,25 +20,41 @@ function DashboardGraphic() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/10 p-5 shadow-premium backdrop-blur-sm">
-      <div className="flex flex-col gap-4">
+    <div className="relative mt-6 overflow-hidden rounded-[1.5rem] bg-[linear-gradient(150deg,#02297a_0%,#001a48_60%,#001233_100%)] p-5 shadow-premium">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(47,109,246,0.35),transparent_55%),radial-gradient(circle_at_bottom_left,rgba(34,197,94,0.18),transparent_50%)]"
+      />
+      <div className="relative flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium uppercase tracking-[0.18em] text-white/55">
+            Overview
+          </span>
+          <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[0.65rem] font-semibold text-emerald-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
+            Live
+          </span>
+        </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl bg-white/10 p-3">
-            <p className="text-xs text-white/70">Revenue</p>
+          <div className="rounded-xl border border-white/10 bg-white/[0.07] p-3">
+            <p className="text-xs text-white/60">Revenue</p>
             <p className="display-number mt-2 text-lg text-white">$148k</p>
             <p className="mt-1 text-xs font-semibold text-emerald-300">+18%</p>
           </div>
-          <div className="rounded-xl bg-white/10 p-3">
-            <p className="text-xs text-white/70">Users</p>
+          <div className="rounded-xl border border-white/10 bg-white/[0.07] p-3">
+            <p className="text-xs text-white/60">Users</p>
             <p className="display-number mt-2 text-lg text-white">2.4k</p>
+            <p className="mt-1 text-xs font-semibold text-emerald-300">+6%</p>
           </div>
-          <div className="hidden rounded-xl bg-white/10 p-3 sm:block">
-            <p className="text-xs text-white/70">Orders</p>
+          <div className="hidden rounded-xl border border-white/10 bg-white/[0.07] p-3 sm:block">
+            <p className="text-xs text-white/60">Orders</p>
             <p className="display-number mt-2 text-lg text-white">932</p>
+            <p className="mt-1 text-xs font-semibold text-emerald-300">+11%</p>
           </div>
-          <div className="hidden rounded-xl bg-white/10 p-3 sm:block">
-            <p className="text-xs text-white/70">Churn</p>
+          <div className="hidden rounded-xl border border-white/10 bg-white/[0.07] p-3 sm:block">
+            <p className="text-xs text-white/60">Churn</p>
             <p className="display-number mt-2 text-lg text-white">1.2%</p>
+            <p className="mt-1 text-xs font-semibold text-rose-300">-0.3%</p>
           </div>
         </div>
         <div className="relative flex flex-1 flex-col justify-end gap-2">
@@ -157,35 +174,43 @@ function ChatGraphic() {
 
 function FileFormatGraphic() {
   const shouldReduceMotion = useReducedMotion();
+  const formats = ["CSV", "XLSX", "Sheets"] as const;
 
   return (
-    <div className="mt-5 flex items-center justify-center gap-4 rounded-[1.25rem] border border-primary/10 bg-white px-4 py-6 shadow-soft">
+    <div className="mt-5 flex flex-col items-center gap-4 rounded-[1.25rem] border border-primary/10 bg-white px-4 py-6 shadow-soft">
+      <div className="flex items-center justify-center gap-3">
+        {formats.map((format, index) => (
+          <motion.div
+            key={format}
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: index * 0.12, ...easeOut }}
+            className="flex h-16 w-14 flex-col items-center justify-center gap-1.5 rounded-xl border border-primary/15 bg-primary/[0.05] shadow-sm"
+          >
+            <FileSpreadsheet className="h-5 w-5 text-primary" />
+            <span className="text-[0.62rem] font-semibold text-primary">
+              {format}
+            </span>
+          </motion.div>
+        ))}
+      </div>
       <motion.div
-        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, ...easeOut }}
-        className="flex h-16 w-14 flex-col items-center justify-center rounded-xl border border-primary/15 bg-primary/[0.05] shadow-sm"
-      >
-        <FileSpreadsheet className="mb-1.5 h-5 w-5 text-primary" />
-        <span className="text-[0.65rem] font-semibold text-primary">CSV</span>
-      </motion.div>
-      <motion.div
-        animate={shouldReduceMotion ? {} : { y: [-4, 4, -4] }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+        animate={shouldReduceMotion ? {} : { y: [-3, 3, -3] }}
+        transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
         className="text-muted-foreground"
       >
-        <ChevronDown className="h-4 w-4 rotate-[-90deg]" />
+        <ChevronDown className="h-4 w-4" />
       </motion.div>
       <motion.div
-        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -16 }}
+        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.15, ...easeOut }}
-        className="flex h-16 w-14 flex-col items-center justify-center rounded-xl border border-primary/15 bg-primary/[0.05] shadow-sm"
+        transition={{ duration: 0.5, delay: 0.35, ...easeOut }}
+        className="flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#00327d,#2f6df6)] px-4 py-1.5 text-xs font-semibold text-white shadow-[0_8px_20px_-10px_rgba(0,50,125,0.6)]"
       >
-        <FileSpreadsheet className="mb-1.5 h-5 w-5 text-primary" />
-        <span className="text-[0.65rem] font-semibold text-primary">XLSX</span>
+        <Zap className="h-3.5 w-3.5" />
+        Ready to analyze
       </motion.div>
     </div>
   );
@@ -194,30 +219,57 @@ function FileFormatGraphic() {
 function InsightsGraphic() {
   const shouldReduceMotion = useReducedMotion();
 
+  const insights = [
+    {
+      icon: TrendingUp,
+      tone: "text-emerald-600",
+      bg: "bg-emerald-50",
+      ring: "ring-emerald-100",
+      label: "Revenue up 18% vs. last month",
+      meta: "Trend",
+    },
+    {
+      icon: AlertTriangle,
+      tone: "text-amber-600",
+      bg: "bg-amber-50",
+      ring: "ring-amber-100",
+      label: "Unusual spike in EU returns",
+      meta: "Anomaly",
+    },
+    {
+      icon: Lightbulb,
+      tone: "text-primary",
+      bg: "bg-primary/[0.06]",
+      ring: "ring-primary/10",
+      label: "Focus Q3 spend on the West region",
+      meta: "Suggestion",
+    },
+  ] as const;
+
   return (
-    <div className="mt-5 flex flex-col gap-3 rounded-[1.25rem] border border-primary/10 bg-white px-4 py-4 shadow-soft">
-      <motion.div
-        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.2, ...easeOut }}
-        className="flex items-center gap-2 rounded-xl border border-primary/15 bg-primary/[0.05] px-3 py-2"
-      >
-        <TrendingUp className="h-3.5 w-3.5 shrink-0 text-primary" />
-        <span className="text-xs font-medium text-primary">Revenue up 18%</span>
-      </motion.div>
-      <motion.div
-        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.4, ...easeOut }}
-        className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2"
-      >
-        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-        <span className="text-xs font-medium text-amber-700">
-          Anomaly detected
-        </span>
-      </motion.div>
+    <div className="mt-5 flex flex-col gap-2.5 rounded-[1.25rem] border border-primary/10 bg-white p-4 shadow-soft">
+      {insights.map((insight, index) => (
+        <motion.div
+          key={insight.meta}
+          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -12 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.15 + index * 0.15, ...easeOut }}
+          className="flex items-center gap-3 rounded-xl border border-black/[0.04] bg-white px-3 py-2.5 shadow-[0_2px_8px_-4px_rgba(15,23,42,0.12)]"
+        >
+          <span
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ${insight.bg} ${insight.ring}`}
+          >
+            <insight.icon className={`h-4 w-4 ${insight.tone}`} />
+          </span>
+          <span className="flex-1 text-xs font-medium leading-snug text-foreground">
+            {insight.label}
+          </span>
+          <span className="hidden shrink-0 rounded-full bg-muted px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide text-muted-foreground sm:inline">
+            {insight.meta}
+          </span>
+        </motion.div>
+      ))}
     </div>
   );
 }

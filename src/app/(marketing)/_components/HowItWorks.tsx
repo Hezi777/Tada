@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, Cpu, LayoutDashboard, FileSpreadsheet } from "lucide-react";
+import { Upload, Cpu, LayoutDashboard } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 
 const steps = [
@@ -37,7 +37,7 @@ export function HowItWorks() {
       ? { opacity: 0 }
       : { opacity: 0, x: fromSide === "left" ? -40 : 40 },
     whileInView: { opacity: 1, x: 0 },
-    viewport: { once: true, margin: "-100px" },
+    viewport: { once: false, margin: "-100px" },
     transition: { duration: 0.7, ...easeOut },
   });
 
@@ -78,7 +78,7 @@ export function HowItWorks() {
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-base font-bold text-white shadow-glow ring-8 ring-[var(--color-bg)]"
                     initial={{ scale: shouldReduceMotion ? 1 : 0 }}
                     whileInView={{ scale: 1 }}
-                    viewport={{ once: true, margin: "-100px" }}
+                    viewport={{ once: false, margin: "-100px" }}
                     transition={{
                       type: "spring",
                       stiffness: 200,
@@ -124,21 +124,6 @@ export function HowItWorks() {
             );
           })}
         </div>
-
-        {/* Closing note */}
-        <motion.div
-          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.6, ...easeOut }}
-          className="mx-auto mt-20 flex max-w-xl items-center gap-3 rounded-full border border-primary/15 bg-primary/[0.05] px-6 py-3 text-center"
-        >
-          <FileSpreadsheet className="hidden h-4 w-4 shrink-0 text-primary sm:block" />
-          <p className="text-sm leading-6 text-foreground">
-            One upload, one generated dashboard, one conversational loop - kept
-            simple on purpose.
-          </p>
-        </motion.div>
       </div>
     </section>
   );
