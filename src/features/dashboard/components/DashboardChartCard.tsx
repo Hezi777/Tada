@@ -1,5 +1,6 @@
 import {
   memo,
+  useEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -58,6 +59,7 @@ import {
 import type { LayoutItem } from "@/features/dashboard/client/layout";
 import { DASHBOARD_COLORS } from "@/features/dashboard/client/design";
 import { updateChart } from "@/features/dashboard/client/store";
+import { onChartReveal } from "@/features/dashboard/client/chart-effects";
 
 const CHART_COLOR = DASHBOARD_COLORS.primary;
 const CHART_GRID_COLOR = DASHBOARD_COLORS.chartGrid;
@@ -930,6 +932,28 @@ const DashboardChartCard = memo(function DashboardChartCard({
     }
   };
 
+  // One-time "magic" reveal glow when this chart is freshly created by the AI.
+  const [isRevealing, setIsRevealing] = useState(false);
+  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const unsubscribe = onChartReveal((id) => {
+      if (id !== chart.id) {
+        return;
+      }
+      setIsRevealing(true);
+      if (revealTimerRef.current) {
+        clearTimeout(revealTimerRef.current);
+      }
+      revealTimerRef.current = setTimeout(() => setIsRevealing(false), 2200);
+    });
+    return () => {
+      unsubscribe();
+      if (revealTimerRef.current) {
+        clearTimeout(revealTimerRef.current);
+      }
+    };
+  }, [chart.id]);
+
   return (
     <TooltipProvider delayDuration={150}>
       <Card
@@ -1011,6 +1035,16 @@ const DashboardChartCard = memo(function DashboardChartCard({
         <CardContent className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-4">
           <DashboardChartContent chart={chart} rows={rows} />
         </CardContent>
+        {isRevealing ? (
+          <div
+            aria-hidden="true"
+            className="ai-glow-ring ai-glow-ring-mask pointer-events-none absolute inset-0 z-20 rounded-[20px]"
+            style={{
+              animation:
+                "tada-glow-spin 4s linear infinite, tada-reveal-fade 2.2s ease-out forwards",
+            }}
+          />
+        ) : null}
         {isEditing ? (
           <div
             role="slider"
