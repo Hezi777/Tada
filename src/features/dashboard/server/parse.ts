@@ -113,8 +113,29 @@ function normalizeDateCells(rows: Row[]): Row[] {
   });
 }
 
+// Hebrew CSVs exported from Excel are usually Windows-1255, not UTF-8.
+// Decoding those bytes as UTF-8 turns every Hebrew character into U+FFFD,
+// so detect the encoding from the BOM (if any) and fall back to Windows-1255
+// when the bytes are not valid UTF-8.
+function decodeCsvBuffer(buffer: Buffer): string {
+  if (buffer.length >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
+    return new TextDecoder("utf-8").decode(buffer.subarray(3));
+  }
+  if (buffer.length >= 2 && buffer[0] === 0xff && buffer[1] === 0xfe) {
+    return new TextDecoder("utf-16le").decode(buffer.subarray(2));
+  }
+  if (buffer.length >= 2 && buffer[0] === 0xfe && buffer[1] === 0xff) {
+    return new TextDecoder("utf-16be").decode(buffer.subarray(2));
+  }
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+  } catch {
+    return new TextDecoder("windows-1255").decode(buffer);
+  }
+}
+
 function parseCsv(buffer: Buffer): Row[] {
-  const parsed = Papa.parse<Row>(buffer.toString("utf8"), {
+  const parsed = Papa.parse<Row>(decodeCsvBuffer(buffer), {
     header: true,
     skipEmptyLines: true,
   });
