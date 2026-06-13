@@ -15,8 +15,6 @@ import { motion, useReducedMotion } from "framer-motion";
 const easeOut = { ease: "easeOut" as const };
 
 function DashboardGraphic() {
-  const bars = [40, 65, 50, 80, 60, 92];
-  const highlightIndex = bars.length - 1;
   const shouldReduceMotion = useReducedMotion();
 
   return (
@@ -57,85 +55,67 @@ function DashboardGraphic() {
             <p className="mt-1 text-xs font-semibold text-rose-300">-0.3%</p>
           </div>
         </div>
-        <div className="grid h-32 grid-cols-5 gap-3">
-          {/* Trend mini-panel */}
-          <div className="col-span-3 flex flex-col rounded-xl border border-white/10 bg-white/[0.05] p-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-white/60">Revenue trend</p>
-              <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[0.6rem] font-semibold text-emerald-300">
-                +18%
-              </span>
-            </div>
-            <div className="relative mt-2 flex-1">
-              <svg
-                viewBox="0 0 220 70"
-                className="absolute inset-0 h-full w-full overflow-visible"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <defs>
-                  <linearGradient
-                    id="features-area-gradient"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="0%" stopColor="#2f6df6" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#2f6df6" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <motion.path
-                  d="M10 56 C 45 54, 62 36, 92 38 S 144 18, 210 14 L 210 70 L 10 70 Z"
-                  fill="url(#features-area-gradient)"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.3 }}
-                />
-                <motion.path
-                  d="M10 56 C 45 54, 62 36, 92 38 S 144 18, 210 14"
-                  stroke="#5b9dff"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  fill="none"
-                  initial={{ pathLength: shouldReduceMotion ? 1 : 0 }}
-                  whileInView={{ pathLength: 1 }}
-                  viewport={{ once: true }}
-                  transition={{
-                    duration: shouldReduceMotion ? 0 : 1.2,
-                    ease: "easeOut",
-                  }}
-                />
-              </svg>
-            </div>
+        {/* Single trend chart - one clear focal visual */}
+        <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-white/80">Revenue trend</p>
+            <span className="rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
+              +18%
+            </span>
           </div>
-          {/* Bar chart mini-panel */}
-          <div className="col-span-2 flex flex-col rounded-xl border border-white/10 bg-white/[0.05] p-3">
-            <p className="text-xs text-white/60">By channel</p>
-            <div className="mt-2 flex flex-1 items-end justify-between gap-1.5">
-              {bars.map((height, index) => {
-                const isHighlight = index === highlightIndex;
-                return (
-                  <motion.div
-                    key={`${height}-${index}`}
-                    initial={{ height: shouldReduceMotion ? `${height}%` : 0 }}
-                    whileInView={{ height: `${height}%` }}
-                    viewport={{ once: true }}
-                    transition={{
-                      duration: 0.6,
-                      delay: index * 0.1,
-                      ...easeOut,
-                    }}
-                    className={`w-full rounded-t-md ${
-                      isHighlight
-                        ? "bg-[linear-gradient(180deg,#14b8a6,#22c55e)] shadow-[0_0_14px_rgba(34,197,94,0.4)]"
-                        : "bg-[linear-gradient(180deg,#2f6df6,#00327d)] opacity-80"
-                    }`}
-                  />
-                );
-              })}
-            </div>
+          <div className="relative h-28">
+            <svg
+              viewBox="0 0 220 80"
+              className="absolute inset-0 h-full w-full overflow-visible"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient
+                  id="features-area-gradient"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop offset="0%" stopColor="#2f6df6" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="#2f6df6" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {[20, 45, 70].map((y) => (
+                <line
+                  key={y}
+                  x1="0"
+                  y1={y}
+                  x2="220"
+                  y2={y}
+                  stroke="rgba(255,255,255,0.06)"
+                  strokeWidth="1"
+                />
+              ))}
+              <motion.path
+                d="M6 62 C 45 60, 62 40, 92 42 S 150 18, 214 12 L 214 80 L 6 80 Z"
+                fill="url(#features-area-gradient)"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+              />
+              <motion.path
+                d="M6 62 C 45 60, 62 40, 92 42 S 150 18, 214 12"
+                stroke="#5b9dff"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                fill="none"
+                initial={{ pathLength: shouldReduceMotion ? 1 : 0 }}
+                whileInView={{ pathLength: 1 }}
+                viewport={{ once: true }}
+                transition={{
+                  duration: shouldReduceMotion ? 0 : 1.2,
+                  ease: "easeOut",
+                }}
+              />
+            </svg>
           </div>
         </div>
       </div>
@@ -148,13 +128,13 @@ function ChatGraphic() {
   const sparkBars = [30, 55, 42, 70, 58, 85, 64];
 
   return (
-    <div className="mt-4 flex flex-1 flex-col gap-2.5 rounded-[1.25rem] border border-primary/10 bg-white px-4 py-4 shadow-soft">
+    <div className="mt-5 flex flex-1 flex-col gap-4 rounded-[1.25rem] border border-primary/10 bg-white p-5 shadow-soft">
       <motion.div
         initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: 0.1, ...easeOut }}
-        className="ms-auto max-w-[12rem] rounded-2xl rounded-tr-sm bg-primary px-3 py-1.5 text-xs text-primary-foreground"
+        className="ms-auto max-w-[12rem] rounded-2xl rounded-tr-sm bg-primary px-3.5 py-2 text-xs text-primary-foreground"
       >
         Show me revenue by region
       </motion.div>
@@ -162,22 +142,13 @@ function ChatGraphic() {
         initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.3, ...easeOut }}
-        className="max-w-[13rem] rounded-2xl rounded-tl-sm border border-primary/10 bg-white px-3 py-1.5 text-xs text-foreground shadow-sm"
-      >
-        Here&apos;s your regional breakdown.
-      </motion.div>
-      <motion.div
-        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.45, ...easeOut }}
-        className="max-w-[15rem] rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 shadow-sm"
+        transition={{ duration: 0.5, delay: 0.35, ...easeOut }}
+        className="max-w-[15rem] rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3.5 shadow-sm"
       >
         <p className="text-xs font-semibold text-foreground">
           West region leads at $52k
         </p>
-        <div className="mt-2 flex h-12 items-end gap-1">
+        <div className="mt-3 flex h-14 items-end gap-1">
           {sparkBars.map((height, index) => (
             <motion.div
               key={`${height}-${index}`}
@@ -199,11 +170,20 @@ function ChatGraphic() {
         </div>
       </motion.div>
       <motion.div
+        initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 20 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.7, ...easeOut }}
+        className="ms-auto max-w-[11rem] rounded-2xl rounded-tr-sm bg-primary px-3.5 py-2 text-xs text-primary-foreground"
+      >
+        And profit margin?
+      </motion.div>
+      <motion.div
         initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.6, ...easeOut }}
-        className="mt-auto max-w-[6rem] rounded-2xl rounded-tl-sm border border-primary/10 bg-white px-3 py-2.5 shadow-sm"
+        transition={{ duration: 0.5, delay: 0.95, ...easeOut }}
+        className="max-w-[5.5rem] rounded-2xl rounded-tl-sm border border-primary/10 bg-white px-3 py-2.5 shadow-sm"
       >
         <div className="flex items-center gap-2">
           {[0, 1, 2].map((dot) => (
@@ -280,9 +260,6 @@ function InsightsGraphic() {
       ring: "ring-emerald-100",
       label: "Revenue up 18% vs. last month",
       meta: "Trend",
-      confidence: 92,
-      barColor: "bg-[linear-gradient(90deg,#14b8a6,#22c55e)]",
-      spark: [30, 42, 38, 55, 50, 68, 80],
     },
     {
       icon: AlertTriangle,
@@ -291,9 +268,6 @@ function InsightsGraphic() {
       ring: "ring-amber-100",
       label: "Unusual spike in EU returns",
       meta: "Anomaly",
-      confidence: 76,
-      barColor: "bg-[linear-gradient(90deg,#f59e0b,#fbbf24)]",
-      spark: [25, 28, 30, 26, 65, 35, 32],
     },
     {
       icon: Lightbulb,
@@ -302,94 +276,33 @@ function InsightsGraphic() {
       ring: "ring-primary/10",
       label: "Focus Q3 spend on the West region",
       meta: "Suggestion",
-      confidence: 88,
-      barColor: "bg-[linear-gradient(90deg,#2f6df6,#00327d)]",
-      spark: [40, 48, 45, 60, 58, 72, 70],
     },
   ] as const;
 
   return (
-    <div className="mt-5 flex flex-col gap-3 rounded-[1.25rem] border border-primary/10 bg-white p-4 shadow-soft sm:p-5">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          AI insights
-        </span>
-        <span className="flex items-center gap-1.5 rounded-full bg-primary/[0.06] px-2.5 py-1 text-[0.65rem] font-semibold text-primary">
-          <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(0,50,125,0.5)]" />
-          3 new
-        </span>
-      </div>
-      <div className="grid gap-2.5 sm:grid-cols-3">
-        {insights.map((insight, index) => (
-          <motion.div
-            key={insight.meta}
-            initial={
-              shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }
-            }
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{
-              duration: 0.5,
-              delay: 0.15 + index * 0.12,
-              ...easeOut,
-            }}
-            className="flex flex-col gap-2.5 rounded-xl border border-black/[0.04] bg-white p-3 shadow-[0_2px_8px_-4px_rgba(15,23,42,0.12)]"
+    <div className="mt-5 flex flex-col divide-y divide-black/[0.05] rounded-[1.25rem] border border-primary/10 bg-white px-5 shadow-soft">
+      {insights.map((insight, index) => (
+        <motion.div
+          key={insight.meta}
+          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.15 + index * 0.12, ...easeOut }}
+          className="flex items-center gap-4 py-4"
+        >
+          <span
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${insight.bg} ${insight.ring}`}
           >
-            <div className="flex items-center justify-between">
-              <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ${insight.bg} ${insight.ring}`}
-              >
-                <insight.icon className={`h-4 w-4 ${insight.tone}`} />
-              </span>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                {insight.meta}
-              </span>
-            </div>
-            <p className="text-xs font-medium leading-snug text-foreground">
-              {insight.label}
-            </p>
-            <div className="flex h-8 items-end gap-[3px]">
-              {insight.spark.map((height, sparkIndex) => (
-                <motion.div
-                  key={`${insight.meta}-${sparkIndex}`}
-                  initial={{
-                    height: shouldReduceMotion ? `${height}%` : 0,
-                  }}
-                  whileInView={{ height: `${height}%` }}
-                  viewport={{ once: true }}
-                  transition={{
-                    duration: 0.45,
-                    delay: 0.3 + index * 0.12 + sparkIndex * 0.04,
-                    ...easeOut,
-                  }}
-                  className={`flex-1 rounded-[2px] ${insight.barColor} opacity-80`}
-                />
-              ))}
-            </div>
-            <div>
-              <div className="flex items-center justify-between text-[0.6rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                <span>Confidence</span>
-                <span>{insight.confidence}%</span>
-              </div>
-              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                <motion.div
-                  initial={{
-                    width: shouldReduceMotion ? `${insight.confidence}%` : 0,
-                  }}
-                  whileInView={{ width: `${insight.confidence}%` }}
-                  viewport={{ once: true }}
-                  transition={{
-                    duration: 0.6,
-                    delay: 0.4 + index * 0.12,
-                    ...easeOut,
-                  }}
-                  className={`h-full rounded-full ${insight.barColor}`}
-                />
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+            <insight.icon className={`h-5 w-5 ${insight.tone}`} />
+          </span>
+          <p className="flex-1 text-sm font-medium text-foreground">
+            {insight.label}
+          </p>
+          <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[0.62rem] font-semibold uppercase tracking-wide text-muted-foreground">
+            {insight.meta}
+          </span>
+        </motion.div>
+      ))}
     </div>
   );
 }
