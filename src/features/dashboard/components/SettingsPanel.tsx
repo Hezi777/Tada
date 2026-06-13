@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
-import { Button } from "@/shared/ui/button";
+import { Button, buttonVariants } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { createClient } from "@/shared/lib/supabase/client";
 import { listDashboards } from "@/shared/lib/api";
@@ -32,6 +32,7 @@ import {
   persistLanguageCode,
 } from "@/features/dashboard/client/locale";
 import { useTranslation, type TranslationKey } from "@/shared/i18n";
+import { bidiIsolate } from "@/shared/lib/format";
 
 type ThemeMode = "system" | "light" | "dark";
 type SettingsSection = "profile" | "appearance" | "language" | "account";
@@ -266,6 +267,7 @@ export function SettingsPanel() {
     null,
   );
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const profileRef = useRef<HTMLElement | null>(null);
   const appearanceRef = useRef<HTMLElement | null>(null);
   const languageRef = useRef<HTMLElement | null>(null);
@@ -318,6 +320,51 @@ export function SettingsPanel() {
       mounted = false;
     };
   }, [supabase]);
+
+  useEffect(() => {
+    const root = containerRef.current;
+    const sections: Array<{
+      key: SettingsSection;
+      el: HTMLElement | null;
+    }> = [
+      { key: "profile", el: profileRef.current },
+      { key: "appearance", el: appearanceRef.current },
+      { key: "language", el: languageRef.current },
+      { key: "account", el: accountRef.current },
+    ];
+
+    if (!root) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+        if (visible.length === 0) {
+          return;
+        }
+
+        const match = sections.find(
+          (section) => section.el === visible[0].target,
+        );
+        if (match) {
+          setActiveSection(match.key);
+        }
+      },
+      { root, rootMargin: "-20% 0px -60% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] },
+    );
+
+    for (const section of sections) {
+      if (section.el) {
+        observer.observe(section.el);
+      }
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   const usagePercent = Math.min(
     100,
@@ -462,7 +509,10 @@ export function SettingsPanel() {
   }
 
   return (
-    <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-10 sm:px-8">
+    <div
+      ref={containerRef}
+      className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-10 sm:px-8"
+    >
       <h1 className="font-display text-[2.25rem] font-black tracking-[-0.045em] text-[var(--color-text-primary)]">
         {t("settings.title")}
       </h1>
@@ -582,24 +632,6 @@ export function SettingsPanel() {
                 />
               </div>
             </div>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-              {accountStatus ? (
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  {accountStatus.text}
-                </p>
-              ) : null}
-              <Button
-                type="button"
-                onClick={() => {
-                  void handleSaveAccount();
-                }}
-                disabled={isSavingAccount}
-                className="h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-accent-secondary)]"
-              >
-                {isSavingAccount ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
           </section>
 
           <section
@@ -683,24 +715,6 @@ export function SettingsPanel() {
                 ))}
               </select>
             </div>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-              {accountStatus ? (
-                <p className="text-sm text-[var(--color-text-secondary)]">
-                  {accountStatus.text}
-                </p>
-              ) : null}
-              <Button
-                type="button"
-                onClick={() => {
-                  void handleSaveAccount();
-                }}
-                disabled={isSavingAccount}
-                className="h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-accent-secondary)]"
-              >
-                {isSavingAccount ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
           </section>
 
           <section
@@ -723,7 +737,8 @@ export function SettingsPanel() {
                   Free Plan
                 </span>
                 <span className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
-                  ID {userId ? truncateUuid(userId) : "Pending"}
+                  ID{" "}
+                  {userId ? bidiIsolate(truncateUuid(userId)) : "Pending"}
                 </span>
               </div>
             </div>
@@ -734,7 +749,8 @@ export function SettingsPanel() {
                   Workspace Usage
                 </span>
                 <span className="font-semibold text-[var(--color-accent)]">
-                  {dashboardCount} of {DASHBOARD_LIMIT} dashboards
+                  {bidiIsolate(`${dashboardCount} of ${DASHBOARD_LIMIT}`)}{" "}
+                  dashboards
                 </span>
               </div>
               <div className="h-3 overflow-hidden rounded-full bg-[var(--color-surface-subtle)]">
@@ -784,10 +800,10 @@ export function SettingsPanel() {
                 </div>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="destructive"
                   onClick={() => setDeleteDialogOpen(true)}
                   disabled={isDeleting}
-                  className="h-10 rounded-full border border-[var(--color-border)] bg-card px-5 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
+                  className="h-10 px-5 text-sm font-semibold"
                 >
                   <Trash2 className="h-4 w-4" />
                   Delete account
@@ -804,6 +820,25 @@ export function SettingsPanel() {
         </div>
       </div>
 
+      <div className="sticky bottom-0 z-10 -mx-6 -mb-10 mt-8 flex flex-col gap-3 border-t border-[var(--color-border)] bg-[var(--color-bg)] px-6 py-4 sm:-mx-8 sm:flex-row sm:items-center sm:justify-end sm:px-8">
+        {accountStatus ? (
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            {accountStatus.text}
+          </p>
+        ) : null}
+        <Button
+          type="button"
+          variant="primary-accent"
+          onClick={() => {
+            void handleSaveAccount();
+          }}
+          disabled={isSavingAccount}
+          className="h-10 px-6 text-sm font-semibold sm:self-end"
+        >
+          {isSavingAccount ? "Saving..." : "Save Changes"}
+        </Button>
+      </div>
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -816,7 +851,7 @@ export function SettingsPanel() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-secondary)]"
+              className={buttonVariants({ variant: "destructive" })}
               disabled={isDeleting}
               onClick={(event) => {
                 event.preventDefault();

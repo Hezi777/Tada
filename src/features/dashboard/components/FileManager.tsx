@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
 import { Badge } from "@/shared/ui/badge";
-import { Button } from "@/shared/ui/button";
+import { Button, buttonVariants } from "@/shared/ui/button";
 import { Card } from "@/shared/ui/card";
 import {
   DropdownMenu,
@@ -49,6 +49,7 @@ import {
   TooltipTrigger,
 } from "@/shared/ui/tooltip";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { EmptyState } from "@/shared/ui/empty-state";
 import { useToast } from "@/shared/hooks/use-toast";
 import {
   createDashboard,
@@ -59,7 +60,7 @@ import {
   updateDashboard,
   uploadToDashboard,
 } from "@/shared/lib/api";
-import { formatDateIL } from "@/shared/lib/format";
+import { bidiIsolate, formatDateIL } from "@/shared/lib/format";
 import { useTranslation } from "@/shared/i18n";
 import {
   clearActiveDashboard,
@@ -715,7 +716,7 @@ export default function FileManager() {
                         void handleDrillIn(dashboard);
                       }
                     }}
-                    className="group relative flex aspect-[3/2] cursor-pointer flex-col overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_60px_-30px_rgba(25,28,30,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+                    className="group relative flex aspect-[3/2] cursor-pointer flex-col overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-ui hover:-translate-y-1 hover:shadow-[0_28px_60px_-30px_rgba(25,28,30,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
                     onClick={() => void handleDrillIn(dashboard)}
                   >
                     <div
@@ -728,7 +729,7 @@ export default function FileManager() {
                         </div>
 
                         <div
-                          className="flex items-center gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                          className="flex items-center gap-2 opacity-0 transition-ui group-hover:opacity-100"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <Popover
@@ -742,7 +743,7 @@ export default function FileManager() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 rounded-full bg-white/80 text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm hover:bg-white"
+                                className="h-8 w-8 rounded-full bg-card text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm hover:bg-[var(--color-surface-muted)]"
                                 aria-label="Change dashboard icon"
                               >
                                 <Smile className="h-4 w-4" />
@@ -790,7 +791,7 @@ export default function FileManager() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 rounded-full bg-white/80 shadow-sm backdrop-blur-sm hover:bg-white"
+                                className="h-8 w-8 rounded-full bg-card shadow-sm backdrop-blur-sm hover:bg-[var(--color-surface-muted)]"
                                 aria-label="Change dashboard color"
                               >
                                 <span
@@ -832,7 +833,7 @@ export default function FileManager() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 rounded-full bg-white/80 text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm hover:bg-white"
+                                className="h-8 w-8 rounded-full bg-card text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm hover:bg-[var(--color-surface-muted)]"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -865,7 +866,7 @@ export default function FileManager() {
                       <DashboardPreview index={index} />
 
                       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <div className="rounded-full bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-white opacity-0 shadow-[0_18px_40px_-26px_rgba(0,50,125,0.7)] transition-all duration-200 group-hover:opacity-100">
+                        <div className="rounded-full bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-white opacity-0 shadow-[0_18px_40px_-26px_rgba(0,50,125,0.7)] transition-ui group-hover:opacity-100">
                           Open Dashboard
                         </div>
                       </div>
@@ -906,27 +907,14 @@ export default function FileManager() {
                   </Card>
                 );
               })}
-
-              <button
-                type="button"
-                onClick={() => setCreateOpen(true)}
-                className="group flex aspect-[3/2] flex-col items-center justify-center rounded-[20px] border-2 border-dashed border-[var(--color-border)] bg-card transition-all duration-300 hover:border-[var(--color-accent)] hover:bg-[var(--color-surface-muted)]"
-              >
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-muted)] transition-colors group-hover:text-[var(--color-accent)]">
-                  <Plus className="h-7 w-7" />
-                </div>
-                <span className="font-display text-lg font-bold tracking-[-0.03em] text-[var(--color-text-secondary)] group-hover:text-[var(--color-accent)]">
-                  Create New Dashboard
-                </span>
-              </button>
             </div>
           )}
         </div>
 
         <footer className="mt-14 flex flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm font-medium text-[var(--color-text-secondary)]">
-            Showing {pagedDashboards.length} of {sortedDashboards.length}{" "}
-            dashboards
+            Showing {bidiIsolate(String(pagedDashboards.length))} of{" "}
+            {bidiIsolate(String(sortedDashboards.length))} dashboards
           </span>
           <div className="flex items-center gap-2">
             <Button
@@ -995,7 +983,7 @@ export default function FileManager() {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => void handleDeleteDashboard()}
-                className="bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-secondary)]"
+                className={buttonVariants({ variant: "destructive" })}
               >
                 Delete
               </AlertDialogAction>
@@ -1111,30 +1099,32 @@ export default function FileManager() {
 
       <div className="mt-8 flex-1">
         {filteredFiles.length === 0 ? (
-          <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[20px] border border-[var(--color-border)] bg-card px-6 py-10 text-center shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
-            <div className="flex h-20 w-20 items-center justify-center rounded-[28px] bg-[var(--color-accent-light)] text-[var(--color-accent)]">
-              <UploadCloud className="h-8 w-8" />
-            </div>
-            <h2 className="mt-6 font-display text-[1.875rem] font-bold tracking-[-0.04em] text-[var(--color-text-primary)]">
-              {searchQuery.trim()
+          <EmptyState
+            className="min-h-[420px] justify-center rounded-[20px] border border-[var(--color-border)] bg-card px-6 py-10 shadow-card"
+            icon={<UploadCloud className="h-8 w-8" />}
+            title={
+              searchQuery.trim()
                 ? "No files match your search"
-                : "No files yet"}
-            </h2>
-            <p className="mt-3 max-w-sm text-sm leading-7 text-[var(--color-text-secondary)]">
-              {searchQuery.trim()
+                : "No files yet"
+            }
+            description={
+              searchQuery.trim()
                 ? "Try a different search term, or clear the search to see all files."
-                : "Upload a CSV, Excel, or PDF file to start building charts for this dashboard."}
-            </p>
-            <Button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="mt-6 h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-accent-secondary)]"
-            >
-              <Upload className="h-4 w-4" />
-              Upload File
-            </Button>
-          </div>
+                : "Upload a CSV, Excel, or PDF file to start building charts for this dashboard."
+            }
+            action={
+              <Button
+                type="button"
+                variant="primary-accent"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="h-10 px-6 text-sm font-semibold"
+              >
+                <Upload className="h-4 w-4" />
+                Upload File
+              </Button>
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {filteredFiles.map((file) => {
@@ -1148,7 +1138,7 @@ export default function FileManager() {
               return (
                 <Card
                   key={file.id}
-                  className="group relative overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_28px_54px_-30px_rgba(25,28,30,0.24)]"
+                  className="group relative overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-ui hover:-translate-y-1 hover:shadow-[0_28px_54px_-30px_rgba(25,28,30,0.24)]"
                 >
                   <div className="flex items-start gap-4 p-5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-accent-light)] text-[var(--color-accent)]">
@@ -1185,7 +1175,7 @@ export default function FileManager() {
                       size="icon"
                       onClick={() => setDeleteFileConfirm(file)}
                       aria-label={`Remove ${file.fileName}`}
-                      className="h-8 w-8 shrink-0 rounded-full text-[var(--color-text-muted)] opacity-0 transition-opacity hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] group-hover:opacity-100"
+                      className="h-8 w-8 shrink-0 rounded-full text-[var(--color-text-muted)] opacity-0 transition-ui hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] group-hover:opacity-100"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -1224,7 +1214,7 @@ export default function FileManager() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void handleRemoveFile()}
-              className="bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-secondary)]"
+              className={buttonVariants({ variant: "destructive" })}
             >
               Remove
             </AlertDialogAction>
