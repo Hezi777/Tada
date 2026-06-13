@@ -872,7 +872,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
       <Card
         ref={setNodeRef}
         style={style}
-        className={`flex h-full flex-col overflow-hidden rounded-[20px] border bg-card p-0 shadow-premium transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-24px_rgba(25,28,30,0.18)] ${getCardMinHeightClass(
+        className={`flex h-full flex-col overflow-hidden rounded-[20px] border bg-card p-0 shadow-premium ${getCardMinHeightClass(
           chart,
         )} ${
           isEditing
