@@ -17,6 +17,8 @@
     --color-text-muted: #9ba3b2;
     --color-chart-grid: #eceef0;
     --color-chart-axis: #6b7280;
+    --color-chart-hover: rgba(0, 50, 125, 0.05);
+    --color-chart-cursor-line: rgba(0, 50, 125, 0.18);
 
     --background: 210 43% 98%;
     --foreground: 217 30% 13%;
@@ -76,6 +78,8 @@
     --color-text-muted: #6f7785;
     --color-chart-grid: #272d37;
     --color-chart-axis: #8891a0;
+    --color-chart-hover: rgba(255, 255, 255, 0.045);
+    --color-chart-cursor-line: rgba(255, 255, 255, 0.16);
 
     /* shadcn HSL tokens (button/card/popover/input primitives). */
     --background: 220 22% 8%;

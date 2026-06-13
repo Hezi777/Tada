@@ -108,9 +108,9 @@ function GlowFilter({ id, color }: { id: string; color: string }) {
       <feDropShadow
         dx="0"
         dy="0"
-        stdDeviation="4"
+        stdDeviation="3.5"
         floodColor={color}
-        floodOpacity="0.45"
+        floodOpacity="0.28"
       />
     </filter>
   );
@@ -295,7 +295,7 @@ function makeCurrencyTooltipFormatter(currency: string) {
 
 function ChartEmptyState() {
   return (
-    <div className="flex h-[180px] items-center justify-center rounded-[20px] bg-[var(--color-surface-muted)] px-6 text-center">
+    <div className="flex h-full min-h-[160px] flex-1 items-center justify-center rounded-[20px] bg-[var(--color-surface-muted)] px-6 text-center">
       <p className="text-sm text-[var(--color-text-secondary)]">
         This chart does not have enough data to render.
       </p>
@@ -327,7 +327,7 @@ function ScatterTooltip({
   const yValue = point.payload?.y;
 
   return (
-    <div className="grid min-w-[10rem] gap-1.5 rounded-[1.25rem] border border-[var(--color-border)] bg-card/95 px-3 py-2 text-xs shadow-[0_24px_48px_-30px_rgba(0,50,125,0.3)] backdrop-blur">
+    <div className="grid min-w-[10rem] gap-2 rounded-[1.25rem] border border-[var(--color-border)] bg-card/95 px-3.5 py-2.5 text-xs shadow-premium backdrop-blur">
       <div className="font-medium text-[var(--color-text-primary)]">
         Scatter point
       </div>
@@ -380,7 +380,6 @@ const DashboardChartContent = memo(function DashboardChartContent({
     const chartConfig = buildValueChartConfig(metricLabel(chart));
     const currency = chartCurrency(chart);
     const fillGradientId = gradientId(chart.id, "area-fill");
-    const strokeGradientId = gradientId(chart.id, "area-stroke");
     const glowId = gradientId(chart.id, "area-glow");
 
     return (
@@ -396,8 +395,8 @@ const DashboardChartContent = memo(function DashboardChartContent({
             <linearGradient id={fillGradientId} x1="0" y1="0" x2="0" y2="1">
               <stop
                 offset="0%"
-                stopColor={GRADIENT_HIGHLIGHT_STOPS[1]}
-                stopOpacity={0.22}
+                stopColor={GRADIENT_PRIMARY_STOPS[0]}
+                stopOpacity={0.18}
               />
               <stop
                 offset="100%"
@@ -405,11 +404,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
                 stopOpacity={0}
               />
             </linearGradient>
-            <linearGradient id={strokeGradientId} x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor={GRADIENT_PRIMARY_STOPS[0]} />
-              <stop offset="100%" stopColor={GRADIENT_HIGHLIGHT_STOPS[1]} />
-            </linearGradient>
-            <GlowFilter id={glowId} color={GRADIENT_HIGHLIGHT_STOPS[1]} />
+            <GlowFilter id={glowId} color={GRADIENT_PRIMARY_STOPS[0]} />
           </defs>
           <CartesianGrid
             vertical={false}
@@ -448,16 +443,16 @@ const DashboardChartContent = memo(function DashboardChartContent({
           <Area
             type="monotone"
             dataKey="value"
-            stroke={`url(#${strokeGradientId})`}
-            strokeWidth={3}
+            stroke={GRADIENT_PRIMARY_STOPS[0]}
+            strokeWidth={2.5}
             filter={`url(#${glowId})`}
             fill={`url(#${fillGradientId})`}
             dot={false}
             activeDot={{
-              r: 5,
-              fill: GRADIENT_HIGHLIGHT_STOPS[1],
+              r: 4.5,
+              fill: GRADIENT_PRIMARY_STOPS[0],
               stroke: "var(--color-surface)",
-              strokeWidth: 3,
+              strokeWidth: 2.5,
             }}
             isAnimationActive
             animationDuration={CHART_ANIMATION_DURATION}
@@ -529,7 +524,10 @@ const DashboardChartContent = memo(function DashboardChartContent({
             stroke={CHART_AXIS_COLOR}
           />
           <ChartTooltip
-            cursor={{ stroke: "#C6D5EE", strokeDasharray: "4 8" }}
+            cursor={{
+              stroke: "var(--color-chart-cursor-line)",
+              strokeDasharray: "4 8",
+            }}
             content={
               <ScatterTooltip
                 xLabel={xLabel}
@@ -678,7 +676,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
           {series.map((entry, index) => (
             <div
               key={`${chart.id}-legend-${entry.label}`}
-              className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] px-2.5 py-1 text-[11px]"
+              className="flex items-center gap-1.5 rounded-full border border-[var(--color-border)] px-2.5 py-1 text-[11px] transition-colors duration-200 hover:border-[var(--color-accent)]/30"
             >
               <span
                 className="h-2 w-2 shrink-0 rounded-full"
@@ -706,7 +704,6 @@ const DashboardChartContent = memo(function DashboardChartContent({
   const chartConfig = buildValueChartConfig(metricLabel(chart));
   const isHorizontal = chart.orientation === "horizontal";
   const currency = chartCurrency(chart);
-  const barActiveFill = DASHBOARD_COLORS.secondary;
   const maxValue = Math.max(...series.map((entry) => entry.value));
   const highlightGradientId = gradientId(chart.id, "bar-highlight");
   const highlightGlowId = gradientId(chart.id, "bar-glow");
@@ -768,7 +765,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             stroke={CHART_AXIS_COLOR}
           />
           <ChartTooltip
-            cursor={{ fill: "var(--color-accent-light)" }}
+            cursor={{ fill: "var(--color-chart-hover)" }}
             content={
               <ChartTooltipContent
                 formatter={currency ? makeCurrencyTooltipFormatter(currency) : undefined}
@@ -778,7 +775,6 @@ const DashboardChartContent = memo(function DashboardChartContent({
           <Bar
             dataKey="value"
             radius={[0, 10, 10, 0]}
-            activeBar={{ fill: barActiveFill }}
             isAnimationActive
             animationDuration={CHART_ANIMATION_DURATION}
             animationEasing={CHART_ANIMATION_EASING}
@@ -843,7 +839,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
           stroke={CHART_AXIS_COLOR}
         />
         <ChartTooltip
-          cursor={{ fill: "var(--color-accent-light)" }}
+          cursor={{ fill: "var(--color-chart-hover)" }}
           content={
             <ChartTooltipContent
               formatter={currency ? makeCurrencyTooltipFormatter(currency) : undefined}
@@ -853,7 +849,6 @@ const DashboardChartContent = memo(function DashboardChartContent({
         <Bar
           dataKey="value"
           radius={[10, 10, 0, 0]}
-          activeBar={{ fill: barActiveFill }}
           isAnimationActive
           animationDuration={CHART_ANIMATION_DURATION}
           animationEasing={CHART_ANIMATION_EASING}
