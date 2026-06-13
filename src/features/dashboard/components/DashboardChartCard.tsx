@@ -6,6 +6,7 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
+  type RefObject,
 } from "react";
 import { GripVertical, Scaling } from "lucide-react";
 import { CSS } from "@dnd-kit/utilities";
@@ -347,6 +348,67 @@ function ScatterTooltip({
   );
 }
 
+/** Tracks an element's content box size via ResizeObserver, for charts that
+ * need to clamp radii/sizes to the actual rendered area. */
+function useElementSize(): [RefObject<HTMLDivElement>, { width: number; height: number }] {
+  const ref = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) {
+      return;
+    }
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      setSize((prev) =>
+        prev.width === width && prev.height === height
+          ? prev
+          : { width, height },
+      );
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return [ref, size];
+}
+
+/** Donut outer/inner radius in px, clamped so the ring + legend always fit
+ * inside the card regardless of how small/tall the chart area gets. */
+const DONUT_OUTER_RADIUS_MAX = 100;
+const DONUT_OUTER_RADIUS_MIN = 44;
+const DONUT_INNER_RATIO = 0.62;
+
+function getDonutRadii(width: number, height: number): {
+  outerRadius: number;
+  innerRadius: number;
+} {
+  if (width <= 0 || height <= 0) {
+    return { outerRadius: DONUT_OUTER_RADIUS_MAX, innerRadius: DONUT_OUTER_RADIUS_MAX * DONUT_INNER_RATIO };
+  }
+  const fit = Math.min(width, height) / 2 - 12;
+  const outerRadius = Math.min(
+    DONUT_OUTER_RADIUS_MAX,
+    Math.max(DONUT_OUTER_RADIUS_MIN, fit),
+  );
+  return { outerRadius, innerRadius: outerRadius * DONUT_INNER_RATIO };
+}
+
+/** Categorical axes with few categories show every tick (no skipping); past
+ * this count, fall back to gap-based tick thinning. */
+const LOW_CARDINALITY_THRESHOLD = 6;
+
+/** Caps bar thickness so full-width charts don't stretch a handful of bars
+ * across the whole card. Wider cards get a slightly higher cap. */
+function getMaxBarSize(chart: LayoutItem): number {
+  if (chart.colSpan >= 12) return 64;
+  if (chart.colSpan >= 8) return 56;
+  return 48;
+}
+
 const CHART_SIZES = ["small", "medium", "large"] as const;
 
 /** Card min-height mirrors the chart area so larger sizes visibly grow. */
@@ -370,6 +432,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
   rows: SerializedRow[];
 }) {
   const [activeSlice, setActiveSlice] = useState<number | undefined>(undefined);
+  const [donutContainerRef, donutSize] = useElementSize();
 
   if (chart.type === "area") {
     const series = buildAreaSeries(chart, rows);
@@ -565,12 +628,14 @@ const DashboardChartContent = memo(function DashboardChartContent({
         ? "Total Count"
         : `Total ${metricLabel(chart)}`;
     const donutCurrency = chartCurrency(chart);
+    const { outerRadius, innerRadius } = getDonutRadii(donutSize.width, donutSize.height);
 
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
         <ChartContainer
+          ref={donutContainerRef}
           config={chartConfig}
-          className="min-h-[140px] w-full flex-1 rounded-[20px] bg-card"
+          className="min-h-[180px] w-full flex-1 rounded-[20px] bg-card"
         >
           <PieChart>
             <defs>
@@ -589,8 +654,8 @@ const DashboardChartContent = memo(function DashboardChartContent({
               dataKey="value"
               nameKey="label"
               cornerRadius={6}
-              innerRadius="58%"
-              outerRadius="85%"
+              innerRadius={innerRadius}
+              outerRadius={outerRadius}
               startAngle={90}
               endAngle={450}
               isAnimationActive={false}
@@ -609,8 +674,8 @@ const DashboardChartContent = memo(function DashboardChartContent({
               nameKey="label"
               paddingAngle={3}
               cornerRadius={6}
-              innerRadius="58%"
-              outerRadius="85%"
+              innerRadius={innerRadius}
+              outerRadius={outerRadius}
               activeIndex={activeSlice}
               onMouseEnter={(_: unknown, index: number) =>
                 setActiveSlice(index)
@@ -619,7 +684,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
               activeShape={(props: { outerRadius?: number | string }) => (
                 <Sector
                   {...props}
-                  outerRadius={Number(props.outerRadius) + 4}
+                  outerRadius={Number(props.outerRadius) + 2}
                 />
               )}
               isAnimationActive
@@ -669,7 +734,10 @@ const DashboardChartContent = memo(function DashboardChartContent({
                 }}
               />
             </Pie>
-            <ChartTooltip content={<ChartTooltipContent labelKey="label" />} />
+            <ChartTooltip
+              offset={20}
+              content={<ChartTooltipContent labelKey="label" />}
+            />
           </PieChart>
         </ChartContainer>
         <div className="flex flex-wrap justify-center gap-2">
@@ -761,6 +829,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
             fontSize={11}
             tickMargin={8}
             width={128}
+            interval={series.length <= LOW_CARDINALITY_THRESHOLD ? 0 : undefined}
             tickFormatter={(value: string) => truncateLabel(value, 22)}
             stroke={CHART_AXIS_COLOR}
           />
@@ -775,6 +844,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
           <Bar
             dataKey="value"
             radius={[0, 10, 10, 0]}
+            maxBarSize={getMaxBarSize(chart)}
             isAnimationActive
             animationDuration={CHART_ANIMATION_DURATION}
             animationEasing={CHART_ANIMATION_EASING}
@@ -802,7 +872,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
     >
       <BarChart
         data={series}
-        margin={{ top: 12, right: 12, left: 0, bottom: 4 }}
+        margin={{ top: 12, right: 12, left: 8, bottom: 4 }}
       >
         <defs>
           <linearGradient id={highlightGradientId} x1="0" y1="0" x2="0" y2="1">
@@ -826,6 +896,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
           fontSize={11}
           tickMargin={10}
           minTickGap={18}
+          interval={series.length <= LOW_CARDINALITY_THRESHOLD ? 0 : undefined}
           tickFormatter={formatAxisValue}
           stroke={CHART_AXIS_COLOR}
         />
@@ -849,6 +920,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
         <Bar
           dataKey="value"
           radius={[10, 10, 0, 0]}
+          maxBarSize={getMaxBarSize(chart)}
           isAnimationActive
           animationDuration={CHART_ANIMATION_DURATION}
           animationEasing={CHART_ANIMATION_EASING}
@@ -1084,7 +1156,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
               className="group absolute right-0 top-1/2 z-10 flex h-16 w-3 -translate-y-1/2 touch-none items-center justify-center focus-visible:outline-none"
               style={{ cursor: "ew-resize" }}
             >
-              <span className="h-12 w-1.5 rounded-full bg-[var(--color-border)] transition group-hover:h-14 group-hover:bg-[var(--color-accent)] group-focus-visible:bg-[var(--color-accent)]" />
+              <span className="transition-ui h-10 w-1 rounded-full bg-[var(--color-text-muted)]/35 group-hover:h-14 group-hover:w-1.5 group-hover:bg-[var(--color-accent)] group-focus-visible:h-14 group-focus-visible:w-1.5 group-focus-visible:bg-[var(--color-accent)]" />
             </div>
             {/* Bottom edge — drag to change height */}
             <div
@@ -1102,7 +1174,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
               className="group absolute bottom-0 left-1/2 z-10 flex h-3 w-16 -translate-x-1/2 touch-none items-center justify-center focus-visible:outline-none"
               style={{ cursor: "ns-resize" }}
             >
-              <span className="h-1.5 w-12 rounded-full bg-[var(--color-border)] transition group-hover:w-14 group-hover:bg-[var(--color-accent)] group-focus-visible:bg-[var(--color-accent)]" />
+              <span className="transition-ui h-1 w-10 rounded-full bg-[var(--color-text-muted)]/35 group-hover:h-1.5 group-hover:w-14 group-hover:bg-[var(--color-accent)] group-focus-visible:h-1.5 group-focus-visible:w-14 group-focus-visible:bg-[var(--color-accent)]" />
             </div>
           </>
         ) : null}
