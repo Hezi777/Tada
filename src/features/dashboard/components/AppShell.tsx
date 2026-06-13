@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useTranslation } from "@/shared/i18n";
 import {
   CircleUserRound,
   FolderClosed,
@@ -122,6 +123,7 @@ export function AppShell({
   dashboardContent,
   showFloatingChat = true,
 }: AppShellProps) {
+  const { t } = useTranslation();
   const [themeMode, setThemeMode] = useState<ThemeMode>(readThemeMode);
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -220,17 +222,17 @@ export function AppShell({
 
       <nav className="flex-1 overflow-y-auto px-3 py-2">
         <div className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-          Workspace
+          {t("nav.group.workspace")}
         </div>
         <div className="flex flex-col gap-1">
           <NavItem
-            label="Overview"
+            label={t("nav.overview")}
             icon={<LayoutDashboard className="h-4 w-4" />}
             active={activeTab === "dashboard"}
             onClick={() => handleNavigate("dashboard")}
           />
           <NavItem
-            label="Files"
+            label={t("nav.files")}
             icon={<FolderClosed className="h-4 w-4" />}
             active={activeTab === "dashboards"}
             onClick={() => handleNavigate("dashboards")}
@@ -238,11 +240,11 @@ export function AppShell({
         </div>
 
         <div className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-          Account
+          {t("nav.group.account")}
         </div>
         <div className="flex flex-col gap-1">
           <NavItem
-            label="Settings"
+            label={t("nav.settings")}
             icon={<Settings className="h-4 w-4" />}
             active={activeTab === "settings"}
             onClick={() => handleNavigate("settings")}
@@ -256,10 +258,10 @@ export function AppShell({
           className="mesh-teal shadow-premium block rounded-xl p-3 transition hover:opacity-90"
         >
           <span className="inline-flex items-center rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[11px] font-bold text-white">
-            Beta
+            {t("shell.beta")}
           </span>
           <p className="mt-2 text-xs font-medium text-[var(--color-text-secondary)]">
-            All features free during beta
+            {t("shell.betaNote")}
           </p>
         </Link>
 

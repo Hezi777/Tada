@@ -64,6 +64,7 @@ import {
 import CreateDashboardModal from "@/features/dashboard/components/CreateDashboardModal";
 import { DashboardSwitcher } from "@/features/dashboard/components/DashboardSwitcher";
 import { DashboardChartCard } from "@/features/dashboard/components/DashboardChartCard";
+import { useTranslation } from "@/shared/i18n";
 import type { DashboardListItem } from "@/shared/contracts";
 import { BI_RULE_LIMITS } from "@/shared/contracts";
 import {
@@ -607,6 +608,7 @@ function ManageViewsSheet({
 }
 
 export function Dashboard() {
+  const { t } = useTranslation();
   const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
   const rows = useDashboardStore((snapshot) => snapshot.rows);
   const charts = useDashboardStore((snapshot) => snapshot.charts);
@@ -765,7 +767,7 @@ export function Dashboard() {
             <div className="inline-flex h-10 items-center gap-2 rounded-full border border-[var(--color-border)] bg-card px-4 text-sm font-medium text-[var(--color-text-secondary)]">
               <CalendarDays className="h-4 w-4 text-[var(--color-accent)]" />
               <span className="tabular-nums">
-                {rows.length.toLocaleString()} rows
+                {rows.length.toLocaleString()} {t("dash.rows")}
               </span>
             </div>
 
@@ -797,12 +799,12 @@ export function Dashboard() {
               {isEditing ? (
                 <>
                   <Check className="mr-2 h-4 w-4" />
-                  Done
+                  {t("dash.done")}
                 </>
               ) : (
                 <>
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit
+                  {t("dash.edit")}
                 </>
               )}
             </Button>
@@ -822,7 +824,7 @@ export function Dashboard() {
               aria-label="Open manage views"
             >
               <LayoutPanelLeft className="mr-2 h-4 w-4" />
-              Manage Views
+              {t("dash.manageViews")}
             </Button>
           </div>
         </div>

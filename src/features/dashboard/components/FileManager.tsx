@@ -60,6 +60,7 @@ import {
   uploadToDashboard,
 } from "@/shared/lib/api";
 import { formatDateIL } from "@/shared/lib/format";
+import { useTranslation } from "@/shared/i18n";
 import {
   clearActiveDashboard,
   getCachedDashboard,
@@ -241,6 +242,7 @@ function DashboardPreview({ index }: { index: number }) {
 }
 
 export default function FileManager() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [view, setView] = useState<View>("dashboards");
   const [dashboards, setDashboards] = useState<DashboardListItem[]>([]);
@@ -592,10 +594,10 @@ export default function FileManager() {
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <h1 className="font-display text-[2.25rem] font-black tracking-[-0.05em] text-[var(--color-text-primary)]">
-                My Dashboards
+                {t("files.title")}
               </h1>
               <p className="mt-2 text-sm font-medium text-[var(--color-text-secondary)]">
-                Manage and monitor your visual intelligence assets.
+                {t("files.subtitle")}
               </p>
             </div>
 
@@ -605,7 +607,7 @@ export default function FileManager() {
               className="h-10 rounded-full bg-[var(--color-accent)] px-5 text-white hover:bg-[var(--color-accent-secondary)]"
             >
               <Plus className="h-4 w-4" />
-              New Dashboard
+              {t("files.new")}
             </Button>
           </div>
 
