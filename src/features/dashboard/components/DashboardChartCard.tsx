@@ -320,26 +320,6 @@ function ScatterTooltip({
   );
 }
 
-/** Chart heights scale with both the user's size choice and the donut's
- * tighter aspect ratio, so resizing visibly changes the chart. */
-function getChartHeightClass(chart: LayoutItem): string {
-  if (chart.type === "donut") {
-    if (chart.size === "small") return "h-[220px]";
-    if (chart.size === "large") return "h-[320px]";
-    return "h-[260px]";
-  }
-
-  if (chart.colSpan >= 8) {
-    if (chart.size === "small") return "h-[260px]";
-    if (chart.size === "large") return "h-[380px]";
-    return "h-[320px]";
-  }
-
-  if (chart.size === "small") return "h-[190px]";
-  if (chart.size === "large") return "h-[300px]";
-  return "h-[240px]";
-}
-
 /** Card min-height mirrors the chart area so larger sizes visibly grow. */
 function getCardMinHeightClass(chart: LayoutItem): string {
   if (chart.colSpan >= 8) {
@@ -361,7 +341,6 @@ const DashboardChartContent = memo(function DashboardChartContent({
   rows: SerializedRow[];
 }) {
   const [activeSlice, setActiveSlice] = useState<number | undefined>(undefined);
-  const chartHeightClass = getChartHeightClass(chart);
 
   if (chart.type === "area") {
     const series = buildAreaSeries(chart, rows);
@@ -378,7 +357,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
     return (
       <ChartContainer
         config={chartConfig}
-        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-card`}
+        className="h-full min-h-[160px] w-full rounded-[20px] bg-card"
       >
         <AreaChart
           data={series}
@@ -477,7 +456,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
     return (
       <ChartContainer
         config={chartConfig}
-        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-card`}
+        className="h-full min-h-[160px] w-full rounded-[20px] bg-card"
       >
         <ScatterChart margin={{ top: 12, right: 12, left: 0, bottom: 4 }}>
           <defs>
@@ -561,10 +540,10 @@ const DashboardChartContent = memo(function DashboardChartContent({
     const donutIsCurrency = isCurrencyMetric(chart);
 
     return (
-      <div className="flex flex-col gap-3">
+      <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
         <ChartContainer
           config={chartConfig}
-          className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-card`}
+          className="min-h-[140px] w-full flex-1 rounded-[20px] bg-card"
         >
           <PieChart>
             <defs>
@@ -709,7 +688,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
     return (
       <ChartContainer
         config={chartConfig}
-        className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-card`}
+        className="h-full min-h-[160px] w-full rounded-[20px] bg-card"
       >
         <BarChart
           data={series}
@@ -794,7 +773,7 @@ const DashboardChartContent = memo(function DashboardChartContent({
   return (
     <ChartContainer
       config={chartConfig}
-      className={`${chartHeightClass} w-full aspect-auto rounded-[20px] bg-card`}
+      className="h-full min-h-[160px] w-full rounded-[20px] bg-card"
     >
       <BarChart
         data={series}
@@ -893,7 +872,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
       <Card
         ref={setNodeRef}
         style={style}
-        className={`overflow-hidden rounded-[20px] border bg-card p-0 shadow-premium transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-24px_rgba(25,28,30,0.18)] ${getCardMinHeightClass(
+        className={`flex h-full flex-col overflow-hidden rounded-[20px] border bg-card p-0 shadow-premium transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-24px_rgba(25,28,30,0.18)] ${getCardMinHeightClass(
           chart,
         )} ${
           isEditing
@@ -966,7 +945,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
             ) : null}
           </div>
         </CardHeader>
-        <CardContent className="px-6 pb-6 pt-4">
+        <CardContent className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-4">
           <DashboardChartContent chart={chart} rows={rows} />
         </CardContent>
       </Card>
