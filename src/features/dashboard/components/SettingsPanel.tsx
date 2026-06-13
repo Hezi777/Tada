@@ -156,9 +156,9 @@ function SectionNavItem({
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-10 w-full items-center gap-3 rounded-r-lg px-4 text-left text-sm transition-colors ${
+      className={`flex h-10 w-full items-center gap-3 rounded-e-lg px-4 text-start text-sm transition-colors ${
         active
-          ? "border-l-[3px] border-[var(--color-accent)] bg-[var(--color-surface-muted)] font-semibold text-[var(--color-text-primary)]"
+          ? "border-s-[3px] border-[var(--color-accent)] bg-[var(--color-surface-muted)] font-semibold text-[var(--color-text-primary)]"
           : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
       }`}
     >
@@ -185,7 +185,7 @@ function ThemeOption({
     <button
       type="button"
       onClick={onClick}
-      className={`relative rounded-[20px] border-2 p-3 text-left transition-all ${
+      className={`relative rounded-[20px] border-2 p-3 text-start transition-all ${
         active
           ? "border-[var(--color-accent)] bg-card shadow-[0_18px_40px_-30px_rgba(0,50,125,0.35)]"
           : "border-transparent bg-[var(--color-surface-muted)] hover:border-[rgba(25,28,30,0.12)]"
@@ -241,7 +241,8 @@ function ThemeOption({
 }
 
 export function SettingsPanel() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const isRtl = lang === "he";
   const supabase = useMemo(() => createClient(), []);
   const [activeSection, setActiveSection] =
     useState<SettingsSection>("profile");
@@ -337,8 +338,22 @@ export function SettingsPanel() {
       return;
     }
 
+    // The Account section is taller than the observer's active band, so it
+    // can never win on intersection ratio alone. Treat reaching the bottom
+    // of the scroll container as the Account section being active.
+    function isAtBottom() {
+      return root
+        ? root.scrollHeight - root.scrollTop - root.clientHeight < 4
+        : false;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
+        if (isAtBottom()) {
+          setActiveSection("account");
+          return;
+        }
+
         const visible = entries
           .filter((entry) => entry.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
@@ -363,7 +378,18 @@ export function SettingsPanel() {
       }
     }
 
-    return () => observer.disconnect();
+    function handleScroll() {
+      if (isAtBottom()) {
+        setActiveSection("account");
+      }
+    }
+
+    root.addEventListener("scroll", handleScroll);
+
+    return () => {
+      observer.disconnect();
+      root.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   const usagePercent = Math.min(
@@ -509,10 +535,11 @@ export function SettingsPanel() {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-10 sm:px-8"
-    >
+    <div className="flex h-full flex-col bg-[var(--color-bg)]">
+      <div
+        ref={containerRef}
+        className="dashboard-scroll flex-1 overflow-y-auto px-6 pt-10 sm:px-8"
+      >
       <h1 className="font-display text-[2.25rem] font-black tracking-[-0.045em] text-[var(--color-text-primary)]">
         {t("settings.title")}
       </h1>
@@ -819,8 +846,10 @@ export function SettingsPanel() {
           </section>
         </div>
       </div>
+      <div className="h-10" />
+      </div>
 
-      <div className="sticky bottom-0 z-10 -mx-6 -mb-10 mt-8 flex flex-col gap-3 border-t border-[var(--color-border)] bg-[var(--color-bg)] px-6 py-4 sm:-mx-8 sm:flex-row sm:items-center sm:justify-end sm:px-8">
+      <div className="flex flex-shrink-0 flex-col gap-3 border-t border-[var(--color-border)] bg-[var(--color-bg)] px-6 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8">
         {accountStatus ? (
           <p className="text-sm text-[var(--color-text-secondary)]">
             {accountStatus.text}
