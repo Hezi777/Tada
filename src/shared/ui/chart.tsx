@@ -50,15 +50,20 @@ const ChartContainer = React.forwardRef<
         data-chart={chartId}
         ref={ref}
         className={cn(
-          "flex justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-[var(--color-chart-axis)] [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-[var(--color-chart-grid)] [&_.recharts-curve.recharts-tooltip-cursor]:stroke-[var(--color-chart-cursor-line)] [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-[var(--color-chart-grid)] [&_.recharts-radial-bar-background-sector]:fill-[var(--color-surface-muted)] [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-[var(--color-chart-hover)] [&_.recharts-reference-line_[stroke='#ccc']]:stroke-[var(--color-border)] [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
+          "relative flex min-h-0 flex-1 justify-center overflow-hidden text-xs [&_.recharts-cartesian-axis-tick_text]:fill-[var(--color-chart-axis)] [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-[var(--color-chart-grid)] [&_.recharts-curve.recharts-tooltip-cursor]:stroke-[var(--color-chart-cursor-line)] [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-[var(--color-chart-grid)] [&_.recharts-radial-bar-background-sector]:fill-[var(--color-surface-muted)] [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-[var(--color-chart-hover)] [&_.recharts-reference-line_[stroke='#ccc']]:stroke-[var(--color-border)] [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
           className,
         )}
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer width="100%" height="100%">
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        {/* Absolutely positioned so the SVG's resolved size can never feed
+            back into this element's own layout size (which would otherwise
+            create an unbounded ResponsiveContainer resize loop). */}
+        <div className="absolute inset-0">
+          <RechartsPrimitive.ResponsiveContainer width="100%" height="100%">
+            {children}
+          </RechartsPrimitive.ResponsiveContainer>
+        </div>
       </div>
     </ChartContext.Provider>
   );

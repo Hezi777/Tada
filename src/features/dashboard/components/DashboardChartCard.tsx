@@ -6,7 +6,6 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
-  type RefObject,
 } from "react";
 import { GripVertical, Scaling } from "lucide-react";
 import { CSS } from "@dnd-kit/utilities";
@@ -348,54 +347,13 @@ function ScatterTooltip({
   );
 }
 
-/** Tracks an element's content box size via ResizeObserver, for charts that
- * need to clamp radii/sizes to the actual rendered area. */
-function useElementSize(): [RefObject<HTMLDivElement>, { width: number; height: number }] {
-  const ref = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0 });
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) {
-      return;
-    }
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-      const { width, height } = entry.contentRect;
-      setSize((prev) =>
-        prev.width === width && prev.height === height
-          ? prev
-          : { width, height },
-      );
-    });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  return [ref, size];
-}
-
-/** Donut outer/inner radius in px, clamped so the ring + legend always fit
- * inside the card regardless of how small/tall the chart area gets. */
-const DONUT_OUTER_RADIUS_MAX = 100;
-const DONUT_OUTER_RADIUS_MIN = 44;
-const DONUT_INNER_RATIO = 0.62;
-
-function getDonutRadii(width: number, height: number): {
-  outerRadius: number;
-  innerRadius: number;
-} {
-  if (width <= 0 || height <= 0) {
-    return { outerRadius: DONUT_OUTER_RADIUS_MAX, innerRadius: DONUT_OUTER_RADIUS_MAX * DONUT_INNER_RATIO };
-  }
-  const fit = Math.min(width, height) / 2 - 12;
-  const outerRadius = Math.min(
-    DONUT_OUTER_RADIUS_MAX,
-    Math.max(DONUT_OUTER_RADIUS_MIN, fit),
-  );
-  return { outerRadius, innerRadius: outerRadius * DONUT_INNER_RATIO };
-}
+/** Donut outer/inner radius as percentages of the container's bounding box.
+ * Recharts resolves these against the rendered <ResponsiveContainer> size on
+ * every layout pass, so the ring always fits without needing a
+ * ResizeObserver (which previously fed back into a height-driven layout and
+ * caused the card to grow without bound). */
+const DONUT_OUTER_RADIUS = "80%";
+const DONUT_INNER_RADIUS = "50%";
 
 /** Categorical axes with few categories show every tick (no skipping); past
  * this count, fall back to gap-based tick thinning. */
@@ -432,7 +390,6 @@ const DashboardChartContent = memo(function DashboardChartContent({
   rows: SerializedRow[];
 }) {
   const [activeSlice, setActiveSlice] = useState<number | undefined>(undefined);
-  const [donutContainerRef, donutSize] = useElementSize();
 
   if (chart.type === "area") {
     const series = buildAreaSeries(chart, rows);
@@ -628,12 +585,10 @@ const DashboardChartContent = memo(function DashboardChartContent({
         ? "Total Count"
         : `Total ${metricLabel(chart)}`;
     const donutCurrency = chartCurrency(chart);
-    const { outerRadius, innerRadius } = getDonutRadii(donutSize.width, donutSize.height);
 
     return (
       <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
         <ChartContainer
-          ref={donutContainerRef}
           config={chartConfig}
           className="min-h-[180px] w-full flex-1 rounded-[20px] bg-card"
         >
@@ -654,8 +609,8 @@ const DashboardChartContent = memo(function DashboardChartContent({
               dataKey="value"
               nameKey="label"
               cornerRadius={6}
-              innerRadius={innerRadius}
-              outerRadius={outerRadius}
+              innerRadius={DONUT_INNER_RADIUS}
+              outerRadius={DONUT_OUTER_RADIUS}
               startAngle={90}
               endAngle={450}
               isAnimationActive={false}
@@ -674,8 +629,8 @@ const DashboardChartContent = memo(function DashboardChartContent({
               nameKey="label"
               paddingAngle={3}
               cornerRadius={6}
-              innerRadius={innerRadius}
-              outerRadius={outerRadius}
+              innerRadius={DONUT_INNER_RADIUS}
+              outerRadius={DONUT_OUTER_RADIUS}
               activeIndex={activeSlice}
               onMouseEnter={(_: unknown, index: number) =>
                 setActiveSlice(index)
