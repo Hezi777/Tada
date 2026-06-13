@@ -31,6 +31,7 @@ import {
   languageCodeFromLabel,
   persistLanguageCode,
 } from "@/features/dashboard/client/locale";
+import { useTranslation, type TranslationKey } from "@/shared/i18n";
 
 type ThemeMode = "system" | "light" | "dark";
 type SettingsSection = "profile" | "appearance" | "language" | "account";
@@ -43,13 +44,13 @@ const DASHBOARD_LIMIT = 5;
 
 const SETTINGS_NAV: Array<{
   key: SettingsSection;
-  label: string;
+  labelKey: TranslationKey;
   icon: typeof UserRound;
 }> = [
-  { key: "profile", label: "Profile", icon: UserRound },
-  { key: "appearance", label: "Appearance", icon: Paintbrush },
-  { key: "language", label: "Language", icon: Globe },
-  { key: "account", label: "Account", icon: CreditCard },
+  { key: "profile", labelKey: "settings.nav.profile", icon: UserRound },
+  { key: "appearance", labelKey: "settings.nav.appearance", icon: Paintbrush },
+  { key: "language", labelKey: "settings.nav.language", icon: Globe },
+  { key: "account", labelKey: "settings.nav.account", icon: CreditCard },
 ];
 
 const LANGUAGE_OPTIONS = ["English (US)", "Hebrew (IL)"];
@@ -239,6 +240,7 @@ function ThemeOption({
 }
 
 export function SettingsPanel() {
+  const { t } = useTranslation();
   const supabase = useMemo(() => createClient(), []);
   const [activeSection, setActiveSection] =
     useState<SettingsSection>("profile");
@@ -462,19 +464,19 @@ export function SettingsPanel() {
   return (
     <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-10 sm:px-8">
       <h1 className="font-display text-[2.25rem] font-black tracking-[-0.045em] text-[var(--color-text-primary)]">
-        Settings
+        {t("settings.title")}
       </h1>
 
       <div className="mt-10 flex flex-col gap-10 md:flex-row">
         <aside className="w-full md:w-[200px] md:flex-shrink-0">
           <div className="md:sticky md:top-8">
             <nav className="space-y-1">
-              {SETTINGS_NAV.map(({ key, label, icon }) => (
+              {SETTINGS_NAV.map(({ key, labelKey, icon }) => (
                 <SectionNavItem
                   key={key}
                   active={activeSection === key}
                   icon={icon}
-                  label={label}
+                  label={t(labelKey)}
                   onClick={() => scrollToSection(key)}
                 />
               ))}
@@ -490,10 +492,10 @@ export function SettingsPanel() {
             <div className="mb-6">
               <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-extrabold tracking-[-0.03em] text-[var(--color-text-primary)]">
                 <UserRound className="h-5 w-5 text-[var(--color-accent)]" />
-                Profile
+                {t("settings.profile.heading")}
               </h2>
               <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                Manage the personal details tied to your Tada workspace.
+                {t("settings.profile.desc")}
               </p>
             </div>
 
@@ -606,10 +608,10 @@ export function SettingsPanel() {
           >
             <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-extrabold tracking-[-0.03em] text-[var(--color-text-primary)]">
               <Paintbrush className="h-5 w-5 text-[var(--color-accent)]" />
-              Appearance
+              {t("settings.appearance.heading")}
             </h2>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-              Select how you want Tada to feel across your workspace.
+              {t("settings.appearance.desc")}
             </p>
 
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -655,15 +657,15 @@ export function SettingsPanel() {
           >
             <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-extrabold tracking-[-0.03em] text-[var(--color-text-primary)]">
               <Globe className="h-5 w-5 text-[var(--color-accent)]" />
-              Language
+              {t("settings.language.heading")}
             </h2>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-              Choose the language used across your Tada workspace.
+              {t("settings.language.desc")}
             </p>
 
             <div className="mt-6 max-w-sm space-y-2">
               <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
-                Language Preference
+                {t("settings.language.label")}
               </label>
               <select
                 value={languagePreference}
@@ -709,7 +711,7 @@ export function SettingsPanel() {
               <div>
                 <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-extrabold tracking-[-0.03em] text-[var(--color-text-primary)]">
                   <CreditCard className="h-5 w-5 text-[var(--color-accent)]" />
-                  Account
+                  {t("settings.account.heading")}
                 </h2>
                 <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
                   Manage your plan, workspace capacity, and account access.

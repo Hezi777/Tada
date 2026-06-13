@@ -22,6 +22,7 @@ import { ScrollArea } from "@/shared/ui/scroll-area";
 import { Separator } from "@/shared/ui/separator";
 import { Textarea } from "@/shared/ui/textarea";
 import { sendChat } from "@/shared/lib/api";
+import { useTranslation } from "@/shared/i18n";
 import { computeKpiValue } from "@/features/dashboard/client/runtime";
 import {
   applyChartProposal,
@@ -37,11 +38,11 @@ interface Message {
   proposalState?: "pending" | "accepted" | "dismissed";
 }
 
-const SUGGESTION_PROMPTS = [
-  "Summarize the key trends in this data",
-  "Which chart should I look at first?",
-  "Add a chart comparing top categories",
-];
+const SUGGESTION_KEYS = [
+  "chat.suggest.trends",
+  "chat.suggest.which",
+  "chat.suggest.compare",
+] as const;
 
 function emitChartPulse(chartId: string | undefined): void {
   if (!chartId || typeof window === "undefined") {
@@ -55,6 +56,7 @@ function emitChartPulse(chartId: string | undefined): void {
 }
 
 export function FloatingChat() {
+  const { t } = useTranslation();
   const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
   const chartConfigs = useDashboardStore((snapshot) => snapshot.charts);
   const kpiConfigs = useDashboardStore((snapshot) => snapshot.kpis);
@@ -150,8 +152,7 @@ export function FloatingChat() {
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      let content =
-        "Tada Wiz is unavailable right now. Make sure the API is running.";
+      let content = t("chat.unavailable");
       if (error instanceof Error) {
         if (error.message === "not_found" || error.message === "missing_rows") {
           content =
@@ -248,7 +249,7 @@ export function FloatingChat() {
               handleSend();
             }
           }}
-          placeholder="Ask Tada Wiz..."
+          placeholder={t("chat.placeholder")}
           className="max-h-32 min-h-[44px] flex-1 resize-none rounded-[12px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus-visible:ring-[var(--color-accent)]"
           aria-label="Type your message"
           disabled={!canChat || isSending}
@@ -284,18 +285,17 @@ export function FloatingChat() {
           {canChat && messages.length === 0 ? (
             <div className="space-y-3">
               <Card className="rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
-                Ask about your data, request a chart change, or get help reading
-                a view.
+                {t("chat.empty")}
               </Card>
               <div className="flex flex-wrap gap-2">
-                {SUGGESTION_PROMPTS.map((prompt) => (
+                {SUGGESTION_KEYS.map((key) => (
                   <button
-                    key={prompt}
+                    key={key}
                     type="button"
-                    onClick={() => setInput(prompt)}
+                    onClick={() => setInput(t(key))}
                     className="rounded-full border border-[var(--color-border)] bg-card px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
                   >
-                    {prompt}
+                    {t(key)}
                   </button>
                 ))}
               </div>
@@ -467,7 +467,7 @@ export function FloatingChat() {
                       Tada Wiz
                     </DrawerTitle>
                     <DrawerDescription className="mt-0.5 text-[13px] text-white/75">
-                      Ask anything about your data
+                      {t("chat.subtitle")}
                     </DrawerDescription>
                   </div>
                 </div>
@@ -516,7 +516,7 @@ export function FloatingChat() {
                       <div>
                         <div className="text-base font-extrabold">Tada Wiz</div>
                         <p className="mt-0.5 text-[13px] text-white/75">
-                          Ask anything about your data
+                          {t("chat.subtitle")}
                         </p>
                       </div>
                     </div>

@@ -27,6 +27,7 @@ import {
 import { ConfirmGenerationStep } from "@/features/dashboard/components/ConfirmGenerationStep";
 import type { DatasetTopic, UploadProfileResponse } from "@/shared/contracts";
 import { useToast } from "@/shared/hooks/use-toast";
+import { useTranslation } from "@/shared/i18n";
 
 type DashboardPageState =
   | "loading"
@@ -61,13 +62,14 @@ function DashboardUploadEmptyState({
   onFileUpload: (file: File) => void;
   errorMessage?: string | null;
 }) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   return (
     <div className="flex h-full flex-col">
       <DashboardStateHeader
-        title="Overview"
-        subtitle="Upload a dataset to start building your workspace."
+        title={t("dash.overview")}
+        subtitle={t("dash.empty.subtitle")}
       />
 
       <div className="flex flex-1 items-center justify-center px-5 pb-6">
@@ -91,11 +93,10 @@ function DashboardUploadEmptyState({
               />
             </div>
             <h2 className="font-display text-3xl text-[var(--color-text-primary)]">
-              Upload your first dataset
+              {t("dash.empty.title")}
             </h2>
             <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]">
-              Add a CSV, Excel, or PDF file and Tada will profile your data and
-              generate your dashboard, KPIs, and charts.
+              {t("dash.empty.body")}
             </p>
 
             <Button
@@ -105,11 +106,11 @@ function DashboardUploadEmptyState({
               onClick={() => inputRef.current?.click()}
             >
               <FileSpreadsheet className="mr-2 h-4 w-4" />
-              Choose file
+              {t("dash.empty.choose")}
             </Button>
 
             <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
-              CSV, Excel, or PDF · up to 10MB
+              {t("dash.empty.hint")}
             </p>
 
             <Input
@@ -133,6 +134,7 @@ function DashboardUploadEmptyState({
 }
 
 function DashboardLoadingState() {
+  const { t } = useTranslation();
   return (
     <div className="flex h-full flex-col items-center justify-center bg-[var(--color-bg)]">
       <div className="flex flex-col items-center text-center">
@@ -144,7 +146,7 @@ function DashboardLoadingState() {
           className="h-10 w-auto animate-pulse-soft"
         />
         <p className="mt-4 text-sm font-medium text-[var(--color-text-secondary)]">
-          Loading your dashboard...
+          {t("dash.loading")}
         </p>
       </div>
     </div>
