@@ -1,6 +1,11 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import {
+  type ReactNode,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -45,6 +50,33 @@ type NavTab = "dashboard" | "dashboards" | "settings";
 const THEME_STORAGE_KEY = "tada-theme";
 const THEME_EVENT = "tada-theme-change";
 const SIDEBAR_COLLAPSED_KEY = "tada-sidebar-collapsed";
+const SIDEBAR_EVENT = "tada-sidebar-change";
+
+// useSyncExternalStore subscribers: keep localStorage-backed prefs SSR-safe
+// (separate server snapshot) so they never cause a hydration mismatch.
+function subscribeTheme(callback: () => void): () => void {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+  window.addEventListener(THEME_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(THEME_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+function subscribeSidebar(callback: () => void): () => void {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+  window.addEventListener(SIDEBAR_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(SIDEBAR_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
 
 function readThemeMode(): ThemeMode {
   if (typeof window === "undefined") {
@@ -160,23 +192,32 @@ export function AppShell({
   const { t } = useTranslation();
   const lang = useLanguage();
   const isRtl = lang === "he";
-  const [themeMode, setThemeMode] = useState<ThemeMode>(readThemeMode);
+  // localStorage-backed prefs read via useSyncExternalStore: the server snapshot
+  // ("system" / not-collapsed) matches the first client render, so there is no
+  // hydration mismatch, and updates flow through the THEME_EVENT/SIDEBAR_EVENT.
+  const themeMode = useSyncExternalStore(
+    subscribeTheme,
+    readThemeMode,
+    () => "system" as ThemeMode,
+  );
+  const collapsed = useSyncExternalStore(
+    subscribeSidebar,
+    readSidebarCollapsed,
+    () => false,
+  );
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(readSidebarCollapsed);
   const prefersReducedMotion = useReducedMotion();
   const activeDashboardId = useDashboardStore((s) => s.activeDashboardId);
 
   const toggleCollapsed = () => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
-      }
-      return next;
-    });
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(!collapsed));
+    window.dispatchEvent(new Event(SIDEBAR_EVENT));
   };
 
   useEffect(() => {
@@ -197,47 +238,28 @@ export function AppShell({
     };
   }, []);
 
+  // Apply the resolved theme (dark class) whenever the mode changes, and keep
+  // "system" in sync with the OS preference.
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-
     const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const syncTheme = (nextMode: ThemeMode) => {
-      applyThemeMode(nextMode, media.matches);
-    };
-
-    syncTheme(themeMode);
-    window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
-
-    const handleThemeEvent = () => {
-      const nextMode = readThemeMode();
-      setThemeMode(nextMode);
-      syncTheme(nextMode);
-    };
+    applyThemeMode(themeMode, media.matches);
 
     const handleMediaChange = (event: MediaQueryListEvent) => {
-      if (readThemeMode() === "system") {
+      if (themeMode === "system") {
         applyThemeMode("system", event.matches);
       }
     };
-
-    window.addEventListener(THEME_EVENT, handleThemeEvent);
-    window.addEventListener("storage", handleThemeEvent);
     media.addEventListener("change", handleMediaChange);
-
-    return () => {
-      window.removeEventListener(THEME_EVENT, handleThemeEvent);
-      window.removeEventListener("storage", handleThemeEvent);
-      media.removeEventListener("change", handleMediaChange);
-    };
+    return () => media.removeEventListener("change", handleMediaChange);
   }, [themeMode]);
 
   const cycleTheme = () => {
     const order: ThemeMode[] = ["system", "light", "dark"];
     const next = order[(order.indexOf(themeMode) + 1) % order.length];
     window.localStorage.setItem(THEME_STORAGE_KEY, next);
-    setThemeMode(next);
     window.dispatchEvent(new Event(THEME_EVENT));
   };
 
