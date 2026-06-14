@@ -311,15 +311,18 @@ export function FloatingChat() {
           ) : null}
 
           {messages.map((message) => (
-            <div
+            <motion.div
               key={message.id}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
               className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[88%] px-4 py-3 text-sm leading-6 ${
+                className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6 ${
                   message.role === "user"
-                    ? "rounded-[12px_12px_2px_12px] bg-[var(--color-accent)] text-white"
-                    : "rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]"
+                    ? "bg-[var(--color-accent)] text-white"
+                    : "border border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]"
                 }`}
               >
                 {message.content}
@@ -378,23 +381,32 @@ export function FloatingChat() {
                   </div>
                 ) : null}
               </div>
-            </div>
+            </motion.div>
           ))}
 
           {isSending ? (
-            <div className="flex justify-start">
-              <div className="flex items-center gap-1 rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3">
+            <motion.div
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="flex justify-start"
+            >
+              <div className="flex items-center gap-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3">
                 {[0, 1, 2].map((index) => (
                   <span
                     key={index}
-                    className="h-2 w-2 rounded-full bg-[var(--color-text-muted)]"
-                    style={{
-                      animation: `wizDot 1s ease-in-out ${index * 0.12}s infinite`,
-                    }}
+                    className="h-2 w-2 rounded-full bg-[var(--color-accent)] motion-reduce:animate-none"
+                    style={
+                      prefersReducedMotion
+                        ? { opacity: 0.6 }
+                        : {
+                            animation: `wizDot 1s ease-in-out ${index * 0.12}s infinite`,
+                          }
+                    }
                   />
                 ))}
               </div>
-            </div>
+            </motion.div>
           ) : null}
         </div>
       </ScrollArea>
