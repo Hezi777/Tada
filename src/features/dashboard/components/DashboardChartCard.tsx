@@ -60,7 +60,10 @@ import {
 import type { LayoutItem } from "@/features/dashboard/client/layout";
 import { DASHBOARD_COLORS } from "@/features/dashboard/client/design";
 import { updateChart } from "@/features/dashboard/client/store";
-import { onChartReveal } from "@/features/dashboard/client/chart-effects";
+import {
+  consumeRecentReveal,
+  onChartReveal,
+} from "@/features/dashboard/client/chart-effects";
 
 const CHART_COLOR = DASHBOARD_COLORS.primary;
 const CHART_GRID_COLOR = DASHBOARD_COLORS.chartGrid;
@@ -73,9 +76,6 @@ const CHART_ANIMATION_EASING = "ease-out";
 
 /** Royal-Blue brand gradient (top brighter, bottom deeper). */
 const GRADIENT_PRIMARY_STOPS: [string, string] = ["#2f6df6", "#00327d"];
-
-/** Teal -> green "positive highlight" gradient for the standout bar / area. */
-const GRADIENT_HIGHLIGHT_STOPS: [string, string] = ["#14b8a6", "#22c55e"];
 
 /** Multi-series order for donuts and grouped bars, each rendered as a soft
  * vertical gradient (brighter top -> deeper bottom of the same hue). */
@@ -752,12 +752,12 @@ const DashboardChartContent = memo(function DashboardChartContent({
               x2="1"
               y2="0"
             >
-              <stop offset="0%" stopColor={GRADIENT_HIGHLIGHT_STOPS[1]} />
-              <stop offset="100%" stopColor={GRADIENT_HIGHLIGHT_STOPS[0]} />
+              <stop offset="0%" stopColor={GRADIENT_PRIMARY_STOPS[0]} />
+              <stop offset="100%" stopColor={GRADIENT_PRIMARY_STOPS[1]} />
             </linearGradient>
             <GlowFilter
               id={highlightGlowId}
-              color={GRADIENT_HIGHLIGHT_STOPS[0]}
+              color={GRADIENT_PRIMARY_STOPS[0]}
             />
           </defs>
           <CartesianGrid
@@ -831,12 +831,12 @@ const DashboardChartContent = memo(function DashboardChartContent({
       >
         <defs>
           <linearGradient id={highlightGradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={GRADIENT_HIGHLIGHT_STOPS[0]} />
-            <stop offset="100%" stopColor={GRADIENT_HIGHLIGHT_STOPS[1]} />
+            <stop offset="0%" stopColor={GRADIENT_PRIMARY_STOPS[0]} />
+            <stop offset="100%" stopColor={GRADIENT_PRIMARY_STOPS[1]} />
           </linearGradient>
           <GlowFilter
             id={highlightGlowId}
-            color={GRADIENT_HIGHLIGHT_STOPS[0]}
+            color={GRADIENT_PRIMARY_STOPS[0]}
           />
         </defs>
         <CartesianGrid
@@ -984,16 +984,22 @@ const DashboardChartCard = memo(function DashboardChartCard({
   const [isRevealing, setIsRevealing] = useState(false);
   const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    const unsubscribe = onChartReveal((id) => {
-      if (id !== chart.id) {
-        return;
-      }
+    const startReveal = () => {
       setIsRevealing(true);
       if (revealTimerRef.current) {
         clearTimeout(revealTimerRef.current);
       }
       revealTimerRef.current = setTimeout(() => setIsRevealing(false), 2200);
+    };
+    const unsubscribe = onChartReveal((id) => {
+      if (id === chart.id) {
+        startReveal();
+      }
     });
+    // Catch a reveal emitted just before this card mounted (new AI charts).
+    if (consumeRecentReveal(chart.id)) {
+      startReveal();
+    }
     return () => {
       unsubscribe();
       if (revealTimerRef.current) {
