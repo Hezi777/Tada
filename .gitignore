@@ -35,3 +35,12 @@ dist-ssr
 **/*.tsbuildinfo
 npm-config.txt
 dev.log
+
+# Local tool artifacts
+.playwright-mcp/
+supabase/.branches/
+supabase/.temp/
+
+# Large local-only fixtures and design references
+data/test-datasets/
+public/Website Inspo/
