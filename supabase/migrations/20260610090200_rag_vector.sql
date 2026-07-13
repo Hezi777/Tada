@@ -46,6 +46,9 @@ create index if not exists idx_user_data_chunks_embedding
 create index if not exists idx_user_data_chunks_dataset_id
   on public.user_data_chunks (dataset_id);
 
+grant select on public.bi_rules_chunks to authenticated;
+grant select, insert, delete on public.user_data_chunks to authenticated;
+
 -- RLS: rules are read-only reference data for signed-in users (writes happen
 -- through the service-role seed script, which bypasses RLS). Data chunks are
 -- strictly user-scoped.
