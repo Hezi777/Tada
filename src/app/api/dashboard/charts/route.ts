@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/shared/lib/supabase/server";
-import { ChartConfigSchema } from "@/shared/contracts";
+import { ChartConfigSchema, KPIConfigSchema } from "@/shared/contracts";
 
 export const runtime = "nodejs";
 
 const PersistChartsRequestSchema = z.object({
   datasetId: z.string().min(1),
   charts: z.array(ChartConfigSchema),
+  kpis: z.array(KPIConfigSchema).optional(),
 });
 
 export async function PATCH(request: Request) {
@@ -38,6 +39,21 @@ export async function PATCH(request: Request) {
       { error: error.message || "charts_persist_failed" },
       { status: 400 },
     );
+  }
+
+  if (parsed.data.kpis) {
+    const { error: kpiError } = await supabase
+      .from("kpis")
+      .update({ configs: parsed.data.kpis })
+      .eq("dataset_id", parsed.data.datasetId)
+      .eq("user_id", user.id);
+
+    if (kpiError) {
+      return NextResponse.json(
+        { error: kpiError.message || "kpis_persist_failed" },
+        { status: 400 },
+      );
+    }
   }
 
   return NextResponse.json({ ok: true });

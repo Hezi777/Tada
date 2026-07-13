@@ -41,6 +41,11 @@ export const translations = {
     "chart.resize": "Resize chart",
     "chart.drag": "Drag to reorder",
     "chart.pinned": "pinned",
+    "chart.edit": "Edit chart",
+    "chart.edit.title": "Edit chart",
+    "chart.edit.placeholder": "e.g. Make this a horizontal bar by region",
+    "chart.edit.update": "Update",
+    "chart.edit.updating": "Updating chart…",
 
     // Settings
     "settings.title": "Settings",
@@ -132,6 +137,11 @@ export const translations = {
     "chart.resize": "שינוי גודל גרף",
     "chart.drag": "גרור לסידור מחדש",
     "chart.pinned": "מוצמד",
+    "chart.edit": "ערוך תרשים",
+    "chart.edit.title": "ערוך תרשים",
+    "chart.edit.placeholder": "לדוגמה: הפוך לעמודות אופקיות לפי אזור",
+    "chart.edit.update": "עדכן",
+    "chart.edit.updating": "מעדכן תרשים…",
 
     // Settings
     "settings.title": "הגדרות",

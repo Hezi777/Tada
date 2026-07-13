@@ -495,6 +495,80 @@ export function computeKpiValue(
   );
 }
 
+const KPI_TREND_LIMITS = {
+  maxSparklinePoints: 12,
+  minPeriods: 2,
+} as const;
+
+export type KpiTrend = {
+  deltaPct: number;
+  sparkline: CategoricalChartSeries;
+};
+
+/**
+ * Buckets rows by period (reusing the granularity/bucketing approach from
+ * `buildAreaSeries`) and aggregates the KPI's column with the KPI's
+ * aggregation per period. Returns `null` when there is no usable date/time
+ * column or fewer than two periods, so the caller can fall back to a
+ * value-only display.
+ */
+export function computeKpiTrend(
+  kpi: KPIConfig,
+  rows: SerializedRow[],
+  columns: DashboardColumn[],
+): KpiTrend | null {
+  const timeColumn = columns.find((column) => column.kind === "date")?.name;
+  if (!timeColumn) {
+    return null;
+  }
+
+  const granularity = detectTimeGranularity(rows, timeColumn);
+  const buckets = new Map<string, number[]>();
+
+  for (const row of rows) {
+    const dateValue = toDate(row[timeColumn]);
+    if (!dateValue) {
+      continue;
+    }
+    const bucket = toBucketKey(dateValue, granularity);
+    const values = buckets.get(bucket) ?? [];
+    if (kpi.aggregation === "count") {
+      values.push(1);
+    } else {
+      const numericValue = toNumber(row[kpi.column]);
+      if (numericValue !== null) {
+        values.push(numericValue);
+      }
+    }
+    buckets.set(bucket, values);
+  }
+
+  const periods = Array.from(buckets.entries()).sort((left, right) =>
+    left[0].localeCompare(right[0]),
+  );
+  if (periods.length < KPI_TREND_LIMITS.minPeriods) {
+    return null;
+  }
+
+  const aggregation =
+    kpi.aggregation === "mode" || kpi.aggregation === "range"
+      ? "count"
+      : (kpi.aggregation as ChartConfig["aggregation"]);
+
+  const series = periods.map(([label, values]) => ({
+    label,
+    value: reduceAggregation(values, aggregation),
+  }));
+
+  const sparkline = series.slice(-KPI_TREND_LIMITS.maxSparklinePoints);
+
+  const previous = series[series.length - 2].value;
+  const last = series[series.length - 1].value;
+  const deltaPct = previous === 0 ? 0 : ((last - previous) / Math.abs(previous)) * 100;
+
+  return { deltaPct, sparkline };
+}
+
 export function formatNumber(value: number | null): string | null {
   if (value === null || Number.isNaN(value)) {
     return null;

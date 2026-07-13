@@ -13,6 +13,7 @@ import {
   Percent,
   ShieldCheck,
   ShoppingCart,
+  Tag,
   Target,
   TrendingUp,
   Users,
@@ -113,6 +114,38 @@ const AGGREGATION_ICON_MAP: Record<string, LucideIcon> = {
   max: TrendingUp,
   mode: CreditCard,
 };
+
+/** 3D illustration shown as the KPI card's hero graphic, keyed by the
+ * Lucide icon `resolveKpiIcon`/`getKpiIcon` already resolved for that card. */
+const ICON_ILLUSTRATION_MAP = new Map<LucideIcon, string>([
+  [DollarSign, "kpi-revenue.png"],
+  [Users, "kpi-customers.png"],
+  [Percent, "kpi-conversion.png"],
+  [Clock3, "kpi-time.png"],
+  [ShoppingCart, "kpi-orders.png"],
+  [TrendingUp, "kpi-growth.png"],
+  [ShieldCheck, "kpi-security.png"],
+  [Gauge, "kpi-system.png"],
+  [Globe2, "kpi-region.png"],
+  [ArrowRightLeft, "kpi-comparison.png"],
+  [Hash, "kpi-count.png"],
+  [CalendarRange, "kpi-daterange.png"],
+  [Activity, "kpi-average.png"],
+  [Target, "kpi-target.png"],
+  [CreditCard, "kpi-payment.png"],
+  [Tag, "kpi-count.png"],
+]);
+
+/** Path under `/illustrations/kpi/...` for a resolved KPI icon, or `null` if
+ * no illustration exists yet for that icon. */
+export function resolveIllustrationForIcon(icon: LucideIcon): string | null {
+  const filename = ICON_ILLUSTRATION_MAP.get(icon);
+  return filename ? `/illustrations/kpi/${filename}` : null;
+}
+
+export function resolveKpiIllustration(kpi: KPIConfig): string | null {
+  return resolveIllustrationForIcon(resolveKpiIcon(kpi));
+}
 
 function normalizeText(value: string | null | undefined): string {
   return (value ?? "").trim().toLowerCase();

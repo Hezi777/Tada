@@ -335,6 +335,7 @@ async function requestChatResponseFromLlm(input: {
   retrievedContext: string[];
   profile: DatasetProfile | null;
   topic: string;
+  focusChartId?: string;
 }): Promise<ChatResponse | null> {
   if (!getGroqApiKey()) {
     return null;
@@ -359,6 +360,11 @@ async function requestChatResponseFromLlm(input: {
     "5. Trend explanations: when asked why something changed, describe the movement visible in the retrieved context and clearly separate observation from speculation.",
     "If the user is only asking a question or explanation, set patch to null.",
     "If you cannot ground a requested change or answer in the provided context, say so clearly and set patch to null.",
+    ...(input.focusChartId
+      ? [
+          `The user is editing the chart with id=${input.focusChartId}. Return a patch with action "update" and chartId="${input.focusChartId}" applying their requested change; do not add or remove charts.`,
+        ]
+      : []),
     JSON.stringify({
       userMessage: input.message,
       datasetTopic: input.topic,
@@ -650,12 +656,14 @@ export async function handleChat({
   message,
   chartConfigs,
   kpis,
+  focusChartId,
 }: {
   supabase: SupabaseClient;
   datasetId: string;
   message: string;
   chartConfigs: ChartConfig[];
   kpis: ChatKpiValue[];
+  focusChartId?: string;
 }): Promise<ChatResponse> {
   const context = await ensureDatasetContext(supabase, datasetId);
   if (!context) {
@@ -696,6 +704,7 @@ export async function handleChat({
     retrievedContext,
     profile,
     topic,
+    focusChartId,
   });
   if (llmResponse) {
     return finalizeChatResponse(llmResponse, chartConfigs, state.columns, rows);

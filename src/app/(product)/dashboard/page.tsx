@@ -176,6 +176,7 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
   const charts = useDashboardStore((snapshot) => snapshot.charts);
+  const kpis = useDashboardStore((snapshot) => snapshot.kpis);
   const activeDashboardId = useDashboardStore((s) => s.activeDashboardId);
   const [pageState, setPageState] = useState<DashboardPageState>("loading");
   const [processingPhase, setProcessingPhase] = useState<
@@ -213,7 +214,10 @@ export default function DashboardPage() {
           }
 
           isHydratingRef.current = true;
-          lastPersistedChartsRef.current = JSON.stringify(result.charts);
+          lastPersistedChartsRef.current = JSON.stringify({
+            charts: result.charts,
+            kpis: result.kpis,
+          });
           initializeDashboardStore(result, result.dashboard);
           setActiveDashboard(result.dashboard);
           setPageState("loaded");
@@ -255,7 +259,7 @@ export default function DashboardPage() {
     if (!datasetId) {
       return;
     }
-    const nextSerialized = JSON.stringify(charts);
+    const nextSerialized = JSON.stringify({ charts, kpis });
     if (isHydratingRef.current) {
       lastPersistedChartsRef.current = nextSerialized;
       return;
@@ -268,10 +272,10 @@ export default function DashboardPage() {
       return;
     }
     lastPersistedChartsRef.current = nextSerialized;
-    void persistDashboardCharts({ datasetId, charts }).catch((error) => {
+    void persistDashboardCharts({ datasetId, charts, kpis }).catch((error) => {
       console.error("[dashboard] failed to persist charts:", error);
     });
-  }, [charts, datasetId]);
+  }, [charts, kpis, datasetId]);
 
   const [profiledUpload, setProfiledUpload] =
     useState<UploadProfileResponse | null>(null);

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/shared/lib/supabase/server";
 import { inferColumns } from "@/features/dashboard/server/infer";
-import { normalizeChartConfig } from "@/shared/contracts";
+import { normalizeChartConfig, normalizeKpiConfig } from "@/shared/contracts";
 import {
   createDatasetState,
   setDatasetFiles,
@@ -125,7 +125,9 @@ export async function GET(
   const charts = Array.isArray(chartRow?.configs)
     ? chartRow.configs.map((chart) => normalizeChartConfig(chart))
     : [];
-  const kpis = Array.isArray(kpiRow?.configs) ? kpiRow.configs : [];
+  const kpis = Array.isArray(kpiRow?.configs)
+    ? kpiRow.configs.map((kpi, index) => normalizeKpiConfig(kpi, index))
+    : [];
   const files = (fileRows ?? []).map((file) => ({
     id: String(file.id),
     fileName: String(file.file_name),
