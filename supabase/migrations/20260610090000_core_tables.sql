@@ -69,6 +69,11 @@ create trigger kpis_updated_at
   before update on public.kpis
   for each row execute function public.update_updated_at();
 
+grant select, insert, update, delete on public.datasets to authenticated;
+grant select, insert, update, delete on public.dataset_files to authenticated;
+grant select, insert, update, delete on public.charts to authenticated;
+grant select, insert, update, delete on public.kpis to authenticated;
+
 -- Row Level Security: per-command policies scoped to authenticated users.
 alter table public.datasets enable row level security;
 alter table public.dataset_files enable row level security;

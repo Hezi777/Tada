@@ -23,6 +23,9 @@ create trigger dashboards_updated_at
   before update on public.dashboards
   for each row execute function public.update_updated_at();
 
+grant select, insert, update, delete on public.dashboards to authenticated;
+grant select, insert, delete on public.dashboard_datasets to authenticated;
+
 alter table public.dashboards enable row level security;
 alter table public.dashboard_datasets enable row level security;
 
