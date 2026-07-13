@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { Header } from "@/app/(marketing)/_components/Header";
 import { Hero } from "@/app/(marketing)/_components/Hero";
-import { BrandMarquee } from "@/app/(marketing)/_components/BrandMarquee";
 import { Features } from "@/app/(marketing)/_components/Features";
 import { HowItWorks } from "@/app/(marketing)/_components/HowItWorks";
 import { FAQ } from "@/app/(marketing)/_components/FAQ";
@@ -73,7 +72,6 @@ export function LandingPageClient() {
         onOpenWorkspace={handleOpenWorkspace}
       />
       <Hero onGetStarted={handleGetStarted} />
-      <BrandMarquee />
       <Features />
       <HowItWorks />
       <FAQ />

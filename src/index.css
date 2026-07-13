@@ -17,6 +17,8 @@
     --color-text-muted: #9ba3b2;
     --color-chart-grid: #eceef0;
     --color-chart-axis: #6b7280;
+    --color-chart-hover: rgba(0, 50, 125, 0.05);
+    --color-chart-cursor-line: rgba(0, 50, 125, 0.18);
 
     --background: 210 43% 98%;
     --foreground: 217 30% 13%;
@@ -61,40 +63,59 @@
   }
 
   .dark {
-    --background: 210 100% 99%;
-    --foreground: 217 35% 16%;
-    --card: 0 0% 100%;
-    --card-foreground: 217 35% 16%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 217 35% 16%;
-    --primary: 211 90% 54%;
+    /* App custom tokens - the ones components actually use. Dark canvas,
+       lifted surfaces, brand blue brightened one family-step for contrast. */
+    --color-bg: #0e1116;
+    --color-surface: #171b22;
+    --color-surface-muted: #1f242d;
+    --color-surface-subtle: #272d37;
+    --color-border: rgba(255, 255, 255, 0.1);
+    --color-accent: #2f65b5;
+    --color-accent-secondary: #4a7acc;
+    --color-accent-light: #1a2740;
+    --color-text-primary: #eef1f5;
+    --color-text-secondary: #aab3c0;
+    --color-text-muted: #6f7785;
+    --color-chart-grid: #272d37;
+    --color-chart-axis: #8891a0;
+    --color-chart-hover: rgba(255, 255, 255, 0.045);
+    --color-chart-cursor-line: rgba(255, 255, 255, 0.16);
+
+    /* shadcn HSL tokens (button/card/popover/input primitives). */
+    --background: 220 22% 8%;
+    --foreground: 210 20% 96%;
+    --card: 222 18% 12%;
+    --card-foreground: 210 20% 96%;
+    --popover: 222 18% 12%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 213 59% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 212 74% 96%;
-    --secondary-foreground: 216 29% 26%;
-    --muted: 212 55% 96%;
-    --muted-foreground: 216 15% 46%;
-    --accent: 201 94% 91%;
-    --accent-foreground: 214 73% 32%;
-    --destructive: 0 84% 60%;
+    --secondary: 220 14% 18%;
+    --secondary-foreground: 210 20% 92%;
+    --muted: 220 14% 18%;
+    --muted-foreground: 215 12% 60%;
+    --accent: 220 14% 20%;
+    --accent-foreground: 210 20% 92%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 213 45% 88%;
-    --input: 213 45% 88%;
-    --ring: 211 90% 54%;
-    --glow: 210 100% 72%;
-    --surface: 210 100% 98%;
-    --surface-elevated: 0 0% 100%;
-    --hero-tint: 210 100% 97%;
-    --hero-grid: 212 65% 90%;
-    --shadow-color: 215 74% 31%;
-    --panel: 210 82% 98%;
-    --sidebar-background: 211 83% 98%;
-    --sidebar-foreground: 216 29% 26%;
-    --sidebar-primary: 211 90% 54%;
+    --border: 220 14% 20%;
+    --input: 220 14% 22%;
+    --ring: 213 59% 50%;
+    --glow: 213 70% 55%;
+    --surface: 220 22% 8%;
+    --surface-elevated: 222 18% 12%;
+    --hero-tint: 220 22% 10%;
+    --hero-grid: 220 14% 18%;
+    --shadow-color: 220 40% 3%;
+    --panel: 222 18% 12%;
+    --sidebar-background: 222 18% 11%;
+    --sidebar-foreground: 210 20% 92%;
+    --sidebar-primary: 213 59% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 212 74% 95%;
-    --sidebar-accent-foreground: 216 29% 26%;
-    --sidebar-border: 213 45% 88%;
-    --sidebar-ring: 211 90% 54%;
+    --sidebar-accent: 220 14% 18%;
+    --sidebar-accent-foreground: 210 20% 92%;
+    --sidebar-border: 220 14% 20%;
+    --sidebar-ring: 213 59% 50%;
   }
 
   * {
@@ -113,9 +134,9 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-satoshi), sans-serif;
-    background-color: #f7f9fb;
-    color: hsl(var(--foreground));
+    font-family: var(--font-satoshi), var(--font-assistant), sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
     min-height: 100vh;
     overflow-x: hidden;
   }
@@ -139,6 +160,97 @@
   ::selection {
     background: rgba(0, 50, 125, 0.14);
     color: var(--color-text-primary);
+  }
+}
+
+/* ── Design tokens: spacing / type scale / motion ──────────────────────────
+   Spacing: Tailwind's default 4px scale already aligns to an 8px rhythm
+   (use 2/4/6/8/10/12... => 8/16/24/32/40/48px) for section gaps and card
+   padding. No scale override needed — just use multiples of 2 consistently.
+
+   Type roles: ~1.25 step scale, matched to sizes already in use across the
+   dashboard (10–48px) so adopting these classes is non-breaking.
+     .t-display     48px / 900 / -0.03em   – hero numbers, landing display
+     .t-h1          30px / 700 / -0.02em   – page-level empty-state headings
+     .t-h2          22px / 700 / -0.01em   – section / card-group headings
+     .t-card-title  17px / 600             – card titles
+     .t-label       12px / 600 / uppercase – field labels, eyebrow tags
+     .t-body        14px / 400             – body copy, descriptions
+     .t-metric      36px / 800 / tabular   – KPI values
+
+   Motion: use `.transition-ui` for hover/focus state changes (~180ms
+   ease-out). Reduced-motion users get instant transitions. */
+@layer utilities {
+  .t-display {
+    font-family: var(--font-satoshi), var(--font-assistant), sans-serif;
+    font-size: 3rem; /* 48px */
+    line-height: 1.1;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+  }
+
+  .t-h1 {
+    font-family: var(--font-satoshi), var(--font-assistant), sans-serif;
+    font-size: 1.875rem; /* 30px */
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .t-h2 {
+    font-family: var(--font-satoshi), var(--font-assistant), sans-serif;
+    font-size: 1.375rem; /* 22px */
+    line-height: 1.3;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .t-card-title {
+    font-size: 1.0625rem; /* 17px */
+    line-height: 1.4;
+    font-weight: 600;
+  }
+
+  .t-label {
+    font-size: 0.75rem; /* 12px */
+    line-height: 1.4;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .t-body {
+    font-size: 0.875rem; /* 14px */
+    line-height: 1.6;
+    font-weight: 400;
+  }
+
+  .t-metric {
+    font-family: var(--font-satoshi), var(--font-assistant), sans-serif;
+    font-size: 2.25rem; /* 36px */
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  :root {
+    --motion-duration: 180ms;
+    --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .transition-ui {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: var(--motion-duration);
+    transition-timing-function: var(--motion-ease);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .transition-ui {
+      transition-duration: 0.01ms;
+    }
   }
 }
 
@@ -195,6 +307,18 @@
     box-shadow:
       0 18px 45px -36px hsl(var(--shadow-color) / 0.24),
       0 2px 6px hsl(var(--shadow-color) / 0.05);
+  }
+
+  .dark .shadow-card {
+    box-shadow:
+      0 18px 45px -30px hsl(var(--shadow-color) / 0.7),
+      0 2px 8px hsl(var(--shadow-color) / 0.3);
+  }
+
+  .dark .shadow-soft {
+    box-shadow:
+      0 24px 70px -30px hsl(var(--shadow-color) / 0.75),
+      0 10px 28px -18px hsl(var(--shadow-color) / 0.5);
   }
 
   .surface-panel {
@@ -431,8 +555,277 @@
     position: absolute;
     inset: 0;
     border-radius: 9999px;
-    border: 2px solid #00327d;
+    border: 2px solid var(--color-accent);
     animation: fab-ring-pulse 2.5s ease-in-out infinite;
     pointer-events: none;
   }
 }
+
+/* ── v2 premium system: subtle mesh-gradient cards, depth, bold display type ── */
+@layer utilities {
+  /* Soft pastel mesh surfaces for KPI / feature cards (light). */
+  .mesh-blue {
+    background:
+      radial-gradient(at 0% 0%, rgba(47, 109, 246, 0.06), transparent 55%),
+      radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.05), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(0, 50, 125, 0.04), transparent 55%),
+      #ffffff;
+  }
+  .mesh-teal {
+    background:
+      radial-gradient(at 0% 0%, rgba(20, 184, 166, 0.07), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.05), transparent 55%),
+      #ffffff;
+  }
+  .mesh-violet {
+    background:
+      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.07), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.05), transparent 55%),
+      #ffffff;
+  }
+  /* Deep navy mesh for the primary/anchor card. */
+  .mesh-navy {
+    background:
+      radial-gradient(at 0% 0%, #0a4aa0, transparent 60%),
+      radial-gradient(at 100% 100%, #001f4d, transparent 65%),
+      linear-gradient(135deg, #00327d 0%, #001b45 100%);
+  }
+
+  .dark .mesh-blue {
+    background:
+      radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(0, 50, 125, 0.28), transparent 60%),
+      var(--color-surface);
+  }
+  .dark .mesh-teal {
+    background:
+      radial-gradient(at 0% 0%, rgba(20, 184, 166, 0.14), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.12), transparent 60%),
+      var(--color-surface);
+  }
+  .dark .mesh-violet {
+    background:
+      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.16), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.12), transparent 60%),
+      var(--color-surface);
+  }
+  .dark .mesh-navy {
+    background:
+      radial-gradient(at 0% 0%, #0c4aa0, transparent 60%),
+      radial-gradient(at 100% 100%, #001225, transparent 65%),
+      linear-gradient(135deg, #013a8f 0%, #00132f 100%);
+  }
+
+  /* Blue→teal gradient text for hero numbers / accent words. */
+  .text-gradient-brand {
+    background: linear-gradient(120deg, #00327d 0%, #1466b8 45%, #14b8a6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Layered soft depth for premium cards. */
+  .shadow-premium {
+    box-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.04),
+      0 14px 36px -18px rgba(16, 24, 40, 0.2);
+  }
+  .dark .shadow-premium {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      0 16px 44px -18px rgba(0, 0, 0, 0.65);
+  }
+
+  /* Bold, tight, tabular display numbers (uses the Satoshi variable font). */
+  .display-number {
+    font-family: var(--font-satoshi), var(--font-assistant), sans-serif;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  /* AI "magic" gradient ring — brand blue -> teal -> green -> violet. Used for
+     the generating placeholder and the one-time reveal glow on new charts. */
+  .ai-glow-ring {
+    background: conic-gradient(
+      from var(--tada-glow-angle),
+      #2f6df6,
+      #14b8a6,
+      #22c55e,
+      #7c6cff,
+      #2f6df6
+    );
+    animation: tada-glow-spin 4s linear infinite;
+  }
+  .ai-glow-ring-soft {
+    background: conic-gradient(
+      from var(--tada-glow-angle),
+      #2f6df6,
+      #14b8a6,
+      #22c55e,
+      #7c6cff,
+      #2f6df6
+    );
+    animation:
+      tada-glow-spin 4s linear infinite,
+      tada-glow-breathe 3s ease-in-out infinite;
+  }
+  /* Border-only mask, for drawing the ring as an overlay on top of a card. */
+  .ai-glow-ring-mask {
+    padding: 1.5px;
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ai-glow-ring,
+    .ai-glow-ring-soft {
+      animation: none;
+    }
+  }
+}
+
+/* Animatable angle for the conic gradient. Browsers without @property simply
+   render a static brand gradient (graceful, still on-brand). */
+@property --tada-glow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes tada-glow-spin {
+  to {
+    --tada-glow-angle: 360deg;
+  }
+}
+@keyframes tada-glow-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+@keyframes tada-reveal-fade {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ── Maximal-premium surface system (light + dark, one language) ──────────
+   Accent gradient tokens (brand blue) + the `.premium-card` surface used for
+   widgets across the dashboard: gradient-tinted background, layered soft
+   shadow + accent-tinted glow halo, hairline border. `.glass` is the overlay
+   variant. Glow/gradient live on surfaces & fills only — text keeps the
+   existing WCAG-AA `--color-text-*` tokens in both themes. */
+@layer utilities {
+  :root {
+    --accent-gradient-from: #2f6df6;
+    --accent-gradient-to: #00327d;
+    --premium-glow: rgba(47, 109, 246, 0.16);
+  }
+
+  .dark {
+    --premium-glow: rgba(47, 109, 246, 0.32);
+  }
+
+  .accent-gradient {
+    background: linear-gradient(135deg, var(--accent-gradient-from) 0%, var(--accent-gradient-to) 100%);
+  }
+
+  .text-accent-gradient {
+    background: linear-gradient(135deg, var(--accent-gradient-from) 0%, var(--accent-gradient-to) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Premium widget surface: subtle accent-tinted gradient + hairline border +
+     layered shadow with an accent glow halo (soft colored shadow in light,
+     luminous glow in dark). */
+  .premium-card {
+    position: relative;
+    background:
+      linear-gradient(160deg, rgba(47, 109, 246, 0.05) 0%, transparent 45%),
+      var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.04),
+      0 18px 44px -28px var(--premium-glow),
+      0 14px 36px -18px rgba(16, 24, 40, 0.16);
+  }
+
+  .dark .premium-card {
+    background:
+      linear-gradient(160deg, rgba(47, 109, 246, 0.1) 0%, transparent 50%),
+      var(--color-surface);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      0 0 48px -8px var(--premium-glow),
+      0 16px 44px -18px rgba(0, 0, 0, 0.65);
+  }
+
+  /* Glass overlay surface (sheets, dropdowns, floating chrome). */
+  .glass {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.6));
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--color-border);
+  }
+
+  .dark .glass {
+    background: linear-gradient(180deg, rgba(23, 27, 34, 0.78), rgba(23, 27, 34, 0.6));
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--color-border);
+  }
+
+  /* Spring hover-lift for premium widgets; smooth size-change transition for
+     grid re-flow (col/row span changes). Both respect reduced-motion. */
+  .premium-hover {
+    transition:
+      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      border-color 200ms ease;
+  }
+
+  .premium-hover:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.04),
+      0 26px 60px -28px var(--premium-glow),
+      0 18px 44px -18px rgba(16, 24, 40, 0.22);
+  }
+
+  .dark .premium-hover:hover {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      0 0 64px -8px var(--premium-glow),
+      0 22px 52px -18px rgba(0, 0, 0, 0.7);
+  }
+
+  .premium-transition {
+    transition:
+      grid-column 320ms cubic-bezier(0.4, 0, 0.2, 1),
+      grid-row 320ms cubic-bezier(0.4, 0, 0.2, 1),
+      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .premium-hover,
+    .premium-hover:hover,
+    .premium-transition {
+      transition-duration: 0.01ms;
+      transform: none;
+    }
+  }
+}
+

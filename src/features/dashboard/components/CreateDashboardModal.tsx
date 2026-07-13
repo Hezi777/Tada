@@ -15,7 +15,10 @@ import {
 } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { DASHBOARD_ICON_OPTIONS, DASHBOARD_COLOR_OPTIONS } from "@/shared/contracts";
+import {
+  DASHBOARD_ICON_OPTIONS,
+  DASHBOARD_COLOR_OPTIONS,
+} from "@/shared/contracts";
 import {
   BarChart3,
   PieChart,
@@ -86,7 +89,7 @@ export default function CreateDashboardModal({
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <DialogContent
-        className="overflow-hidden rounded-[24px] border border-transparent bg-white p-0 text-[var(--color-text-primary)] shadow-[0_32px_64px_-44px_rgba(25,28,30,0.24)] sm:max-w-lg"
+        className="overflow-hidden rounded-[24px] border border-transparent bg-card p-0 text-[var(--color-text-primary)] shadow-[0_32px_64px_-44px_rgba(25,28,30,0.24)] sm:max-w-lg"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
         }}
@@ -97,8 +100,8 @@ export default function CreateDashboardModal({
               New Dashboard
             </DialogTitle>
             <DialogDescription className="max-w-sm text-sm text-[var(--color-text-muted)]">
-              Give it a name, choose an icon, and pick a gallery tint to make
-              it easy to spot.
+              Give it a name, choose an icon, and pick a gallery tint to make it
+              easy to spot.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -142,13 +145,13 @@ export default function CreateDashboardModal({
                     onClick={() => setSelectedIcon(iconName)}
                     className={`flex h-11 w-11 items-center justify-center rounded-[8px] border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 ${
                       isSelected
-                        ? "border-[#00327d] shadow-none"
+                        ? "border-[var(--color-accent)] shadow-none"
                         : "border-[rgba(25,28,30,0.12)] hover:-translate-y-0.5 hover:bg-[var(--color-surface-muted)]"
                     }`}
                     style={{
                       backgroundColor: isSelected
                         ? `${selectedColor}14`
-                        : "white",
+                        : "hsl(var(--card))",
                       color: isSelected
                         ? selectedColor
                         : "var(--color-text-muted)",
@@ -181,7 +184,7 @@ export default function CreateDashboardModal({
                     onClick={() => setSelectedColor(color)}
                     className={`h-9 w-9 rounded-full border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 ${
                       isSelected
-                        ? "border-[#00327d] shadow-none"
+                        ? "border-[var(--color-accent)] shadow-none"
                         : "border-[rgba(25,28,30,0.12)] hover:-translate-y-0.5 hover:shadow-sm"
                     }`}
                     style={{
@@ -230,9 +233,9 @@ export default function CreateDashboardModal({
             </Button>
             <Button
               type="submit"
+              variant="primary-accent"
               disabled={!name.trim()}
-              className="h-10 rounded-full px-5 text-sm text-white shadow-none transition-opacity disabled:opacity-50"
-              style={{ backgroundColor: "#00327d" }}
+              className="h-10 px-5 text-sm font-semibold shadow-none disabled:opacity-50"
             >
               Create Dashboard
             </Button>

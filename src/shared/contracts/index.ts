@@ -104,6 +104,9 @@ export const ChartConfigSchema = z.object({
   priority: z.number().int().nonnegative().default(0),
   lastTouchedBy: ChartLastTouchedBySchema.default("user"),
   visibilityState: ChartVisibilityStateSchema.default("visible"),
+  // Render hints set by the BI rules engine.
+  orientation: z.enum(["vertical", "horizontal"]).optional(),
+  categoryLimit: z.number().int().positive().optional(),
 });
 export type ChartConfig = z.infer<typeof ChartConfigSchema>;
 
@@ -153,8 +156,24 @@ export const KPIConfigSchema = z.object({
   label: z.string().min(1),
   description: z.string().min(1),
   isPrimary: z.boolean(),
+  // Apple-widget geometry: size preset + order in the unified widget list.
+  size: ChartSizeSchema.default("medium"),
+  order: z.number().int().nonnegative().default(0),
 });
 export type KPIConfig = z.infer<typeof KPIConfigSchema>;
+
+/** Backfill `size`/`order` for KPI configs persisted before the
+ * Apple-widget canvas (geometry now lives in these two fields only). */
+export function normalizeKpiConfig(
+  kpi: Omit<KPIConfig, "size" | "order"> & Partial<Pick<KPIConfig, "size" | "order">>,
+  index = 0,
+): KPIConfig {
+  return {
+    ...kpi,
+    size: kpi.size ?? "medium",
+    order: kpi.order ?? index,
+  };
+}
 
 export const ChatKpiValueSchema = z.object({
   id: z.string().min(1),
@@ -229,6 +248,7 @@ export const ChatDashboardRequestSchema = z.object({
   message: z.string().min(1),
   chartConfigs: z.array(ChartConfigSchema),
   kpis: z.array(ChatKpiValueSchema),
+  focusChartId: z.string().min(1).optional(),
 });
 export type ChatDashboardRequest = z.infer<typeof ChatDashboardRequestSchema>;
 
@@ -239,6 +259,115 @@ export const ChatDashboardResponseSchema = z.object({
   proposal: ChatChartProposalSchema.nullable(),
 });
 export type ChatDashboardResponse = z.infer<typeof ChatDashboardResponseSchema>;
+
+// ── BI Rules RAG ──
+
+export const BiRuleCategorySchema = z.enum([
+  "chart_selection",
+  "formatting",
+  "aggregation",
+  "readability",
+  "israeli_data",
+]);
+export type BiRuleCategory = z.infer<typeof BiRuleCategorySchema>;
+
+export const BiRuleSeveritySchema = z.enum(["error", "warning", "info"]);
+export type BiRuleSeverity = z.infer<typeof BiRuleSeveritySchema>;
+
+export const BiRuleSchema = z.object({
+  rule_id: z.string().min(1),
+  category: BiRuleCategorySchema,
+  content: z.string().min(1),
+  action_if_fail: z.string().min(1),
+  severity: BiRuleSeveritySchema,
+});
+export type BiRule = z.infer<typeof BiRuleSchema>;
+
+export const RuleViolationSchema = z.object({
+  ruleId: z.string().min(1),
+  chartId: z.string().min(1),
+  action: z.string().min(1),
+  severity: BiRuleSeveritySchema,
+  applied: z.boolean(),
+  detail: z.string(),
+});
+export type RuleViolation = z.infer<typeof RuleViolationSchema>;
+
+// ── Dataset topics ──
+
+export const DATASET_TOPICS = [
+  "cash_flow",
+  "sales",
+  "expenses",
+  "student_grades",
+  "customer_feedback",
+  "hr",
+  "inventory",
+  "marketing",
+  "unknown",
+] as const;
+
+export const DatasetTopicSchema = z.enum(DATASET_TOPICS);
+export type DatasetTopic = z.infer<typeof DatasetTopicSchema>;
+
+export const DATASET_TOPIC_LABELS: Record<
+  DatasetTopic,
+  { en: string; he: string }
+> = {
+  cash_flow: { en: "Cash flow", he: "תזרים מזומנים" },
+  sales: { en: "Sales", he: "מכירות" },
+  expenses: { en: "Expenses", he: "הוצאות" },
+  student_grades: { en: "Student grades", he: "ציוני תלמידים" },
+  customer_feedback: { en: "Customer feedback", he: "משוב לקוחות" },
+  hr: { en: "HR / People", he: "משאבי אנוש" },
+  inventory: { en: "Inventory", he: "מלאי" },
+  marketing: { en: "Marketing", he: "שיווק" },
+  unknown: { en: "Not sure / Other", he: "לא בטוח / אחר" },
+};
+
+// ── Dataset profiling (pure TS, no LLM) ──
+
+export const ColumnProfileSchema = z.object({
+  name: z.string().min(1),
+  kind: ColumnKindSchema,
+  nullCount: z.number().int().nonnegative(),
+  uniqueCount: z.number().int().nonnegative(),
+  min: z.union([z.string(), z.number()]).nullable(),
+  max: z.union([z.string(), z.number()]).nullable(),
+  mean: z.number().nullable(),
+  topValues: z.array(
+    z.object({ value: SerializedValueSchema, count: z.number().int() }),
+  ),
+  isPii: z.boolean(),
+});
+export type ColumnProfile = z.infer<typeof ColumnProfileSchema>;
+
+export const DatasetProfileSchema = z.object({
+  rowCount: z.number().int().nonnegative(),
+  columnCount: z.number().int().nonnegative(),
+  columns: z.array(ColumnProfileSchema),
+  piiColumns: z.array(z.string()),
+});
+export type DatasetProfile = z.infer<typeof DatasetProfileSchema>;
+
+export const UploadProfileResponseSchema = z.object({
+  datasetId: z.string().min(1),
+  fileName: z.string().min(1),
+  rowCount: z.number().int().nonnegative(),
+  columns: z.array(DashboardColumnSchema),
+  profile: DatasetProfileSchema,
+  suggestedTopic: DatasetTopicSchema,
+});
+export type UploadProfileResponse = z.infer<typeof UploadProfileResponseSchema>;
+
+export const GenerateDashboardRequestSchema = z.object({
+  datasetId: z.string().min(1),
+  topic: DatasetTopicSchema,
+  chartCount: z.number().int().min(2).max(6),
+});
+export type GenerateDashboardRequest = z.infer<
+  typeof GenerateDashboardRequestSchema
+>;
 
 export const BI_RULE_LIMITS = {
   minCharts: 2,

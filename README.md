@@ -36,40 +36,61 @@
 
 ## About
 
-Tada turns CSV and Excel files into interactive dashboards without any manual configuration. Upload a file and a Groq-powered pipeline infers the schema, picks chart types, and streams a finished dashboard in seconds. A floating copilot chat lets you add or refine charts in plain English. Dashboards persist per-user in Supabase, so workspaces survive refreshes and can be switched between instantly.
+Tada turns CSV, Excel, and PDF files into interactive dashboards without any manual configuration. Upload a file and the pipeline profiles your data (pure TS — types, nulls, stats, PII detection), suggests what kind of data it is, and generates a dashboard whose charts are **grounded in a retrieval index of BI best-practice rules** — not just whatever the LLM feels like drawing. A floating copilot chat answers questions in Hebrew or English, grounded in a per-dataset vector index of your actual data. Dashboards persist per-user in Supabase behind Row-Level Security.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Features
 
-| Area | Description |
-|---|---|
-| File ingestion | CSV and Excel (`.xlsx`) uploads processed server-side with automatic type inference and schema detection |
-| AI dashboard generation | Groq LLM analyzes column semantics and produces a full set of chart configs (bar, line, area, pie, scatter) plus up to four KPI cards |
-| KPI cards | Primary metric highlighted in accent color; supporting cards show aggregated values with auto-selected icons |
-| Chart canvas | Drag-and-drop chart reordering via `@dnd-kit`; up to 12 charts per dashboard with a configurable visible/hidden split |
-| Manage Views | Side-sheet to pin, show, hide, or delete individual charts |
-| Copilot chat | Floating drawer powered by Groq; AI proposals add or modify charts and are accepted or dismissed in one click |
-| Multi-dashboard workspaces | Named dashboards with custom icons and colors; instant switch via cached state with no loading flicker |
-| Authentication | Supabase email/password auth with server-side session validation on all API routes |
-| Persistence | Dashboards, datasets, and chart configs stored in Supabase Postgres with checked-in migrations |
-| Landing page | Scroll-driven feature cards, animated chart mockup, and a "How it works" timeline built with Framer Motion |
+| Area                       | Description                                                                                                                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| File ingestion             | CSV, Excel (`.xlsx`/`.xls`), and PDF uploads parsed server-side with validation (size/type/row caps) and Israeli DD/MM date normalization                                                                                |
+| Automatic profiling        | Pure-TS profiling: column types, null counts, stats, top values — plus PII detection (emails, Israeli phones/IDs) that keeps personal data out of AI prompts and embeddings                                              |
+| Topic detection            | The profile is embedded and classified against topic descriptors (cash flow, sales, grades, …); the user confirms topic + chart count before generation                                                                  |
+| Grounded generation        | Chart configs are generated with rules retrieved from the BI Rules RAG, then enforced by a deterministic rule engine (donut→bar conversion, top-N + Other bucketing, horizontal bars for long labels, aggregation fixes) |
+| Grounded chat              | Hebrew/English Q&A, trend explanations, and add/remove/edit-chart commands, grounded in retrieval over the per-dataset vector index with caching                                                                         |
+| KPI cards                  | Primary metric highlighted in accent color; money-like columns formatted as ₪ with bidi-safe rendering                                                                                                                   |
+| Chart canvas               | Bento grid with drag-and-drop reordering, per-card resize (S/M/L), and a Manage Views sheet to pin/show/hide/delete charts                                                                                               |
+| Multi-dashboard workspaces | Named dashboards with custom icons and colors; instant switch via cached state                                                                                                                                           |
+| Authentication             | Supabase email/password + Google OAuth, with server-side session validation on all API routes                                                                                                                            |
+| Persistence & security     | Datasets, charts, KPIs, and both vector indexes in Supabase Postgres with checked-in idempotent migrations and per-command RLS policies                                                                                  |
+| Web app                    | Landing, pricing, about, privacy, and terms pages plus settings (profile picture, account deletion)                                                                                                                      |
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## Architecture: the two RAG systems
+
+Tada's core idea is that both chart generation and chat answers are _grounded_, using two separate pgvector indexes. Embeddings are computed locally with Transformers.js (`Xenova/multilingual-e5-small`, 384-dim) because Groq offers no embeddings endpoint and Hebrew data needs a multilingual model — no extra API key required.
+
+**1. BI Rules RAG (`bi_rules_chunks`)** — queried at dashboard-generation time.
+A versioned dataset of ~60 data-visualization rules (`data/bi-rules.json`, sourced from Cleveland/McGill, the FT Visual Vocabulary, Datawrapper, NN/g, WCAG, and Israeli data conventions) is embedded and seeded into Postgres. When a dashboard is generated, the dataset profile is turned into a retrieval query, the most relevant rules go into the LLM prompt, and a deterministic engine (`src/features/dashboard/server/rules.ts`) then _enforces_ the machine-checkable rules on the output — applying each rule's `action_if_fail` by severity.
+
+**2. Per-user Data RAG (`user_data_chunks`)** — queried at chat time.
+After generation, the dataset is distilled into compact text chunks (overview, per-column stats, category aggregates, monthly time buckets, redacted sample rows), embedded, and stored scoped to the owning user (RLS-enforced). Each chat question retrieves the most relevant chunks instead of re-reading the file, with per-question caching and content-hash checks so unchanged data is never re-embedded.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Screenshots
 
+### Dashboard
+
+![Dashboard: left sidebar navigation, KPI cards, and a bento grid of charts on a light canvas](docs/screenshots/05-dashboard.png)
+
+### Dashboard - Dark Mode
+
+![The same dashboard in dark mode, fully tokenized across sidebar, cards, and charts](docs/screenshots/06-dashboard-dark.png)
+
 ### Landing Page - Hero
 
-![Landing hero: headline, CTA buttons, and an animated dashboard mockup on the right](docs/screenshots/01-landing-hero.png)
+![Landing hero: left-aligned headline, CTA buttons, and a framed dashboard preview on the right](docs/screenshots/01-landing-hero.png)
 
 ### Landing Page - Features Section
 
-![Features section: "Zero friction. Pure insight." heading with scroll-stacked feature cards](docs/screenshots/02-landing-features.png)
+![Features section: "Zero friction. Pure insight." heading over an asymmetric bento grid of feature cards](docs/screenshots/02-landing-features.png)
 
-### Landing Page - How it Works & Smart Insights
+### Landing Page - How it Works
 
-![Smart Insights feature card with trend line and anomaly badge, transitioning into the three-step How It Works section](docs/screenshots/03-landing-how-it-works.png)
+![Three-step "How it works" section with numbered markers on a connecting line](docs/screenshots/03-landing-how-it-works.png)
 
 ### Authentication - Sign In
 
@@ -79,19 +100,21 @@ Tada turns CSV and Excel files into interactive dashboards without any manual co
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 16 (App Router, Turbopack) |
-| Language | TypeScript (strict) |
-| Styling | Tailwind CSS v4 + shadcn/ui |
-| Animation | Framer Motion |
-| Charts | Recharts |
-| Drag and drop | @dnd-kit/core + @dnd-kit/sortable |
-| State management | Zustand |
-| Schema validation | Zod |
-| Auth + Database | Supabase (Auth, Postgres, Row-Level Security) |
-| AI inference | Groq (dashboard generation + copilot chat) |
-| Testing | Vitest + Testing Library |
+| Layer                     | Technology                                                          |
+| ------------------------- | ------------------------------------------------------------------- |
+| Framework                 | Next.js 16 (App Router)                                             |
+| Language                  | TypeScript (strict)                                                 |
+| Styling                   | Tailwind CSS v3 + shadcn/ui                                         |
+| Animation                 | Framer Motion                                                       |
+| Charts                    | Recharts                                                            |
+| Drag and drop             | @dnd-kit/core + @dnd-kit/sortable                                   |
+| State management          | Lightweight custom store (`useSyncExternalStore`)                   |
+| Schema validation         | Zod                                                                 |
+| Auth + Database + Vectors | Supabase (Auth, Postgres, pgvector, Row-Level Security, Storage)    |
+| LLM inference             | Groq — `llama-3.3-70b-versatile` (generation, classification, chat) |
+| Embeddings                | Transformers.js — `Xenova/multilingual-e5-small`, computed locally  |
+| Parsing                   | papaparse (CSV), SheetJS (Excel), unpdf (PDF)                       |
+| Testing                   | Vitest + Testing Library                                            |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -106,30 +129,38 @@ npm install
 cp .env.example .env.local
 ```
 
-Required environment variables:
+Fill in `.env.local`:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 GROQ_API_KEY=<groq-api-key>
+# Optional — only needed for account deletion + the seed script:
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+# Optional model overrides (default: llama-3.3-70b-versatile):
+# GROQ_DASHBOARD_MODEL=
+# GROQ_CHAT_MODEL=
 ```
 
-Optional model overrides (defaults to Groq's `llama3` family):
+**1. Apply migrations** — run the SQL files in `supabase/migrations/` in order against your project (Supabase SQL editor, or `npx supabase db push` if you use the CLI). They are idempotent: safe to re-run.
 
-```env
-GROQ_DASHBOARD_MODEL=<model-id>
-GROQ_CHAT_MODEL=<model-id>
-```
-
-Apply migrations and start:
+**2. Seed the BI rules index** (embeds `data/bi-rules.json` into pgvector; downloads the local embedding model ~30MB on first run):
 
 ```bash
-npx supabase db push
+npm run seed:bi-rules
+```
+
+**3. Run:**
+
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). Useful scripts: `npm run typecheck`, `npm run lint`, `npm run test`.
+
+**Google OAuth (optional):** create an OAuth client in Google Cloud Console and add its credentials under _Authentication → Providers → Google_ in the Supabase dashboard, with `https://<your-project>.supabase.co/auth/v1/callback` as the redirect URI. Email/password works without it.
+
+> **Notes:** Without `GROQ_API_KEY` the app still works — charts come from the deterministic heuristic engine and chat degrades gracefully. The first upload after a server start is a little slower while the local embedding model loads.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

@@ -1,153 +1,128 @@
-'use client';
+"use client";
 
-import { useRef } from 'react';
-import { Upload, Cpu, LayoutDashboard } from 'lucide-react';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { Card } from '@/shared/ui/card';
+import { Upload, Cpu, LayoutDashboard } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 const steps = [
   {
     icon: Upload,
-    step: '01',
-    title: 'Upload your data',
-    description: 'Drag and drop any CSV or Excel file. No formatting required.',
+    step: "01",
+    title: "Upload your data",
+    description:
+      "Drag and drop any CSV or Excel file. No formatting required - Tada profiles the columns for you.",
   },
   {
     icon: Cpu,
-    step: '02',
-    title: 'AI does the work',
+    step: "02",
+    title: "AI does the work",
     description:
-      'Our AI instantly understands your data structure and relationships.',
+      "Our AI instantly understands your data structure, relationships and units, then drafts the dashboard.",
   },
   {
     icon: LayoutDashboard,
-    step: '03',
-    title: 'Explore insights',
-    description: 'Get a complete dashboard. Ask questions. Discover patterns.',
+    step: "03",
+    title: "Explore insights",
+    description:
+      "Get a complete dashboard with KPIs and charts. Ask follow-up questions and watch the view reshape.",
   },
-];
+] as const;
 
-const easeOut = { ease: 'easeOut' as const };
-
-function AnimatedConnector() {
-  const ref = useRef<SVGSVGElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ['start 0.85', 'start 0.35'],
-  });
-  const pathLength = useTransform(scrollYProgress, [0, 1], [0, 1]);
-
-  return (
-    <svg
-      ref={ref}
-      className="absolute left-[16%] right-[16%] top-6 hidden w-[68%] md:block"
-      style={{ height: '2px', overflow: 'visible' }}
-      aria-hidden="true"
-    >
-      {/* track */}
-      <line
-        x1="0"
-        y1="1"
-        x2="100%"
-        y2="1"
-        stroke="hsl(var(--primary) / 0.12)"
-        strokeWidth="2"
-        strokeDasharray="6 6"
-      />
-      {/* animated fill */}
-      <motion.line
-        x1="0"
-        y1="1"
-        x2="100%"
-        y2="1"
-        stroke="hsl(var(--primary) / 0.55)"
-        strokeWidth="2"
-        strokeDasharray="6 6"
-        style={{ pathLength }}
-      />
-    </svg>
-  );
-}
+const easeOut = { ease: "easeOut" as const };
 
 export function HowItWorks() {
+  const shouldReduceMotion = useReducedMotion();
+
+  const reveal = (fromSide: "left" | "right") => ({
+    initial: shouldReduceMotion
+      ? { opacity: 0 }
+      : { opacity: 0, x: fromSide === "left" ? -40 : 40 },
+    whileInView: { opacity: 1, x: 0 },
+    viewport: { once: false, margin: "-100px" },
+    transition: { duration: 0.7, ...easeOut },
+  });
+
   return (
-    <section id="how-it-works" className="relative px-4 py-24 sm:px-6">
-      <div className="container">
-        <div className="section-shell px-6 py-10 sm:px-10 sm:py-14">
-          {/* Heading row */}
-          <div className="mb-16 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <div className="eyebrow mb-5">How It Works</div>
-              <h2 className="text-4xl text-foreground sm:text-5xl">
-                Three steps to clarity
-              </h2>
-              <p className="mt-5 text-lg leading-8 text-muted-foreground">
-                From messy spreadsheet to actionable dashboard in under a
-                minute.
-              </p>
-            </div>
-            <Card className="max-w-sm rounded-[1.5rem] border border-primary/15 bg-primary/[0.07] px-5 py-4 text-sm leading-7 text-foreground shadow-card">
-              The experience stays simple on purpose: one upload, one generated
-              dashboard, one conversational loop.
-            </Card>
-          </div>
+    <section
+      id="how-it-works"
+      className="relative bg-[var(--color-bg)] px-4 py-24 sm:px-6"
+    >
+      <div className="container max-w-5xl">
+        {/* Heading */}
+        <div className="mx-auto mb-20 max-w-2xl text-center">
+          <h2 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">
+            Three steps to clarity
+          </h2>
+          <p className="mt-5 text-lg leading-8 text-muted-foreground">
+            From messy spreadsheet to actionable dashboard in under a minute.
+          </p>
+        </div>
 
-          {/* Card stack */}
-          <div className="relative mt-8">
-            {/* Animated SVG connector line */}
-            <AnimatedConnector />
+        {/* Alternating rows with connecting line */}
+        <div className="relative flex flex-col gap-16 sm:gap-24">
+          {/* Connecting line */}
+          <div
+            className="absolute left-1/2 top-4 hidden h-[calc(100%-2rem)] w-px -translate-x-1/2 bg-[repeating-linear-gradient(to_bottom,hsl(var(--primary)/0.25)_0,hsl(var(--primary)/0.25)_6px,transparent_6px,transparent_12px)] sm:block"
+            aria-hidden="true"
+          />
 
-            <div className="relative grid gap-10 md:grid-cols-3">
-              {steps.map((step, index) => (
-                <div
-                  key={step.step}
-                  className="relative flex flex-col items-center text-center"
-                >
-                  {/* Numbered circle — spring scale-in */}
+          {steps.map((step, index) => {
+            const isEven = index % 2 === 1;
+            return (
+              <div
+                key={step.step}
+                className="relative grid items-center gap-8 sm:grid-cols-2 sm:gap-12"
+              >
+                {/* Step marker - center on larger screens */}
+                <div className="absolute left-1/2 top-0 hidden -translate-x-1/2 sm:block">
                   <motion.div
-                    className="relative z-10 mb-8 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-bold text-white shadow-glow ring-8 ring-white"
-                    initial={{ scale: 0 }}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-base font-bold text-white shadow-glow ring-8 ring-[var(--color-bg)]"
+                    initial={{ scale: shouldReduceMotion ? 1 : 0 }}
                     whileInView={{ scale: 1 }}
-                    viewport={{ once: true, margin: '-100px' }}
+                    viewport={{ once: false, margin: "-100px" }}
                     transition={{
-                      type: 'spring',
+                      type: "spring",
                       stiffness: 200,
-                      delay: index * 0.15,
+                      delay: shouldReduceMotion ? 0 : 0.1,
                     }}
                   >
                     {index + 1}
                   </motion.div>
-
-                  {/* Card — y fade-in */}
-                  <motion.div
-                    className="w-full flex-1"
-                    initial={{ y: 40, opacity: 0 }}
-                    whileInView={{ y: 0, opacity: 1 }}
-                    viewport={{ once: true, margin: '-100px' }}
-                    transition={{
-                      duration: 0.6,
-                      delay: index * 0.15,
-                      ...easeOut,
-                    }}
-                  >
-                    <Card className="surface-panel relative w-full rounded-[1.75rem] border border-white/80 p-6 shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card">
-                      <div className="mb-5 flex justify-center">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] bg-primary/[0.08]">
-                          <step.icon className="h-6 w-6 text-primary" />
-                        </div>
-                      </div>
-                      <h3 className="font-sans text-2xl font-bold text-foreground">
-                        {step.title}
-                      </h3>
-                      <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                        {step.description}
-                      </p>
-                    </Card>
-                  </motion.div>
                 </div>
-              ))}
-            </div>
-          </div>
+
+                {/* Text block */}
+                <motion.div
+                  {...reveal(isEven ? "right" : "left")}
+                  className={`${isEven ? "sm:order-2 sm:text-left" : "sm:text-right"} flex flex-col items-start sm:items-end ${isEven ? "sm:items-start" : ""}`}
+                >
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-[1rem] bg-primary/[0.08] sm:hidden">
+                    <step.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-[0.24em] text-primary/70">
+                    Step {step.step}
+                  </span>
+                  <h3 className="mt-2 font-sans text-2xl font-bold text-foreground sm:text-3xl">
+                    {step.title}
+                  </h3>
+                  <p className="mt-3 max-w-sm text-base leading-7 text-muted-foreground">
+                    {step.description}
+                  </p>
+                </motion.div>
+
+                {/* Visual block */}
+                <motion.div
+                  {...reveal(isEven ? "left" : "right")}
+                  className={`${isEven ? "sm:order-1" : ""} flex ${isEven ? "sm:justify-end" : "sm:justify-start"}`}
+                >
+                  <div className="relative flex h-40 w-full max-w-sm items-center justify-center overflow-hidden rounded-[20px] border border-white/80 bg-white shadow-soft sm:h-48">
+                    <div className="absolute -inset-8 bg-[radial-gradient(circle_at_30%_30%,hsl(var(--primary)/0.08),transparent_60%),radial-gradient(circle_at_75%_75%,rgba(34,197,94,0.08),transparent_55%)]" />
+                    <div className="relative flex h-16 w-16 items-center justify-center rounded-[1.25rem] bg-primary/[0.08]">
+                      <step.icon className="h-8 w-8 text-primary" />
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

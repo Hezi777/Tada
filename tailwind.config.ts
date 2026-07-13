@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
+import containerQueries from "@tailwindcss/container-queries";
 
 export default {
   darkMode: ["class"],
@@ -20,9 +21,21 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-satoshi)", "sans-serif"],
-        display: ["var(--font-satoshi)", "sans-serif"],
-        label: ["var(--font-satoshi)", "sans-serif"],
+        sans: [
+          "var(--font-satoshi)",
+          "var(--font-assistant)",
+          "sans-serif",
+        ],
+        display: [
+          "var(--font-satoshi)",
+          "var(--font-assistant)",
+          "sans-serif",
+        ],
+        label: [
+          "var(--font-satoshi)",
+          "var(--font-assistant)",
+          "sans-serif",
+        ],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -119,5 +132,5 @@ export default {
       },
     },
   },
-  plugins: [tailwindcssAnimate],
+  plugins: [tailwindcssAnimate, containerQueries],
 } satisfies Config;

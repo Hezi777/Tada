@@ -1,13 +1,22 @@
-import { type ReactNode, useEffect, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { Bell, CircleUserRound, LogOut, Search } from "lucide-react";
+"use client";
+
+import {
+  type ReactNode,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useLanguage } from "@/shared/i18n";
+import { Menu, Monitor, Moon, Sun, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Dashboard } from "./Dashboard";
 import FileManager from "./FileManager";
 import { SettingsPanel } from "./SettingsPanel";
 import { FloatingChat } from "./FloatingChat";
-import { logout } from "@/features/auth/server/actions";
+import { Sidebar, type NavTab } from "./Sidebar";
+import { createClient } from "@/shared/lib/supabase/client";
+import { useDashboardStore } from "@/features/dashboard/client/store";
 
 interface AppShellProps {
   dashboardContent?: ReactNode;
@@ -15,10 +24,37 @@ interface AppShellProps {
 }
 
 type ThemeMode = "system" | "light" | "dark";
-type NavTab = "dashboard" | "dashboards" | "settings";
 
 const THEME_STORAGE_KEY = "tada-theme";
 const THEME_EVENT = "tada-theme-change";
+const SIDEBAR_COLLAPSED_KEY = "tada-sidebar-collapsed";
+const SIDEBAR_EVENT = "tada-sidebar-change";
+
+// useSyncExternalStore subscribers: keep localStorage-backed prefs SSR-safe
+// (separate server snapshot) so they never cause a hydration mismatch.
+function subscribeTheme(callback: () => void): () => void {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+  window.addEventListener(THEME_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(THEME_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+function subscribeSidebar(callback: () => void): () => void {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+  window.addEventListener(SIDEBAR_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(SIDEBAR_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
 
 function readThemeMode(): ThemeMode {
   if (typeof window === "undefined") {
@@ -31,32 +67,52 @@ function readThemeMode(): ThemeMode {
     : "system";
 }
 
+function readSidebarCollapsed(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
+}
+
 function applyThemeMode(mode: ThemeMode, prefersDark: boolean) {
   const root = window.document.documentElement;
   const isDark = mode === "dark" || (mode === "system" && prefersDark);
   root.classList.toggle("dark", isDark);
 }
 
-function NavItem({
-  label,
-  active,
-  onClick,
+function ThemeToggle({
+  themeMode,
+  onCycle,
 }: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
+  themeMode: ThemeMode;
+  onCycle: () => void;
 }) {
+  const icon =
+    themeMode === "light" ? (
+      <Sun className="h-4 w-4" />
+    ) : themeMode === "dark" ? (
+      <Moon className="h-4 w-4" />
+    ) : (
+      <Monitor className="h-4 w-4" />
+    );
+
+  const label =
+    themeMode === "light"
+      ? "Theme: Light"
+      : themeMode === "dark"
+        ? "Theme: Dark"
+        : "Theme: System";
+
   return (
     <button
       type="button"
-      onClick={onClick}
-      className={`h-8 rounded-full px-4 text-sm font-semibold transition-all duration-200 ${
-        active
-          ? "bg-[#191c1e] text-white"
-          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
-      }`}
+      onClick={onCycle}
+      aria-label={`${label}. Click to change.`}
+      title={label}
+      className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
     >
-      {label}
+      {icon}
     </button>
   );
 }
@@ -65,135 +121,223 @@ export function AppShell({
   dashboardContent,
   showFloatingChat = true,
 }: AppShellProps) {
-  const [themeMode, setThemeMode] = useState<ThemeMode>(readThemeMode);
+  const lang = useLanguage();
+  const isRtl = lang === "he";
+  // localStorage-backed prefs read via useSyncExternalStore: the server snapshot
+  // ("system" / not-collapsed) matches the first client render, so there is no
+  // hydration mismatch, and updates flow through the THEME_EVENT/SIDEBAR_EVENT.
+  const themeMode = useSyncExternalStore(
+    subscribeTheme,
+    readThemeMode,
+    () => "system" as ThemeMode,
+  );
+  const collapsed = useSyncExternalStore(
+    subscribeSidebar,
+    readSidebarCollapsed,
+    () => false,
+  );
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+  const activeDashboardId = useDashboardStore((s) => s.activeDashboardId);
 
+  const toggleCollapsed = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(!collapsed));
+    window.dispatchEvent(new Event(SIDEBAR_EVENT));
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    void createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        const url = data.user?.user_metadata?.avatar_url;
+        if (mounted && typeof url === "string") {
+          setAvatarUrl(url);
+        }
+        if (mounted && typeof data.user?.email === "string") {
+          setUserEmail(data.user.email);
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Apply the resolved theme (dark class) whenever the mode changes, and keep
+  // "system" in sync with the OS preference.
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-
     const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const syncTheme = (nextMode: ThemeMode) => {
-      applyThemeMode(nextMode, media.matches);
-    };
-
-    syncTheme(themeMode);
-    window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
-
-    const handleThemeEvent = () => {
-      const nextMode = readThemeMode();
-      setThemeMode(nextMode);
-      syncTheme(nextMode);
-    };
+    applyThemeMode(themeMode, media.matches);
 
     const handleMediaChange = (event: MediaQueryListEvent) => {
-      if (readThemeMode() === "system") {
+      if (themeMode === "system") {
         applyThemeMode("system", event.matches);
       }
     };
-
-    window.addEventListener(THEME_EVENT, handleThemeEvent);
-    window.addEventListener("storage", handleThemeEvent);
     media.addEventListener("change", handleMediaChange);
-
-    return () => {
-      window.removeEventListener(THEME_EVENT, handleThemeEvent);
-      window.removeEventListener("storage", handleThemeEvent);
-      media.removeEventListener("change", handleMediaChange);
-    };
+    return () => media.removeEventListener("change", handleMediaChange);
   }, [themeMode]);
+
+  const cycleTheme = () => {
+    const order: ThemeMode[] = ["system", "light", "dark"];
+    const next = order[(order.indexOf(themeMode) + 1) % order.length];
+    window.localStorage.setItem(THEME_STORAGE_KEY, next);
+    window.dispatchEvent(new Event(THEME_EVENT));
+  };
+
+  const handleNavigate = (tab: NavTab) => {
+    setActiveTab(tab);
+    setSidebarOpen(false);
+  };
 
   return (
     <div className="h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text-primary)]">
-      <header className="fixed inset-x-0 top-0 z-40 bg-white">
-        <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-4 sm:px-6">
-          <div className="flex items-center gap-6">
-            <Link
-              href="/"
-              aria-label="Tada home"
-              className="flex items-center transition-opacity hover:opacity-80"
+      {/* Desktop sidebar */}
+      <aside
+        className={`fixed inset-y-0 z-30 hidden bg-card transition-[width] duration-200 ease-in-out motion-reduce:transition-none lg:block ${
+          collapsed ? "w-16" : "w-[248px]"
+        } ${
+          isRtl
+            ? "right-0 border-l border-[var(--color-border)]"
+            : "left-0 border-r border-[var(--color-border)]"
+        }`}
+      >
+        <Sidebar
+          activeTab={activeTab}
+          onNavigate={handleNavigate}
+          collapsed={collapsed}
+          onToggleCollapsed={toggleCollapsed}
+          isRtl={isRtl}
+          avatarUrl={avatarUrl}
+          userEmail={userEmail}
+        />
+      </aside>
+
+      {/* Mobile/tablet sidebar drawer */}
+      <AnimatePresence>
+        {sidebarOpen ? (
+          <>
+            <motion.div
+              key="sidebar-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
+              className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+              aria-hidden="true"
+            />
+            <motion.aside
+              key="sidebar-drawer"
+              initial={
+                prefersReducedMotion
+                  ? { opacity: 0 }
+                  : { x: isRtl ? "100%" : "-100%" }
+              }
+              animate={prefersReducedMotion ? { opacity: 1 } : { x: 0 }}
+              exit={
+                prefersReducedMotion
+                  ? { opacity: 0 }
+                  : { x: isRtl ? "100%" : "-100%" }
+              }
+              transition={{
+                duration: prefersReducedMotion ? 0.12 : 0.22,
+                ease: "easeOut",
+              }}
+              className={`fixed inset-y-0 z-50 w-[248px] bg-card lg:hidden ${
+                isRtl
+                  ? "right-0 border-l border-[var(--color-border)]"
+                  : "left-0 border-r border-[var(--color-border)]"
+              }`}
             >
-              <Image
-                src="/tada-logo.svg"
-                alt="Tada"
-                width={48}
-                height={48}
-                priority
-                className="h-8 w-auto shrink-0"
+              <div className={`absolute top-3 ${isRtl ? "left-3" : "right-3"}`}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSidebarOpen(false)}
+                  aria-label="Close sidebar"
+                  className="h-9 w-9 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <Sidebar
+                activeTab={activeTab}
+                onNavigate={handleNavigate}
+                collapsed={false}
+                onToggleCollapsed={toggleCollapsed}
+                isRtl={isRtl}
+                avatarUrl={avatarUrl}
+                userEmail={userEmail}
               />
-            </Link>
+            </motion.aside>
+          </>
+        ) : null}
+      </AnimatePresence>
 
-            <nav className="hidden items-center gap-2 md:flex">
-              <NavItem
-                label="Dashboard"
-                active={activeTab === "dashboard"}
-                onClick={() => setActiveTab("dashboard")}
-              />
-              <NavItem
-                label="Dashboards"
-                active={activeTab === "dashboards"}
-                onClick={() => setActiveTab("dashboards")}
-              />
-              <NavItem
-                label="Settings"
-                active={activeTab === "settings"}
-                onClick={() => setActiveTab("settings")}
-              />
-            </nav>
+      <div
+        className={`flex h-full flex-col transition-[padding] duration-200 ease-in-out motion-reduce:transition-none ${
+          collapsed
+            ? isRtl
+              ? "lg:pr-16"
+              : "lg:pl-16"
+            : isRtl
+              ? "lg:pr-[248px]"
+              : "lg:pl-[248px]"
+        }`}
+      >
+        {/* Top bar */}
+        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between bg-[var(--color-bg)] px-4 sm:px-6">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar"
+            className="h-9 w-9 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] lg:hidden"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+
+          <div className="ml-auto">
+            <ThemeToggle themeMode={themeMode} onCycle={cycleTheme} />
           </div>
+        </header>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="relative hidden lg:block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
-              <input
-                type="search"
-                aria-label="Search workspace"
-                placeholder="Search workspace..."
-                className="h-10 w-56 rounded-full border border-transparent bg-[var(--color-surface-muted)] pl-10 pr-4 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[rgba(0,50,125,0.14)] focus:bg-white"
-              />
-            </div>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
-              aria-label="Notifications"
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto px-4 pb-6 sm:px-6">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={`${activeTab}:${activeDashboardId ?? "none"}`}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="h-full"
             >
-              <Bell className="h-4 w-4" />
-            </Button>
-
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[var(--color-text-secondary)] shadow-[0_8px_24px_rgba(25,28,30,0.06)]">
-              <CircleUserRound className="h-5 w-5" />
-            </div>
-
-            <form action={logout}>
-              <Button
-                type="submit"
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
-                aria-label="Logout"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </form>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto h-[calc(100vh-64px)] max-w-[1280px] overflow-y-auto pt-16">
-        {activeTab === "settings" ? (
-          <SettingsPanel />
-        ) : activeTab === "dashboards" ? (
-          <FileManager />
-        ) : dashboardContent ? (
-          dashboardContent
-        ) : (
-          <Dashboard />
-        )}
-      </main>
+              {activeTab === "settings" ? (
+                <SettingsPanel />
+              ) : activeTab === "dashboards" ? (
+                <FileManager />
+              ) : dashboardContent ? (
+                dashboardContent
+              ) : (
+                <Dashboard />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
 
       {showFloatingChat ? <FloatingChat /> : null}
     </div>

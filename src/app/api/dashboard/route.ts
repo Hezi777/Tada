@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/shared/lib/supabase/admin";
 import { createClient } from "@/shared/lib/supabase/server";
 import { inferColumns } from "@/features/dashboard/server/infer";
 import { normalizeChartConfig } from "@/shared/contracts";
@@ -24,7 +23,6 @@ function buildDatasetMeta(
 }
 
 export async function GET(request: Request) {
-  const supabaseAdmin = createAdminClient();
   const supabase = await createClient();
   const {
     data: { user },
@@ -35,7 +33,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const { data: dataset, error: datasetError } = await supabaseAdmin
+  const { data: dataset, error: datasetError } = await supabase
     .from("datasets")
     .select("id,name,rows,created_at")
     .eq("user_id", user.id)
@@ -66,7 +64,7 @@ export async function GET(request: Request) {
     { data: kpiRow, error: kpiError },
     { data: fileRows, error: fileError },
   ] = await Promise.all([
-    supabaseAdmin
+    supabase
       .from("charts")
       .select("configs")
       .eq("dataset_id", datasetId)
@@ -74,7 +72,7 @@ export async function GET(request: Request) {
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabaseAdmin
+    supabase
       .from("kpis")
       .select("configs")
       .eq("dataset_id", datasetId)
@@ -82,7 +80,7 @@ export async function GET(request: Request) {
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabaseAdmin
+    supabase
       .from("dataset_files")
       .select("id,file_name,is_primary")
       .eq("dataset_id", datasetId)
