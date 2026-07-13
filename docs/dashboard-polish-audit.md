@@ -40,14 +40,21 @@ existing surface and is a good reference for the target rhythm.
 | Dark-mode breaks: white chips on dark cards, hardcoded badge bg, FAB ring color mismatch | `FileManager.tsx:745,793,835` `bg-white/80`; `Dashboard.tsx:418,425` `#e6e8ea`; `.fab-pulse-ring` `#00327d` vs dark accent | Token-based surfaces |
 | Inputs h-11 vs h-10; textarea radius 8 vs 12 | Settings/CreateDashboardModal vs chat | Standardize input/textarea |
 
-### P1 — Charts & edit mode
-| Issue | Evidence | Fix |
+### P1 — Charts & edit mode — **SUPERSEDED by `docs/WIDGET_SIZING.md`**
+
+The fixes below patched symptoms of the fluid-resize architecture. That
+architecture is being replaced by discrete size classes with fixed dimensions
+(WidgetKit model); the donut overflow and clipping issues are eliminated
+structurally, not clamped. There are no resize handles in the new model —
+the S/M/L/XL control is the only size affordance. Do not implement this table.
+
+| Issue | Evidence | ~~Fix~~ (superseded) |
 |---|---|---|
-| **Donut overflows card** at small width / tall height (only top half visible, legend pushed out) | fixed `innerRadius 58% / outerRadius 85%`, `DashboardChartCard.tsx:570-701` | Clamp donut radius to `min(w,h)` / px ceiling; min-height floor |
-| **3-category bar clips a bar+label** at 4-col width | `XAxis minTickGap={18}`, margin left:0, `:798-869` | `interval={0}` for low cardinality; left margin |
-| Donut tooltip overlaps the popped active slice | `:614-627` | Offset tooltip / reduce pop |
-| Full-width bar charts have big empty gutters (no `maxBarSize`) | `:798-869` | width-aware `maxBarSize` |
-| Resize handles near-invisible (hover/focus only) | `DashboardChartCard.tsx:1069-1108` | Persistent subtle affordance |
+| **Donut overflows card** at small width / tall height (only top half visible, legend pushed out) | fixed `innerRadius 58% / outerRadius 85%`, `DashboardChartCard.tsx:570-701` | ~~Clamp donut radius to `min(w,h)` / px ceiling~~ → fixed px radii per size class |
+| **3-category bar clips a bar+label** at 4-col width | `XAxis minTickGap={18}`, margin left:0, `:798-869` | `interval={0}` for low cardinality (still valid; already shipped in `BarChartView`) |
+| Donut tooltip overlaps the popped active slice | `:614-627` | Offset tooltip / reduce pop (still valid; shipped) |
+| Full-width bar charts have big empty gutters (no `maxBarSize`) | `:798-869` | ~~width-aware `maxBarSize`~~ → per-size-class `maxBarSize` constants |
+| Resize handles near-invisible (hover/focus only) | `DashboardChartCard.tsx:1069-1108` | ~~Persistent subtle affordance~~ → no resize handles exist in the size-class model |
 
 ### P2 — Interaction / flow
 | Issue | Evidence | Fix |
@@ -64,11 +71,11 @@ existing surface and is a good reference for the target rhythm.
 | Bidi artifacts in English description blocks under RTL (leading periods, reversed counts) | Settings descriptions; "of 5 dashboards 0" | bidi-isolate dynamic values |
 
 ## Decision points (for the owner)
-- **Medium chart width (4→6 cols).** Reads well for 2-up and large+medium rows,
-  but 3 mediums can't share a row (6×3=18>12) so one gets force-stretched to
-  full width and looks sparse. Plan: **keep 4/6/8 tiers** for expressive resize,
-  but fix the sparse full-width bars (`maxBarSize`) and the small-width clipping
-  so the edge case looks intentional. Revisit if you'd rather have 3-up mediums.
+- ~~**Medium chart width (4→6 cols).**~~ **RESOLVED (2026-07-13) — superseded
+  by `docs/WIDGET_SIZING.md`.** The 12-col 4/6/8 tier system (`layout.ts`) is
+  deleted, not tuned. Widgets snap to uniform size classes on a 4-column cell
+  grid (S 1×1, M 2×1, L 2×2, XL 4×2); rows can't come up short, so
+  `normalizeRow` force-stretching no longer exists.
 
 ## Fix workstreams (execution order)
 
@@ -79,9 +86,9 @@ existing surface and is a good reference for the target rhythm.
    shared `EmptyState`. Everything downstream consumes these.
 2. **WS2 — Dashboard hierarchy** (`Dashboard.tsx`): role-based KPI sizing /
    F-pattern, unified gaps, adopt `EmptyState`, badge treatment.
-3. **WS3 — Charts & edit mode** (`DashboardChartCard.tsx`, `layout.ts`,
-   `chart.tsx`): donut radius clamp, bar `interval`/`maxBarSize`, tooltip offset,
-   visible resize handles.
+3. **WS3 — Charts & edit mode** — **SUPERSEDED**: follow the migration path
+   in `docs/WIDGET_SIZING.md` §8 instead (size-class views, fixed dimensions,
+   delete `layout.ts`).
 4. **WS4 — Files & Settings** (`FileManager.tsx`, `SettingsPanel.tsx`,
    `CreateDashboardModal.tsx`): destructive variants, one save, scroll-spy,
    dark-mode surfaces, reduce redundant CTAs.
