@@ -15,11 +15,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/shared/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/shared/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { getIconComponent } from "@/features/dashboard/components/CreateDashboardModal";
 
 type DashboardSwitcherProps = {
@@ -71,15 +67,13 @@ export function DashboardSwitcher({
           variant="outline"
           disabled={disabled}
           className={cn(
-            "h-9 max-w-[240px] gap-2 rounded-full border border-transparent bg-[var(--color-surface-muted)] px-3 text-[12px] font-medium text-[var(--color-text-secondary)] shadow-none transition-colors hover:text-[var(--color-text-primary)] data-[state=open]:bg-white data-[state=open]:text-[var(--color-text-primary)]",
+            "h-9 max-w-[240px] gap-2 rounded-full border border-transparent bg-[var(--color-surface-muted)] px-3 text-[12px] font-medium text-[var(--color-text-secondary)] shadow-none transition-colors hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 data-[state=open]:bg-card data-[state=open]:text-[var(--color-text-primary)]",
             className,
             triggerClassName,
           )}
         >
           {activeDashboardIcon ? (
-            <span
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white text-[var(--color-accent)]"
-            >
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-card text-[var(--color-accent)]">
               {React.createElement(getIconComponent(activeDashboardIcon), {
                 className: "h-3.5 w-3.5",
               })}
@@ -97,7 +91,7 @@ export function DashboardSwitcher({
         align="end"
         sideOffset={8}
         className={cn(
-          "w-[340px] rounded-[20px] border border-transparent bg-white p-0 shadow-[0_32px_64px_-42px_rgba(25,28,30,0.18)]",
+          "w-[340px] rounded-[20px] border border-transparent bg-card p-0 shadow-[0_32px_64px_-42px_rgba(25,28,30,0.18)]",
           contentClassName,
         )}
       >
@@ -108,7 +102,8 @@ export function DashboardSwitcher({
                 Switch dashboard
               </p>
               <p className="text-xs text-[var(--color-text-secondary)]">
-                {dashboards.length} dashboard{dashboards.length === 1 ? "" : "s"}
+                {dashboards.length} dashboard
+                {dashboards.length === 1 ? "" : "s"}
               </p>
             </div>
           </div>
@@ -128,7 +123,11 @@ export function DashboardSwitcher({
                     className="group flex items-center gap-3 px-3 py-2.5"
                   >
                     <span
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--color-surface-muted)]"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                      style={{
+                        backgroundColor: `${dashboard.color}1f`,
+                        color: dashboard.color,
+                      }}
                     >
                       <Icon className="h-4 w-4" />
                     </span>
@@ -138,7 +137,7 @@ export function DashboardSwitcher({
                           {dashboard.name}
                         </span>
                         {isActive ? (
-                          <span className="rounded-full bg-[#191c1e] px-2 py-0.5 text-[10px] font-medium text-white">
+                          <span className="rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[10px] font-medium text-white">
                             Active
                           </span>
                         ) : null}
@@ -149,7 +148,7 @@ export function DashboardSwitcher({
                       </p>
                     </div>
                     {isActive ? (
-                      <Check className="h-4 w-4 shrink-0 text-[#191c1e]" />
+                      <Check className="h-4 w-4 shrink-0 text-[var(--color-accent)]" />
                     ) : null}
                   </CommandItem>
                 );
@@ -157,10 +156,10 @@ export function DashboardSwitcher({
             </CommandGroup>
             <CommandSeparator />
             <CommandGroup heading="Actions">
-            <CommandItem
-              onSelect={handleCreate}
-              className="flex items-center gap-3 px-3 py-2.5"
-            >
+              <CommandItem
+                onSelect={handleCreate}
+                className="flex items-center gap-3 px-3 py-2.5"
+              >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]">
                   <Plus className="h-4 w-4" />
                 </span>

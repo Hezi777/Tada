@@ -1,5 +1,8 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, Send, Sparkles, WandSparkles, X } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { Loader2, Send, Sparkles, WandSparkles, X } from "lucide-react";
 import {
   BI_RULE_LIMITS,
   type ChatChartProposal,
@@ -19,12 +22,17 @@ import { ScrollArea } from "@/shared/ui/scroll-area";
 import { Separator } from "@/shared/ui/separator";
 import { Textarea } from "@/shared/ui/textarea";
 import { sendChat } from "@/shared/lib/api";
+import { useTranslation } from "@/shared/i18n";
 import { computeKpiValue } from "@/features/dashboard/client/runtime";
 import {
   applyChartProposal,
   applyChatbotPatch,
   useDashboardStore,
 } from "@/features/dashboard/client/store";
+import {
+  emitChartGenerating,
+  emitChartReveal,
+} from "@/features/dashboard/client/chart-effects";
 
 interface Message {
   id: string;
@@ -34,18 +42,20 @@ interface Message {
   proposalState?: "pending" | "accepted" | "dismissed";
 }
 
-function emitChartPulse(chartId: string | undefined): void {
-  if (!chartId || typeof window === "undefined") {
-    return;
-  }
-  window.dispatchEvent(
-    new CustomEvent("tada:chart-pulse", {
-      detail: { chartId },
-    }),
-  );
-}
+const SUGGESTION_KEYS = [
+  "chat.suggest.trends",
+  "chat.suggest.which",
+  "chat.suggest.compare",
+] as const;
+
+/** Brief flourish (ms) so an AI-created chart feels conjured rather than
+ * popping in instantly: glowing placeholder -> chart materializes in place. */
+const GENERATE_FLOURISH_MS = 1300;
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function FloatingChat() {
+  const { t } = useTranslation();
   const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
   const chartConfigs = useDashboardStore((snapshot) => snapshot.charts);
   const kpiConfigs = useDashboardStore((snapshot) => snapshot.kpis);
@@ -57,6 +67,7 @@ export function FloatingChat() {
   const [isSending, setIsSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canChat = Boolean(datasetId);
+  const prefersReducedMotion = useReducedMotion();
 
   const liveKpis: ChatKpiValue[] = kpiConfigs.map((kpi) => ({
     id: kpi.id,
@@ -122,14 +133,20 @@ export function FloatingChat() {
         kpis: liveKpis,
       });
       if (response.patch) {
-        applyChatbotPatch(response.patch);
-        emitChartPulse(
-          response.patch.action === "add"
-            ? response.patch.config.id
-            : response.patch.action === "remove"
-              ? response.patch.chartId
-              : response.patch.chartId,
-        );
+        if (response.patch.action === "add") {
+          // Show the glowing placeholder, then materialize the chart in place.
+          const newChartId = response.patch.config.id;
+          emitChartGenerating(true);
+          await wait(GENERATE_FLOURISH_MS);
+          applyChatbotPatch(response.patch);
+          emitChartGenerating(false);
+          // Let the new card mount (and register its reveal listener) first.
+          await wait(60);
+          emitChartReveal(newChartId);
+        } else {
+          applyChatbotPatch(response.patch);
+          emitChartReveal(response.patch.chartId);
+        }
       }
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
@@ -140,8 +157,7 @@ export function FloatingChat() {
       };
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      let content =
-        "TADA Wiz is unavailable right now. Make sure the API is running.";
+      let content = t("chat.unavailable");
       if (error instanceof Error) {
         if (error.message === "not_found" || error.message === "missing_rows") {
           content =
@@ -208,7 +224,9 @@ export function FloatingChat() {
     }
 
     applyChartProposal(proposal, action);
-    emitChartPulse(proposal.targetChartId ?? proposal.incomingConfig.id);
+    const revealId = proposal.targetChartId ?? proposal.incomingConfig.id;
+    // Defer so a newly-mounted card registers its reveal listener first.
+    window.setTimeout(() => emitChartReveal(revealId), 60);
     setMessages((prev) =>
       prev.map((message) =>
         message.id === messageId
@@ -226,7 +244,7 @@ export function FloatingChat() {
   };
 
   const composer = (
-    <div className="px-4 py-3">
+    <div className="border-t border-[var(--color-border)] bg-card px-4 py-3">
       <div className="flex items-end gap-2">
         <Textarea
           ref={textareaRef}
@@ -238,21 +256,22 @@ export function FloatingChat() {
               handleSend();
             }
           }}
-          placeholder="Ask TADA Wiz..."
-          className="max-h-32 min-h-[44px] flex-1 resize-none rounded-[8px] border border-transparent bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
+          placeholder={t("chat.placeholder")}
+          className="max-h-32 min-h-[44px] flex-1 resize-none border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus-visible:ring-[var(--color-accent)]"
           aria-label="Type your message"
           disabled={!canChat || isSending}
           rows={1}
         />
         <Button
           size="icon"
+          variant="primary-accent"
           onClick={handleSend}
           disabled={!canChat || isSending || !input.trim()}
-          className="h-11 w-11 rounded-full bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-secondary)]"
+          className="transition-ui h-11 w-11 shrink-0 border-0 shadow-[0_10px_24px_-12px_rgba(0,50,125,0.6)] hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
           aria-label="Send message"
         >
           {isSending ? (
-            <MessageCircle className="h-4 w-4" />
+            <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />
           ) : (
             <Send className="h-4 w-4" />
           )}
@@ -263,31 +282,47 @@ export function FloatingChat() {
 
   const chatBody = (
     <>
-      <ScrollArea className="dashboard-scroll flex-1 bg-white">
+      <ScrollArea className="dashboard-scroll flex-1 bg-card">
         <div className="space-y-4 px-4 py-4">
           {!canChat ? (
-            <Card className="rounded-[20px] border-0 bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
-              Upload a file to start chatting with TADA Wiz.
+            <Card className="rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
+              Upload a file to start chatting with Tada Wiz.
             </Card>
           ) : null}
 
           {canChat && messages.length === 0 ? (
-            <Card className="rounded-[20px] border-0 bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
-              Ask about your data, request a chart change, or get help
-              reading a view.
-            </Card>
+            <div className="space-y-3">
+              <Card className="rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
+                {t("chat.empty")}
+              </Card>
+              <div className="flex flex-wrap gap-2">
+                {SUGGESTION_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setInput(t(key))}
+                    className="rounded-full border border-[var(--color-border)] bg-card px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                  >
+                    {t(key)}
+                  </button>
+                ))}
+              </div>
+            </div>
           ) : null}
 
           {messages.map((message) => (
-            <div
+            <motion.div
               key={message.id}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
               className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[88%] px-4 py-3 text-sm leading-6 ${
+                className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6 ${
                   message.role === "user"
-                    ? "rounded-[12px_12px_2px_12px] bg-[var(--color-accent)] text-white"
-                    : "rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-primary)]"
+                    ? "bg-[var(--color-accent)] text-white"
+                    : "border border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]"
                 }`}
               >
                 {message.content}
@@ -309,7 +344,8 @@ export function FloatingChat() {
                       <Button
                         type="button"
                         size="sm"
-                        className="h-8 rounded-full bg-[var(--color-accent)] px-3 text-xs text-white hover:bg-[var(--color-accent-secondary)]"
+                        variant="primary-accent"
+                        className="transition-ui h-8 px-3 text-xs"
                         onClick={() =>
                           handleProposalAction(message.id, "replace")
                         }
@@ -345,23 +381,32 @@ export function FloatingChat() {
                   </div>
                 ) : null}
               </div>
-            </div>
+            </motion.div>
           ))}
 
           {isSending ? (
-            <div className="flex justify-start">
-              <div className="flex items-center gap-1 rounded-[12px_12px_12px_2px] border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-3">
+            <motion.div
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="flex justify-start"
+            >
+              <div className="flex items-center gap-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3">
                 {[0, 1, 2].map((index) => (
                   <span
                     key={index}
-                    className="h-2 w-2 rounded-full bg-[var(--color-text-muted)]"
-                    style={{
-                      animation: `wizDot 1s ease-in-out ${index * 0.12}s infinite`,
-                    }}
+                    className="h-2 w-2 rounded-full bg-[var(--color-accent)] motion-reduce:animate-none"
+                    style={
+                      prefersReducedMotion
+                        ? { opacity: 0.6 }
+                        : {
+                            animation: `wizDot 1s ease-in-out ${index * 0.12}s infinite`,
+                          }
+                    }
                   />
                 ))}
               </div>
-            </div>
+            </motion.div>
           ) : null}
         </div>
       </ScrollArea>
@@ -375,10 +420,6 @@ export function FloatingChat() {
   return (
     <>
       <style>{`
-        @keyframes wizOpen {
-          from { opacity: 0; transform: translateY(10px) scale(0.95); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
         @keyframes wizDot {
           0%, 80%, 100% { transform: scale(0.6); opacity: 0.35; }
           40% { transform: scale(1); opacity: 1; }
@@ -386,72 +427,118 @@ export function FloatingChat() {
       `}</style>
 
       {/* FAB with pulse ring */}
-      <div className="fixed bottom-8 right-8 z-50">
+      <div className="fixed bottom-6 right-6 z-50">
         {!isOpen && (
           <span className="fab-pulse-ring absolute inset-0 rounded-full" />
         )}
         <Button
           type="button"
+          variant="primary-accent"
           onClick={() => setIsOpen((current) => !current)}
-          className="relative h-[52px] w-[52px] rounded-full border-0 bg-[var(--color-accent)] text-white shadow-[0_18px_36px_-18px_rgba(0,50,125,0.55)] transition-all duration-200 ease-in-out hover:scale-105 hover:bg-[var(--color-accent-secondary)] hover:shadow-[0_22px_40px_-18px_rgba(0,50,125,0.65)]"
-          aria-label={isOpen ? "Close TADA Wiz" : "Open TADA Wiz"}
+          className="transition-ui relative h-[52px] w-[52px] border-0 shadow-[0_18px_36px_-18px_rgba(0,50,125,0.55)] hover:scale-105 hover:shadow-[0_22px_40px_-18px_rgba(0,50,125,0.65)]"
+          aria-label={isOpen ? "Close Tada Wiz" : "Open Tada Wiz"}
+          aria-expanded={isOpen}
         >
-          <Sparkles className="h-5 w-5" />
+          <AnimatePresence mode="wait" initial={false}>
+            {isOpen ? (
+              <motion.span
+                key="close"
+                className="flex h-5 w-5 items-center justify-center"
+                initial={
+                  prefersReducedMotion ? false : { opacity: 0, rotate: -90 }
+                }
+                animate={{ opacity: 1, rotate: 0 }}
+                exit={
+                  prefersReducedMotion ? undefined : { opacity: 0, rotate: 90 }
+                }
+                transition={{ duration: 0.15 }}
+              >
+                <X className="h-5 w-5" />
+              </motion.span>
+            ) : (
+              <motion.span
+                key="open"
+                className="flex h-5 w-5 items-center justify-center"
+                initial={
+                  prefersReducedMotion ? false : { opacity: 0, rotate: 90 }
+                }
+                animate={{ opacity: 1, rotate: 0 }}
+                exit={
+                  prefersReducedMotion ? undefined : { opacity: 0, rotate: -90 }
+                }
+                transition={{ duration: 0.15 }}
+              >
+                <Sparkles className="h-5 w-5" />
+              </motion.span>
+            )}
+          </AnimatePresence>
         </Button>
       </div>
 
-      {isOpen ? (
-        <>
-          {isMobile ? (
-            <Drawer open={isOpen} onOpenChange={setIsOpen}>
-              <DrawerContent className="mt-0 h-[85vh] overflow-hidden rounded-t-[24px] border-0 bg-white p-0 shadow-[0_-12px_40px_rgba(0,0,0,0.18)]">
-                <DrawerHeader className="bg-[linear-gradient(145deg,#00327D_0%,#0047AB_100%)] px-5 py-4 text-left text-white">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
-                        <WandSparkles className="h-4.5 w-4.5" />
-                      </div>
-                      <div>
-                        <DrawerTitle className="text-base font-bold text-white">
-                          TADA Wiz
-                        </DrawerTitle>
-                        <DrawerDescription className="mt-0.5 text-[13px] text-white/75">
-                          Ask anything about your data
-                        </DrawerDescription>
-                      </div>
-                    </div>
-                    <DrawerClose asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full text-white hover:bg-white/10 hover:text-white"
-                        aria-label="Close TADA Wiz"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </DrawerClose>
+      {isMobile ? (
+        <Drawer open={isOpen} onOpenChange={setIsOpen}>
+          <DrawerContent className="mt-0 h-[85vh] overflow-hidden rounded-t-[24px] border-0 bg-card p-0 shadow-[0_-12px_40px_rgba(0,0,0,0.18)]">
+            <DrawerHeader className="mesh-navy px-5 py-4 text-left text-white">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
+                    <WandSparkles className="h-4.5 w-4.5" />
                   </div>
-                </DrawerHeader>
-                <div className="flex min-h-0 flex-1 flex-col">{chatBody}</div>
-              </DrawerContent>
-            </Drawer>
-          ) : (
-            <div
-              className="fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-[24px] border-0 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.14)]"
-              style={{ animation: "wizOpen 200ms ease" }}
+                  <div>
+                    <DrawerTitle className="text-base font-extrabold text-white">
+                      Tada Wiz
+                    </DrawerTitle>
+                    <DrawerDescription className="mt-0.5 text-[13px] text-white/75">
+                      {t("chat.subtitle")}
+                    </DrawerDescription>
+                  </div>
+                </div>
+                <DrawerClose asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full text-white hover:bg-white/10 hover:text-white"
+                    aria-label="Close Tada Wiz"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerHeader>
+            <div className="flex min-h-0 flex-1 flex-col">{chatBody}</div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <AnimatePresence>
+          {isOpen ? (
+            <motion.div
+              key="wiz-panel"
+              initial={
+                prefersReducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: 10, scale: 0.95 }
+              }
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={
+                prefersReducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: 10, scale: 0.95 }
+              }
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="shadow-premium fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-card"
             >
               <div className="flex h-full flex-col">
-                <div className="bg-[linear-gradient(145deg,#00327D_0%,#0047AB_100%)] px-5 py-4 text-white">
+                <div className="mesh-navy px-5 py-4 text-white">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                         <WandSparkles className="h-4.5 w-4.5" />
                       </div>
                       <div>
-                        <div className="text-base font-bold">TADA Wiz</div>
+                        <div className="text-base font-extrabold">Tada Wiz</div>
                         <p className="mt-0.5 text-[13px] text-white/75">
-                          Ask anything about your data
+                          {t("chat.subtitle")}
                         </p>
                       </div>
                     </div>
@@ -461,7 +548,7 @@ export function FloatingChat() {
                       size="icon"
                       onClick={() => setIsOpen(false)}
                       className="h-8 w-8 rounded-full text-white hover:bg-white/10 hover:text-white"
-                      aria-label="Close TADA Wiz"
+                      aria-label="Close Tada Wiz"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -469,10 +556,10 @@ export function FloatingChat() {
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col">{chatBody}</div>
               </div>
-            </div>
-          )}
-        </>
-      ) : null}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      )}
     </>
   );
 }

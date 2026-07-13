@@ -10,7 +10,15 @@ import {
   type KPIConfig,
 } from "@/shared/contracts";
 import Groq from "groq-sdk";
+import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { env, getGroqApiKey } from "@/shared/lib/env";
+import { jsonCompletion } from "@/shared/lib/ai/groq";
+import {
+  retrieveBiRules,
+  type RetrievedBiRule,
+} from "@/features/rag/server/bi-rules";
+import { applyBiRules } from "./rules";
 import type { Column } from "./types";
 
 type Row = Record<string, unknown>;
@@ -108,6 +116,63 @@ function pearsonCorrelation(left: number[], right: number[]): number | null {
   }
 
   return numerator / Math.sqrt(leftDenominator * rightDenominator);
+}
+
+// Non-additive numeric columns: ids, codes, years, postal/zip codes, phone
+// numbers, coordinates, and ordinal ranks. Summing or averaging these
+// produces meaningless totals (e.g. "Average release_year"), so chart
+// builders must treat them as categorical dimensions (group by / count)
+// rather than as the measure being aggregated.
+const NON_MEASURE_NAME_PATTERN =
+  /(^|[_\s])(id|uuid|code|zip|postal|phone|tel|lat|lng|latitude|longitude|rank|position|ordinal|year|yr)([_\s\d]|$)|מזהה|טלפון|מיקוד|שנה/i;
+
+const MIN_PLAUSIBLE_YEAR = 1000;
+const MAX_PLAUSIBLE_YEAR = 2100;
+
+/**
+ * Conservative guard: returns true only when a numeric column represents a
+ * true additive/averageable measure (amounts, quantities, prices,
+ * durations, counts). Returns false for non-additive numeric dimensions
+ * (years, identifiers, codes, postal codes, phone numbers, coordinates,
+ * ordinal ranks) which should instead be grouped/counted, not summed/averaged.
+ */
+export function isAdditiveMeasure(rows: Row[], column: Column): boolean {
+  if (column.kind !== "numeric") {
+    return false;
+  }
+  if (NON_MEASURE_NAME_PATTERN.test(column.name)) {
+    return false;
+  }
+
+  const values = rows
+    .map((row) => toNumber(row[column.name]))
+    .filter((value): value is number => value !== null);
+  if (values.length === 0) {
+    return false;
+  }
+
+  // Year-like: every value is a whole number within a plausible calendar
+  // year range (e.g. release_year, founded_year without a matching name).
+  const allPlausibleYears = values.every(
+    (value) =>
+      Number.isInteger(value) &&
+      value >= MIN_PLAUSIBLE_YEAR &&
+      value <= MAX_PLAUSIBLE_YEAR,
+  );
+  if (allPlausibleYears) {
+    return false;
+  }
+
+  // Identifier-like: whole numbers that are almost all unique, with no
+  // fractional component anywhere - typical of surrogate keys / codes.
+  if (values.length >= 5 && values.every((value) => Number.isInteger(value))) {
+    const distinct = new Set(values);
+    if (distinct.size / values.length > 0.95) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function createChartId(order: number): string {
@@ -443,6 +508,19 @@ function reduceAggregate(
   return bucket.sum;
 }
 
+/**
+ * Downgrades a candidate numeric column to `null` when it is not a true
+ * measure (see isAdditiveMeasure), so builders fall back to counting
+ * records instead of summing/averaging a year, id, code, or similar
+ * non-additive numeric dimension.
+ */
+function resolveMeasureColumn(rows: Row[], column: Column | null): Column | null {
+  if (!column) {
+    return null;
+  }
+  return isAdditiveMeasure(rows, column) ? column : null;
+}
+
 function buildAreaInsight(
   series: Array<{ key: string; value: number }>,
   metricLabel: string,
@@ -500,8 +578,9 @@ function buildScatterInsight(
 function buildAreaChart(
   rows: Row[],
   dateColumn: Column,
-  numericColumn: Column | null,
+  numericColumnInput: Column | null,
 ): IncomingChartConfig | null {
+  const numericColumn = resolveMeasureColumn(rows, numericColumnInput);
   const aggregation = numericColumn ? "sum" : "count";
   const series = aggregateByTime(
     rows,
@@ -532,8 +611,9 @@ function buildAreaChart(
 function buildBarChart(
   rows: Row[],
   categoryColumn: Column,
-  numericColumn: Column | null,
+  numericColumnInput: Column | null,
 ): IncomingChartConfig | null {
+  const numericColumn = resolveMeasureColumn(rows, numericColumnInput);
   const aggregation = numericColumn ? "sum" : "count";
   const series = aggregateByCategory(
     rows,
@@ -564,8 +644,9 @@ function buildBarChart(
 function buildDonutChart(
   rows: Row[],
   categoryColumn: Column,
-  numericColumn: Column | null,
+  numericColumnInput: Column | null,
 ): IncomingChartConfig | null {
+  const numericColumn = resolveMeasureColumn(rows, numericColumnInput);
   const aggregation = numericColumn ? "sum" : "count";
   const series = aggregateByCategory(
     rows,
@@ -657,51 +738,11 @@ function buildScatterChart(
   };
 }
 
-function buildSingleValueBar(
-  rows: Row[],
-  numericColumn: Column,
-): IncomingChartConfig | null {
-  const values = rows
-    .map((row) => toNumber(row[numericColumn.name]))
-    .filter((value): value is number => value !== null);
-  if (values.length === 0) {
-    return null;
-  }
-  const avg = mean(values);
-  return {
-    type: "bar",
-    title: `Average ${numericColumn.name}`,
-    insight: `${numericColumn.name} averages ${Math.round(avg * 100) / 100} across the dataset.`,
-    columns: [numericColumn.name],
-    aggregation: "avg",
-    groupBy: null,
-    timeColumn: null,
-    size: "small",
-  };
-}
-
-function buildSingleValueDonut(
-  rows: Row[],
-  numericColumn: Column,
-): IncomingChartConfig | null {
-  const values = rows
-    .map((row) => toNumber(row[numericColumn.name]))
-    .filter((value): value is number => value !== null);
-  if (values.length === 0) {
-    return null;
-  }
-  const total = values.reduce((sum, value) => sum + value, 0);
-  return {
-    type: "donut",
-    title: `${numericColumn.name} share`,
-    insight: `${numericColumn.name} totals ${Math.round(total * 100) / 100} across the dataset.`,
-    columns: [numericColumn.name],
-    aggregation: "sum",
-    groupBy: null,
-    timeColumn: null,
-    size: "small",
-  };
-}
+// Note: a single aggregate value (e.g. "Average X" or "X total") rendered
+// as one bar or one donut slice is not a meaningful chart - it carries the
+// same information as a KPI card, but as a misleading giant bar / full
+// circle. buildKpiConfigs already surfaces these totals as KPIs, so no
+// single-value bar/donut builder is used in the fallback chart set below.
 
 function buildRecordCountBar(rows: Row[]): IncomingChartConfig | null {
   if (rows.length === 0) {
@@ -887,10 +928,6 @@ function buildFallbackCharts(rows: Row[], columns: Column[]): ChartConfig[] {
     maybeAdd(buildDonutChart(rows, primaryCategory, primaryNumeric));
   }
   maybeAdd(buildScatterChart(rows, columns));
-  if (primaryNumeric) {
-    maybeAdd(buildSingleValueBar(rows, primaryNumeric));
-    maybeAdd(buildSingleValueDonut(rows, primaryNumeric));
-  }
   maybeAdd(buildRecordCountBar(rows));
   maybeAdd(buildRecordCountDonut(rows));
 
@@ -913,34 +950,37 @@ function buildFallbackCharts(rows: Row[], columns: Column[]): ChartConfig[] {
   );
 }
 
-function extractText(payload: unknown): string | null {
-  if (typeof payload === "string") {
-    return payload;
-  }
-  return null;
-}
+/**
+ * Drops bar/donut charts that aggregate a single column with no groupBy -
+ * these render as one giant bar or one full donut slice, i.e. a single
+ * aggregate value masquerading as a chart (the same defect as
+ * buildSingleValueBar/buildSingleValueDonut). Such values belong in a KPI
+ * card. Also removes charts that duplicate an earlier chart's measure,
+ * aggregation, and groupBy (e.g. two donuts that would render the same
+ * total), keeping the first occurrence.
+ */
+function dedupeAndCleanCharts(charts: IncomingChartConfig[]): IncomingChartConfig[] {
+  const seenSignatures = new Set<string>();
+  const result: IncomingChartConfig[] = [];
 
-function parseSuggestionPayload(text: string): IncomingChartConfig[] | null {
-  const trimmed = text.trim();
-  const start = trimmed.indexOf("{");
-  const end = trimmed.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(trimmed.slice(start, end + 1)) as {
-      charts?: Array<Record<string, unknown>>;
-    };
-    if (!Array.isArray(parsed.charts)) {
-      return null;
+  for (const chart of charts) {
+    const isSingleValueShape =
+      (chart.type === "bar" || chart.type === "donut") &&
+      !chart.groupBy &&
+      chart.columns.length <= 1;
+    if (isSingleValueShape) {
+      continue;
     }
-    return parsed.charts
-      .map((chart) => normalizeSuggestedChart(chart))
-      .filter((chart): chart is IncomingChartConfig => Boolean(chart));
-  } catch {
-    return null;
+
+    const signature = `${chart.type}:${chart.aggregation ?? "none"}:${[...chart.columns].sort().join("|")}:${chart.groupBy ?? ""}`;
+    if (seenSignatures.has(signature)) {
+      continue;
+    }
+    seenSignatures.add(signature);
+    result.push(chart);
   }
+
+  return result;
 }
 
 function normalizeSuggestedChart(
@@ -984,22 +1024,77 @@ function normalizeSuggestedChart(
   };
 }
 
+export type GenerationContext = {
+  /** Authenticated client used to query the bi_rules_chunks vector index. */
+  supabase?: SupabaseClient;
+  topic?: string;
+  /** User-confirmed number of charts to aim for (clamped to BI limits). */
+  chartCount?: number;
+};
+
+function buildRuleRetrievalQuery(columns: Column[], topic?: string): string {
+  const byKind = (kind: Column["kind"]) =>
+    columns
+      .filter((column) => column.kind === kind)
+      .map((column) => column.name)
+      .join(", ");
+  return [
+    `Choosing dashboard charts for a ${topic && topic !== "unknown" ? topic.replace(/_/g, " ") : "general business"} dataset.`,
+    `Numeric columns: ${byKind("numeric") || "none"}.`,
+    `Categorical columns: ${byKind("categorical") || "none"}.`,
+    `Date columns: ${byKind("date") || "none"}.`,
+    "Which chart selection, aggregation, formatting, readability and Israeli data rules apply?",
+  ].join(" ");
+}
+
+async function fetchGroundingRules(
+  columns: Column[],
+  context?: GenerationContext,
+): Promise<RetrievedBiRule[]> {
+  if (!context?.supabase) {
+    return [];
+  }
+  return retrieveBiRules(
+    context.supabase,
+    buildRuleRetrievalQuery(columns, context.topic),
+    { topK: 12 },
+  );
+}
+
+const ChartsSuggestionSchema = z.object({
+  charts: z.array(z.record(z.unknown())),
+});
+
 async function suggestChartsWithLLM(
   rows: Row[],
   columns: Column[],
+  groundingRules: RetrievedBiRule[],
+  chartCount?: number,
 ): Promise<ChartConfig[] | null> {
-  const apiKey = getGroqApiKey();
-  if (!apiKey) {
+  if (!getGroqApiKey()) {
     return null;
   }
 
-  const client = new Groq({ apiKey });
-  const model = env.GROQ_DASHBOARD_MODEL;
+  const ruleLines =
+    groundingRules.length > 0
+      ? groundingRules.map((rule) => `- [${rule.severity}] ${rule.content}`)
+      : BI_GENERATION_RULES.map((rule) => `- ${rule}`);
+  const targetCount = chartCount
+    ? Math.min(
+        BI_RULE_LIMITS.maxCharts,
+        Math.max(BI_RULE_LIMITS.minCharts, chartCount),
+      )
+    : null;
+
   const prompt = [
-    "Return strict JSON only. No prose.",
-    `Follow these rules exactly: ${BI_GENERATION_RULES.join(" ")}`,
+    "You design dashboard charts. Return strict JSON only.",
+    "Follow these data-visualization rules exactly:",
+    ...ruleLines,
     'Schema: {"charts":[{"type":"area|bar|donut|scatter","title":"string","insight":"string","columns":["col"],"aggregation":"sum|avg|count|min|max|null","groupBy":"string|null","timeColumn":"string|null","size":"small|medium|large"}]}',
-    "Return 2 to 6 charts. Use only provided column names.",
+    targetCount
+      ? `Return exactly ${targetCount} charts. Use only provided column names.`
+      : "Return 2 to 6 charts. Use only provided column names.",
+    "If column names are Hebrew, keep titles and insights in Hebrew; otherwise use English.",
     JSON.stringify({
       rowCount: rows.length,
       columns: columns.map((column) => ({
@@ -1011,55 +1106,76 @@ async function suggestChartsWithLLM(
     }),
   ].join("\n");
 
-  try {
-    const completion = await client.chat.completions.create({
-      model,
-      temperature: 0.2,
-      max_completion_tokens: 420,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    });
-    const payload = completion.choices[0]?.message?.content ?? null;
-    const text = extractText(payload);
-    if (!text) {
-      return null;
-    }
-    const parsed = parseSuggestionPayload(text);
-    if (!parsed || parsed.length === 0) {
-      return null;
-    }
-
-    const normalized = normalizeCharts(
-      parsed.slice(0, BI_RULE_LIMITS.maxCharts),
-      "ai_initial",
-      false,
-    );
-    return validateChartCollection(normalized, columns, rows)
-      ? null
-      : normalized;
-  } catch {
+  const parsed = await jsonCompletion(prompt, ChartsSuggestionSchema, {
+    model: env.GROQ_DASHBOARD_MODEL,
+    temperature: 0.2,
+    maxTokens: 900,
+  });
+  if (!parsed) {
     return null;
   }
+
+  const incoming = dedupeAndCleanCharts(
+    parsed.charts
+      .map((chart) => normalizeSuggestedChart(chart))
+      .filter((chart): chart is IncomingChartConfig => Boolean(chart)),
+  );
+  if (incoming.length === 0) {
+    return null;
+  }
+
+  const normalized = normalizeCharts(
+    incoming.slice(0, BI_RULE_LIMITS.maxCharts),
+    "ai_initial",
+    false,
+  );
+  return validateChartCollection(normalized, columns, rows) ? null : normalized;
 }
 
 export async function buildInitialChartConfigs(
   rows: Row[],
   columns: Column[],
+  context?: GenerationContext,
 ): Promise<ChartConfig[]> {
-  const suggested = await suggestChartsWithLLM(rows, columns);
-  if (suggested) {
-    return suggested;
+  const groundingRules = await fetchGroundingRules(columns, context);
+  const suggested = await suggestChartsWithLLM(
+    rows,
+    columns,
+    groundingRules,
+    context?.chartCount,
+  );
+  const base = suggested ?? buildFallbackCharts(rows, columns);
+
+  // The retrieved rules guided the prompt; the engine enforces them.
+  const { charts: corrected, violations } = applyBiRules(base, columns, rows);
+  if (violations.length > 0) {
+    console.log(
+      "[bi-rules] applied:",
+      violations
+        .map(
+          (violation) =>
+            `${violation.ruleId} -> ${violation.chartId}${violation.applied ? "" : " (logged)"}`,
+        )
+        .join(", "),
+    );
   }
-  return buildFallbackCharts(rows, columns);
+
+  if (!validateChartCollection(corrected, columns, rows)) {
+    return corrected;
+  }
+  // Rule corrections can collide with collection-level constraints (e.g. a
+  // donut converted to bar duplicating an existing bar); fall back rather
+  // than ship an invalid collection.
+  return suggested ? buildFallbackCharts(rows, columns) : base;
 }
 
 // ── KPI generation: LLM-first, heuristic fallback ──
 
-function buildPrimaryKpi(rows: Row[], column: Column): KPIConfig | null {
+// KPI shape before the Apple-widget `size`/`order` geometry is attached
+// (added once, by index, in buildKpiConfigs).
+type KpiDraft = Omit<KPIConfig, "size" | "order">;
+
+function buildPrimaryKpi(rows: Row[], column: Column): KpiDraft | null {
   const values = rows
     .map((row) => toNumber(row[column.name]))
     .filter((value): value is number => value !== null);
@@ -1082,7 +1198,10 @@ function buildPrimaryKpi(rows: Row[], column: Column): KPIConfig | null {
     aggregation,
     label:
       aggregation === "avg" ? `Average ${column.name}` : `Total ${column.name}`,
-    description: `Primary KPI selected from the highest-variance metric column: ${column.name}.`,
+    description:
+      aggregation === "avg"
+        ? `Average ${column.name} across all uploaded rows.`
+        : `Sum of ${column.name} across all uploaded rows.`,
     isPrimary: true,
   };
 }
@@ -1090,7 +1209,7 @@ function buildPrimaryKpi(rows: Row[], column: Column): KPIConfig | null {
 function buildSecondaryNumericKpi(
   rows: Row[],
   column: Column,
-): KPIConfig | null {
+): KpiDraft | null {
   const values = rows
     .map((row) => toNumber(row[column.name]))
     .filter((value): value is number => value !== null);
@@ -1107,7 +1226,7 @@ function buildSecondaryNumericKpi(
   };
 }
 
-function buildCategoryKpi(rows: Row[], column: Column): KPIConfig | null {
+function buildCategoryKpi(rows: Row[], column: Column): KpiDraft | null {
   const counts = new Map<string, number>();
   for (const row of rows) {
     const raw = row[column.name];
@@ -1138,7 +1257,7 @@ function buildCategoryKpi(rows: Row[], column: Column): KPIConfig | null {
   };
 }
 
-function buildDateRangeKpi(rows: Row[], column: Column): KPIConfig | null {
+function buildDateRangeKpi(rows: Row[], column: Column): KpiDraft | null {
   const dates = rows
     .map((row) => toDate(row[column.name]))
     .filter((value): value is Date => value !== null)
@@ -1146,17 +1265,22 @@ function buildDateRangeKpi(rows: Row[], column: Column): KPIConfig | null {
   if (dates.length === 0) {
     return null;
   }
+  const formatDay = (date: Date) => {
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    return `${day}/${month}/${date.getUTCFullYear()}`;
+  };
   return {
     id: "kpi_time_span",
     column: column.name,
     aggregation: "range",
     label: `${column.name} span`,
-    description: `Coverage runs from ${dates[0].toISOString().slice(0, 10)} to ${dates[dates.length - 1].toISOString().slice(0, 10)}.`,
+    description: `Data covers ${formatDay(dates[0])} to ${formatDay(dates[dates.length - 1])}.`,
     isPrimary: false,
   };
 }
 
-function buildCountKpi(rows: Row[], column: Column): KPIConfig | null {
+function buildCountKpi(rows: Row[], column: Column): KpiDraft | null {
   if (rows.length === 0) {
     return null;
   }
@@ -1170,7 +1294,7 @@ function buildCountKpi(rows: Row[], column: Column): KPIConfig | null {
   };
 }
 
-function buildPrimaryRowCountKpi(fallbackColumnName: string): KPIConfig {
+function buildPrimaryRowCountKpi(fallbackColumnName: string): KpiDraft {
   return {
     id: "kpi_primary",
     column: fallbackColumnName,
@@ -1181,7 +1305,7 @@ function buildPrimaryRowCountKpi(fallbackColumnName: string): KPIConfig {
   };
 }
 
-function buildFallbackKpis(rows: Row[], columns: Column[]): KPIConfig[] {
+function buildFallbackKpis(rows: Row[], columns: Column[]): KpiDraft[] {
   const primaryNumeric = pickPrimaryNumeric(rows, columns);
   const primaryCategory = pickPrimaryCategory(rows, columns);
   const primaryDate = pickPrimaryDate(columns);
@@ -1192,7 +1316,7 @@ function buildFallbackKpis(rows: Row[], columns: Column[]): KPIConfig[] {
     primaryNumeric ? buildSecondaryNumericKpi(rows, primaryNumeric) : null,
     primaryCategory ? buildCategoryKpi(rows, primaryCategory) : null,
     primaryDate ? buildDateRangeKpi(rows, primaryDate) : null,
-  ].filter((kpi): kpi is KPIConfig => Boolean(kpi));
+  ].filter((kpi): kpi is KpiDraft => Boolean(kpi));
 
   if (!kpis.some((kpi) => kpi.isPrimary)) {
     kpis.unshift(buildPrimaryRowCountKpi(fallbackColumnName));
@@ -1220,7 +1344,7 @@ function buildFallbackKpis(rows: Row[], columns: Column[]): KPIConfig[] {
   return kpis.slice(0, BI_RULE_LIMITS.maxKpis);
 }
 
-function parseKpiSuggestionPayload(text: string): KPIConfig[] | null {
+function parseKpiSuggestionPayload(text: string): KpiDraft[] | null {
   const trimmed = text.trim();
   const start = trimmed.indexOf("{");
   const end = trimmed.lastIndexOf("}");
@@ -1247,7 +1371,7 @@ function parseKpiSuggestionPayload(text: string): KPIConfig[] | null {
     ]);
 
     return parsed.kpis
-      .map((kpi, index): KPIConfig | null => {
+      .map((kpi, index): KpiDraft | null => {
         const column = typeof kpi.column === "string" ? kpi.column : "";
         const aggregation =
           typeof kpi.aggregation === "string" &&
@@ -1276,7 +1400,7 @@ function parseKpiSuggestionPayload(text: string): KPIConfig[] | null {
           isPrimary: index === 0,
         };
       })
-      .filter((kpi): kpi is KPIConfig => Boolean(kpi));
+      .filter((kpi): kpi is KpiDraft => Boolean(kpi));
   } catch {
     return null;
   }
@@ -1285,7 +1409,7 @@ function parseKpiSuggestionPayload(text: string): KPIConfig[] | null {
 async function suggestKpisWithLLM(
   rows: Row[],
   columns: Column[],
-): Promise<KPIConfig[] | null> {
+): Promise<KpiDraft[] | null> {
   const apiKey = getGroqApiKey();
   if (!apiKey) {
     return null;
@@ -1374,8 +1498,10 @@ export async function buildKpiConfigs(
   columns: Column[],
 ): Promise<KPIConfig[]> {
   const suggested = await suggestKpisWithLLM(rows, columns);
-  if (suggested) {
-    return suggested;
-  }
-  return buildFallbackKpis(rows, columns);
+  const drafts = suggested ?? buildFallbackKpis(rows, columns);
+  return drafts.map((kpi, index) => ({
+    ...kpi,
+    size: "medium",
+    order: index,
+  }));
 }

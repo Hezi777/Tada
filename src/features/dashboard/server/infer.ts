@@ -99,18 +99,21 @@ function classifyColumn(name: string, values: unknown[]): ColumnKind {
   const avgStringLength =
     stringCount === 0 ? 0 : stringLengthTotal / stringCount;
 
+  // Dates are naturally near-unique, so they must be detected before the
+  // high-uniqueness "ignored" heuristic. Numeric dominance wins ties (e.g.
+  // plain integers that happen to parse as dates).
+  const numericRatio = numericCount / nonEmptyCount;
+  const dateRatio = dateCount / nonEmptyCount;
+  if (dateRatio >= 0.8 && numericRatio < 0.8) {
+    return "date";
+  }
+
   if (uniqueRatio > 0.9 || avgStringLength > 30) {
     return "ignored";
   }
 
-  const numericRatio = numericCount / nonEmptyCount;
   if (numericRatio >= 0.8) {
     return "numeric";
-  }
-
-  const dateRatio = dateCount / nonEmptyCount;
-  if (dateRatio >= 0.8) {
-    return "date";
   }
 
   const stringLike = stringCount / nonEmptyCount >= 0.8;

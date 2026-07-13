@@ -2,8 +2,10 @@
 
 import { type Key, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Camera,
   Check,
   CreditCard,
+  Globe,
   Monitor,
   Moon,
   Paintbrush,
@@ -25,13 +27,17 @@ import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { createClient } from "@/shared/lib/supabase/client";
 import { listDashboards } from "@/shared/lib/api";
+import {
+  languageCodeFromLabel,
+  persistLanguageCode,
+} from "@/features/dashboard/client/locale";
+import { useTranslation, type TranslationKey } from "@/shared/i18n";
+import { bidiIsolate } from "@/shared/lib/format";
 
 type ThemeMode = "system" | "light" | "dark";
-type SettingsSection = "account" | "appearance" | "billing";
+type SettingsSection = "profile" | "appearance" | "language" | "account";
 
-type AccountStatus =
-  | { tone: "success" | "error"; text: string }
-  | null;
+type AccountStatus = { tone: "success" | "error"; text: string } | null;
 
 const THEME_STORAGE_KEY = "tada-theme";
 const THEME_EVENT = "tada-theme-change";
@@ -39,15 +45,16 @@ const DASHBOARD_LIMIT = 5;
 
 const SETTINGS_NAV: Array<{
   key: SettingsSection;
-  label: string;
+  labelKey: TranslationKey;
   icon: typeof UserRound;
 }> = [
-  { key: "account", label: "Account", icon: UserRound },
-  { key: "appearance", label: "Appearance", icon: Paintbrush },
-  { key: "billing", label: "Billing", icon: CreditCard },
+  { key: "profile", labelKey: "settings.nav.profile", icon: UserRound },
+  { key: "appearance", labelKey: "settings.nav.appearance", icon: Paintbrush },
+  { key: "language", labelKey: "settings.nav.language", icon: Globe },
+  { key: "account", labelKey: "settings.nav.account", icon: CreditCard },
 ];
 
-const LANGUAGE_OPTIONS = ["English (US)", "Hebrew (IL)", "Spanish (ES)"];
+const LANGUAGE_OPTIONS = ["English (US)", "Hebrew (IL)"];
 
 function readThemeMode(): ThemeMode {
   if (typeof window === "undefined") {
@@ -71,7 +78,10 @@ function applyThemeMode(mode: ThemeMode) {
   root.classList.toggle("dark", isDark);
 }
 
-function deriveNameParts(email: string | null, metadata: Record<string, unknown>) {
+function deriveNameParts(
+  email: string | null,
+  metadata: Record<string, unknown>,
+) {
   const firstName =
     typeof metadata.first_name === "string"
       ? metadata.first_name
@@ -111,7 +121,11 @@ function deriveNameParts(email: string | null, metadata: Record<string, unknown>
     return { firstName: "", lastName: "" };
   }
 
-  const cleaned = email.split("@")[0]?.replace(/[._-]+/g, " ").trim() ?? "";
+  const cleaned =
+    email
+      .split("@")[0]
+      ?.replace(/[._-]+/g, " ")
+      .trim() ?? "";
   const [first = "", ...rest] = cleaned.split(/\s+/);
 
   return {
@@ -142,13 +156,15 @@ function SectionNavItem({
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-10 w-full items-center gap-3 rounded-r-lg px-4 text-left text-sm transition-colors ${
+      className={`flex h-10 w-full items-center gap-3 rounded-e-lg px-4 text-start text-sm transition-colors ${
         active
-          ? "border-l-[3px] border-[var(--color-accent)] bg-[var(--color-surface-muted)] font-semibold text-[var(--color-text-primary)]"
+          ? "border-s-[3px] border-[var(--color-accent)] bg-[var(--color-surface-muted)] font-semibold text-[var(--color-text-primary)]"
           : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
       }`}
     >
-      <Icon className={`h-4 w-4 ${active ? "text-[var(--color-accent)]" : ""}`} />
+      <Icon
+        className={`h-4 w-4 ${active ? "text-[var(--color-accent)]" : ""}`}
+      />
       <span>{label}</span>
     </button>
   );
@@ -169,9 +185,9 @@ function ThemeOption({
     <button
       type="button"
       onClick={onClick}
-      className={`relative rounded-[20px] border-2 p-3 text-left transition-all ${
+      className={`relative rounded-[20px] border-2 p-3 text-start transition-all ${
         active
-          ? "border-[var(--color-accent)] bg-white shadow-[0_18px_40px_-30px_rgba(0,50,125,0.35)]"
+          ? "border-[var(--color-accent)] bg-card shadow-[0_18px_40px_-30px_rgba(0,50,125,0.35)]"
           : "border-transparent bg-[var(--color-surface-muted)] hover:border-[rgba(25,28,30,0.12)]"
       }`}
     >
@@ -187,13 +203,17 @@ function ThemeOption({
         <div className="space-y-1.5 p-3">
           <div
             className={`h-2 rounded-full ${
-              mode === "dark" ? "bg-[rgba(255,255,255,0.16)]" : "bg-[var(--color-surface-muted)]"
+              mode === "dark"
+                ? "bg-[rgba(255,255,255,0.16)]"
+                : "bg-[var(--color-surface-muted)]"
             }`}
             style={{ width: "72%" }}
           />
           <div
             className={`h-2 rounded-full ${
-              mode === "dark" ? "bg-[rgba(255,255,255,0.08)]" : "bg-[var(--color-surface-subtle)]"
+              mode === "dark"
+                ? "bg-[rgba(255,255,255,0.08)]"
+                : "bg-[var(--color-surface-subtle)]"
             }`}
             style={{ width: "52%" }}
           />
@@ -221,8 +241,11 @@ function ThemeOption({
 }
 
 export function SettingsPanel() {
+  const { t, lang } = useTranslation();
+  const isRtl = lang === "he";
   const supabase = useMemo(() => createClient(), []);
-  const [activeSection, setActiveSection] = useState<SettingsSection>("account");
+  const [activeSection, setActiveSection] =
+    useState<SettingsSection>("profile");
   const [themeMode, setThemeMode] = useState<ThemeMode>(readThemeMode);
   const [email, setEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -235,6 +258,9 @@ export function SettingsPanel() {
   const [userMetadata, setUserMetadata] = useState<Record<string, unknown>>({});
   const [isSavingAccount, setIsSavingAccount] = useState(false);
   const [accountStatus, setAccountStatus] = useState<AccountStatus>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [billingMessage, setBillingMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -242,9 +268,11 @@ export function SettingsPanel() {
     null,
   );
 
-  const accountRef = useRef<HTMLElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const profileRef = useRef<HTMLElement | null>(null);
   const appearanceRef = useRef<HTMLElement | null>(null);
-  const billingRef = useRef<HTMLElement | null>(null);
+  const languageRef = useRef<HTMLElement | null>(null);
+  const accountRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -265,10 +293,15 @@ export function SettingsPanel() {
       setUserMetadata(metadata);
       setFirstName(derivedName.firstName);
       setLastName(derivedName.lastName);
-      setLanguagePreference(
-        typeof metadata.language_preference === "string"
+      const storedLanguage =
+        typeof metadata.language_preference === "string" &&
+        LANGUAGE_OPTIONS.includes(metadata.language_preference)
           ? metadata.language_preference
-          : LANGUAGE_OPTIONS[0],
+          : LANGUAGE_OPTIONS[0];
+      setLanguagePreference(storedLanguage);
+      persistLanguageCode(languageCodeFromLabel(storedLanguage));
+      setAvatarUrl(
+        typeof metadata.avatar_url === "string" ? metadata.avatar_url : null,
       );
     });
 
@@ -289,6 +322,76 @@ export function SettingsPanel() {
     };
   }, [supabase]);
 
+  useEffect(() => {
+    const root = containerRef.current;
+    const sections: Array<{
+      key: SettingsSection;
+      el: HTMLElement | null;
+    }> = [
+      { key: "profile", el: profileRef.current },
+      { key: "appearance", el: appearanceRef.current },
+      { key: "language", el: languageRef.current },
+      { key: "account", el: accountRef.current },
+    ];
+
+    if (!root) {
+      return;
+    }
+
+    // The Account section is taller than the observer's active band, so it
+    // can never win on intersection ratio alone. Treat reaching the bottom
+    // of the scroll container as the Account section being active.
+    function isAtBottom() {
+      return root
+        ? root.scrollHeight - root.scrollTop - root.clientHeight < 4
+        : false;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isAtBottom()) {
+          setActiveSection("account");
+          return;
+        }
+
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+        if (visible.length === 0) {
+          return;
+        }
+
+        const match = sections.find(
+          (section) => section.el === visible[0].target,
+        );
+        if (match) {
+          setActiveSection(match.key);
+        }
+      },
+      { root, rootMargin: "-20% 0px -60% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] },
+    );
+
+    for (const section of sections) {
+      if (section.el) {
+        observer.observe(section.el);
+      }
+    }
+
+    function handleScroll() {
+      if (isAtBottom()) {
+        setActiveSection("account");
+      }
+    }
+
+    root.addEventListener("scroll", handleScroll);
+
+    return () => {
+      observer.disconnect();
+      root.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   const usagePercent = Math.min(
     100,
     Math.round((dashboardCount / DASHBOARD_LIMIT) * 100),
@@ -298,11 +401,13 @@ export function SettingsPanel() {
     setActiveSection(section);
 
     const targetRef =
-      section === "account"
-        ? accountRef
+      section === "profile"
+        ? profileRef
         : section === "appearance"
           ? appearanceRef
-          : billingRef;
+          : section === "language"
+            ? languageRef
+            : accountRef;
 
     targetRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -346,10 +451,62 @@ export function SettingsPanel() {
       setAccountStatus({
         tone: "error",
         text:
-          error instanceof Error ? error.message : "Unable to save your profile.",
+          error instanceof Error
+            ? error.message
+            : "Unable to save your profile.",
       });
     } finally {
       setIsSavingAccount(false);
+    }
+  }
+
+  async function handleAvatarUpload(file: File) {
+    if (!userId) {
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setAccountStatus({
+        tone: "error",
+        text: "Profile pictures must be under 2MB.",
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setAccountStatus(null);
+    try {
+      const extension = file.name.split(".").pop()?.toLowerCase() ?? "png";
+      const path = `${userId}/avatar.${extension}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+      // Cache-bust so the new image shows immediately.
+      const url = `${data.publicUrl}?v=${Date.now()}`;
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { ...userMetadata, avatar_url: url },
+      });
+      if (updateError) {
+        throw updateError;
+      }
+
+      setUserMetadata((current) => ({ ...current, avatar_url: url }));
+      setAvatarUrl(url);
+      setAccountStatus({ tone: "success", text: "Profile picture updated." });
+    } catch (error) {
+      setAccountStatus({
+        tone: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Unable to upload your picture.",
+      });
+    } finally {
+      setIsUploadingAvatar(false);
     }
   }
 
@@ -378,21 +535,25 @@ export function SettingsPanel() {
   }
 
   return (
-      <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-10 sm:px-8">
-      <h1 className="font-display text-[2rem] font-bold tracking-[-0.04em] text-[var(--color-text-primary)]">
-        Settings
+    <div className="flex h-full flex-col bg-[var(--color-bg)]">
+      <div
+        ref={containerRef}
+        className="dashboard-scroll flex-1 overflow-y-auto px-6 pt-10 sm:px-8"
+      >
+      <h1 className="font-display text-[2.25rem] font-black tracking-[-0.045em] text-[var(--color-text-primary)]">
+        {t("settings.title")}
       </h1>
 
       <div className="mt-10 flex flex-col gap-10 md:flex-row">
         <aside className="w-full md:w-[200px] md:flex-shrink-0">
           <div className="md:sticky md:top-8">
             <nav className="space-y-1">
-              {SETTINGS_NAV.map(({ key, label, icon }) => (
+              {SETTINGS_NAV.map(({ key, labelKey, icon }) => (
                 <SectionNavItem
                   key={key}
                   active={activeSection === key}
                   icon={icon}
-                  label={label}
+                  label={t(labelKey)}
                   onClick={() => scrollToSection(key)}
                 />
               ))}
@@ -402,22 +563,65 @@ export function SettingsPanel() {
 
         <div className="flex-1 space-y-8">
           <section
-            ref={accountRef}
-            className="rounded-[24px] bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            ref={profileRef}
+            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-premium"
           >
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
-                  <UserRound className="h-5 w-5 text-[var(--color-accent)]" />
-                  Account Information
-                </h2>
-                <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                  Manage the personal details tied to your Tada workspace.
-                </p>
-              </div>
+            <div className="mb-6">
+              <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-extrabold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                <UserRound className="h-5 w-5 text-[var(--color-accent)]" />
+                {t("settings.profile.heading")}
+              </h2>
+              <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                {t("settings.profile.desc")}
+              </p>
+            </div>
 
-              <div className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
-                ID {userId ? truncateUuid(userId) : "Pending"}
+            <div className="mb-8 flex items-center gap-5">
+              <div className="relative">
+                {avatarUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={avatarUrl}
+                    alt="Profile picture"
+                    className="h-20 w-20 rounded-full object-cover shadow-sm"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-muted)]">
+                    <UserRound className="h-9 w-9" />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  aria-label="Change profile picture"
+                  className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-accent)] text-white shadow-sm transition hover:bg-[var(--color-accent-secondary)] disabled:opacity-60"
+                >
+                  <Camera className="h-4 w-4" />
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (file) {
+                      void handleAvatarUpload(file);
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  Profile picture
+                </p>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  {isUploadingAvatar
+                    ? "Uploading..."
+                    : "PNG, JPG, or WebP up to 2MB."}
+                </p>
               </div>
             </div>
 
@@ -429,7 +633,7 @@ export function SettingsPanel() {
                 <Input
                   value={firstName}
                   onChange={(event) => setFirstName(event.target.value)}
-                  className="h-11 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-white px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
+                  className="h-11 rounded-[8px] border border-[var(--color-border)] bg-card px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
                 />
               </div>
 
@@ -440,7 +644,7 @@ export function SettingsPanel() {
                 <Input
                   value={lastName}
                   onChange={(event) => setLastName(event.target.value)}
-                  className="h-11 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-white px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
+                  className="h-11 rounded-[8px] border border-[var(--color-border)] bg-card px-4 text-sm shadow-none focus-visible:ring-[var(--color-accent)]"
                 />
               </div>
 
@@ -454,80 +658,19 @@ export function SettingsPanel() {
                   className="h-11 rounded-[8px] border-transparent bg-[var(--color-surface-subtle)] px-4 text-sm text-[var(--color-text-secondary)] shadow-none focus-visible:ring-0"
                 />
               </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
-                  Language Preference
-                </label>
-                <select
-                  value={languagePreference}
-                  onChange={(event) =>
-                    setLanguagePreference(event.target.value)
-                  }
-                  className="h-11 w-full rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-white px-4 text-sm text-[var(--color-text-primary)] outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(0,50,125,0.12)]"
-                >
-                  {LANGUAGE_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-              {accountStatus ? (
-                <p
-                  className="text-sm text-[var(--color-text-secondary)]"
-                >
-                  {accountStatus.text}
-                </p>
-              ) : null}
-              <Button
-                type="button"
-                onClick={() => {
-                  void handleSaveAccount();
-                }}
-                disabled={isSavingAccount}
-                className="h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[#0047ab]"
-              >
-                {isSavingAccount ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-            <div className="mt-8 rounded-[20px] bg-[var(--color-surface-muted)] p-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-                    Delete account
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                    Permanently remove your workspace access and stored data.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDeleteDialogOpen(true)}
-                  disabled={isDeleting}
-                  className="h-10 rounded-full border border-transparent bg-white px-5 text-sm font-semibold text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete account
-                </Button>
-              </div>
             </div>
           </section>
 
           <section
             ref={appearanceRef}
-            className="rounded-[24px] bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-premium"
           >
-            <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
+            <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-extrabold tracking-[-0.03em] text-[var(--color-text-primary)]">
               <Paintbrush className="h-5 w-5 text-[var(--color-accent)]" />
-              Appearance
+              {t("settings.appearance.heading")}
             </h2>
             <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-              Select how you want Tada to feel across your workspace.
+              {t("settings.appearance.desc")}
             </p>
 
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -568,23 +711,63 @@ export function SettingsPanel() {
           </section>
 
           <section
-            ref={billingRef}
-            className="rounded-[24px] bg-white p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]"
+            ref={languageRef}
+            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-premium"
+          >
+            <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-extrabold tracking-[-0.03em] text-[var(--color-text-primary)]">
+              <Globe className="h-5 w-5 text-[var(--color-accent)]" />
+              {t("settings.language.heading")}
+            </h2>
+            <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+              {t("settings.language.desc")}
+            </p>
+
+            <div className="mt-6 max-w-sm space-y-2">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                {t("settings.language.label")}
+              </label>
+              <select
+                value={languagePreference}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  setLanguagePreference(next);
+                  persistLanguageCode(languageCodeFromLabel(next));
+                }}
+                className="h-11 w-full rounded-[8px] border border-[var(--color-border)] bg-card px-4 text-sm text-foreground outline-none transition focus-visible:outline-none focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[rgba(0,50,125,0.12)]"
+              >
+                {LANGUAGE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </section>
+
+          <section
+            ref={accountRef}
+            className="rounded-[20px] border border-[var(--color-border)] bg-card p-8 shadow-premium"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                <h2 className="flex items-center gap-2 font-display text-[1.375rem] font-extrabold tracking-[-0.03em] text-[var(--color-text-primary)]">
                   <CreditCard className="h-5 w-5 text-[var(--color-accent)]" />
-                  Billing &amp; Plan
+                  {t("settings.account.heading")}
                 </h2>
                 <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                  Manage your plan and keep track of workspace capacity.
+                  Manage your plan, workspace capacity, and account access.
                 </p>
               </div>
 
-              <span className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-primary)]">
-                Free Plan
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-[var(--color-surface-subtle)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-primary)]">
+                  Free Plan
+                </span>
+                <span className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
+                  ID{" "}
+                  {userId ? bidiIsolate(truncateUuid(userId)) : "Pending"}
+                </span>
+              </div>
             </div>
 
             <div className="mt-8">
@@ -593,7 +776,8 @@ export function SettingsPanel() {
                   Workspace Usage
                 </span>
                 <span className="font-semibold text-[var(--color-accent)]">
-                  {dashboardCount} of {DASHBOARD_LIMIT} dashboards
+                  {bidiIsolate(`${dashboardCount} of ${DASHBOARD_LIMIT}`)}{" "}
+                  dashboards
                 </span>
               </div>
               <div className="h-3 overflow-hidden rounded-full bg-[var(--color-surface-subtle)]">
@@ -604,7 +788,7 @@ export function SettingsPanel() {
               </div>
             </div>
 
-            <div className="mt-8 flex flex-col gap-6 rounded-[20px] bg-[var(--color-surface-muted)] px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-8 flex flex-col gap-6 rounded-[16px] bg-[var(--color-surface-muted)] px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="font-display text-xl font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
                   Upgrade to Pro
@@ -619,7 +803,7 @@ export function SettingsPanel() {
                 onClick={() =>
                   setBillingMessage("Billing actions are not connected yet.")
                 }
-                className="h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[#0047ab]"
+                className="h-10 rounded-full bg-[var(--color-accent)] px-6 text-sm font-semibold text-white hover:bg-[var(--color-accent-secondary)]"
               >
                 Upgrade Now
               </Button>
@@ -630,14 +814,58 @@ export function SettingsPanel() {
                 {billingMessage}
               </p>
             ) : null}
-          </section>
 
-          {deleteErrorMessage ? (
-            <div className="rounded-[20px] bg-[var(--color-surface-muted)] px-6 py-4 text-sm text-[var(--color-text-secondary)]">
-              {deleteErrorMessage}
+            <div className="mt-8 rounded-[16px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                    Delete account
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                    Permanently remove your workspace access and stored data.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  disabled={isDeleting}
+                  className="h-10 px-5 text-sm font-semibold"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete account
+                </Button>
+              </div>
             </div>
-          ) : null}
+
+            {deleteErrorMessage ? (
+              <div className="mt-4 rounded-[16px] bg-[var(--color-surface-muted)] px-6 py-4 text-sm text-[var(--color-text-secondary)]">
+                {deleteErrorMessage}
+              </div>
+            ) : null}
+          </section>
         </div>
+      </div>
+      <div className="h-10" />
+      </div>
+
+      <div className="flex flex-shrink-0 flex-col gap-3 border-t border-[var(--color-border)] bg-[var(--color-bg)] px-6 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-8">
+        {accountStatus ? (
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            {accountStatus.text}
+          </p>
+        ) : null}
+        <Button
+          type="button"
+          variant="primary-accent"
+          onClick={() => {
+            void handleSaveAccount();
+          }}
+          disabled={isSavingAccount}
+          className="h-10 px-6 text-sm font-semibold sm:self-end"
+        >
+          {isSavingAccount ? "Saving..." : "Save Changes"}
+        </Button>
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -652,7 +880,7 @@ export function SettingsPanel() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-[var(--color-accent)] text-white hover:bg-[#0047ab]"
+              variant="destructive"
               disabled={isDeleting}
               onClick={(event) => {
                 event.preventDefault();

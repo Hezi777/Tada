@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { GROQ_MODEL } from "@/shared/lib/ai/config";
 
-const DEFAULT_GROQ_DASHBOARD_MODEL = "openai/gpt-oss-120b";
-const DEFAULT_GROQ_CHAT_MODEL = "moonshotai/kimi-k2-instruct-0905";
+const DEFAULT_GROQ_DASHBOARD_MODEL = GROQ_MODEL;
+const DEFAULT_GROQ_CHAT_MODEL = GROQ_MODEL;
 
 const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),

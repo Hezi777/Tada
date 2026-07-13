@@ -8,6 +8,7 @@ import {
   type SerializedRow,
   type SerializedValue,
 } from "@/shared/contracts";
+import { formatDateIL } from "@/shared/lib/format";
 
 export type DashboardRuntimeContext = {
   columns: DashboardColumn[];
@@ -338,17 +339,33 @@ export function buildGroupedSeries(
       }))
       .sort((left, right) => right.value - left.value);
 
-    if (chart.type === "donut" && series.length > CHART_LIMITS.donut) {
-      const kept = series.slice(0, CHART_LIMITS.donut);
+    // categoryLimit is set by the BI rules engine (top-N + Other bucket).
+    const donutLimit = chart.categoryLimit ?? CHART_LIMITS.donut;
+    if (chart.type === "donut" && series.length > donutLimit) {
+      const kept = series.slice(0, donutLimit - 1);
       const otherValue = series
-        .slice(CHART_LIMITS.donut)
+        .slice(donutLimit - 1)
         .reduce((sum, entry) => sum + entry.value, 0);
       return otherValue > 0
         ? [...kept, { label: "Other", value: otherValue }]
         : kept;
     }
 
-    return chart.type === "bar" ? series.slice(0, CHART_LIMITS.bar) : series;
+    if (chart.type === "bar") {
+      const barLimit = chart.categoryLimit ?? CHART_LIMITS.bar;
+      if (chart.categoryLimit && series.length > barLimit) {
+        const kept = series.slice(0, barLimit);
+        const otherValue = series
+          .slice(barLimit)
+          .reduce((sum, entry) => sum + entry.value, 0);
+        return otherValue > 0
+          ? [...kept, { label: "Other", value: otherValue }]
+          : kept;
+      }
+      return series.slice(0, barLimit);
+    }
+
+    return series;
   }
 
   const valueColumn = chart.columns[0] ?? null;
@@ -459,9 +476,9 @@ export function computeKpiValue(
     if (dates.length === 0) {
       return "-";
     }
-    const start = dates[0].toISOString().slice(0, 10);
-    const end = dates[dates.length - 1].toISOString().slice(0, 10);
-    return start === end ? start : `${start} -> ${end}`;
+    const start = formatDateIL(dates[0]);
+    const end = formatDateIL(dates[dates.length - 1]);
+    return start === end ? start : `${start} – ${end}`;
   }
 
   const values = rows
@@ -476,6 +493,80 @@ export function computeKpiValue(
         100,
     ) / 100
   );
+}
+
+const KPI_TREND_LIMITS = {
+  maxSparklinePoints: 12,
+  minPeriods: 2,
+} as const;
+
+export type KpiTrend = {
+  deltaPct: number;
+  sparkline: CategoricalChartSeries;
+};
+
+/**
+ * Buckets rows by period (reusing the granularity/bucketing approach from
+ * `buildAreaSeries`) and aggregates the KPI's column with the KPI's
+ * aggregation per period. Returns `null` when there is no usable date/time
+ * column or fewer than two periods, so the caller can fall back to a
+ * value-only display.
+ */
+export function computeKpiTrend(
+  kpi: KPIConfig,
+  rows: SerializedRow[],
+  columns: DashboardColumn[],
+): KpiTrend | null {
+  const timeColumn = columns.find((column) => column.kind === "date")?.name;
+  if (!timeColumn) {
+    return null;
+  }
+
+  const granularity = detectTimeGranularity(rows, timeColumn);
+  const buckets = new Map<string, number[]>();
+
+  for (const row of rows) {
+    const dateValue = toDate(row[timeColumn]);
+    if (!dateValue) {
+      continue;
+    }
+    const bucket = toBucketKey(dateValue, granularity);
+    const values = buckets.get(bucket) ?? [];
+    if (kpi.aggregation === "count") {
+      values.push(1);
+    } else {
+      const numericValue = toNumber(row[kpi.column]);
+      if (numericValue !== null) {
+        values.push(numericValue);
+      }
+    }
+    buckets.set(bucket, values);
+  }
+
+  const periods = Array.from(buckets.entries()).sort((left, right) =>
+    left[0].localeCompare(right[0]),
+  );
+  if (periods.length < KPI_TREND_LIMITS.minPeriods) {
+    return null;
+  }
+
+  const aggregation =
+    kpi.aggregation === "mode" || kpi.aggregation === "range"
+      ? "count"
+      : (kpi.aggregation as ChartConfig["aggregation"]);
+
+  const series = periods.map(([label, values]) => ({
+    label,
+    value: reduceAggregation(values, aggregation),
+  }));
+
+  const sparkline = series.slice(-KPI_TREND_LIMITS.maxSparklinePoints);
+
+  const previous = series[series.length - 2].value;
+  const last = series[series.length - 1].value;
+  const deltaPct = previous === 0 ? 0 : ((last - previous) / Math.abs(previous)) * 100;
+
+  return { deltaPct, sparkline };
 }
 
 export function formatNumber(value: number | null): string | null {

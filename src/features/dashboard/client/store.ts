@@ -500,6 +500,51 @@ export function reorderCharts(orderedIds: string[]): void {
   });
 }
 
+/**
+ * Reorder the unified widget canvas (KPIs + visible charts). `orderedIds` is
+ * the full new order of widget ids; KPIs and charts are each re-assigned a
+ * contiguous `order` (0..n-1) within their own collection, matching their
+ * relative order in `orderedIds`. Hidden charts keep ordering after visible
+ * ones (handled by `normalizeOrders`).
+ */
+export function reorderWidgets(orderedIds: string[]): void {
+  withValidatedState((current) => {
+    const kpiMap = new Map(current.kpis.map((kpi) => [kpi.id, kpi]));
+    const chartMap = new Map(current.charts.map((chart) => [chart.id, chart]));
+
+    let kpiIndex = 0;
+    let chartIndex = 0;
+    const nextKpis = new Map<string, KPIConfig>();
+    const nextCharts = new Map<string, ChartConfig>();
+
+    for (const id of orderedIds) {
+      const kpi = kpiMap.get(id);
+      if (kpi) {
+        nextKpis.set(id, { ...kpi, order: kpiIndex });
+        kpiIndex += 1;
+        continue;
+      }
+      const chart = chartMap.get(id);
+      if (chart) {
+        nextCharts.set(id, { ...chart, order: chartIndex });
+        chartIndex += 1;
+      }
+    }
+
+    return {
+      ...current,
+      version: current.version + 1,
+      kpis: current.kpis.map((kpi) => nextKpis.get(kpi.id) ?? kpi),
+      charts: current.charts.map((chart) => {
+        const reordered = nextCharts.get(chart.id);
+        return reordered
+          ? normalizeChartConfig({ ...chart, ...reordered })
+          : chart;
+      }),
+    };
+  });
+}
+
 export function setKPI(id: string, patch: Partial<KPIConfig>): void {
   withValidatedState((current) => ({
     ...current,
@@ -508,6 +553,10 @@ export function setKPI(id: string, patch: Partial<KPIConfig>): void {
       kpi.id === id ? { ...kpi, ...patch, id: kpi.id } : kpi,
     ),
   }));
+}
+
+export function updateKpi(id: string, patch: Partial<KPIConfig>): void {
+  setKPI(id, patch);
 }
 
 export function applyChatbotPatch(patch: ChatbotChartPatch | null): void {
@@ -549,7 +598,9 @@ declare global {
       applyChartProposal: typeof applyChartProposal;
       promoteHiddenChart: typeof promoteHiddenChart;
       reorderCharts: typeof reorderCharts;
+      reorderWidgets: typeof reorderWidgets;
       setKPI: typeof setKPI;
+      updateKpi: typeof updateKpi;
       applyChatbotPatch: typeof applyChatbotPatch;
       getState: typeof getDashboardStoreState;
     };
@@ -566,7 +617,9 @@ if (typeof window !== "undefined") {
     applyChartProposal,
     promoteHiddenChart,
     reorderCharts,
+    reorderWidgets,
     setKPI,
+    updateKpi,
     applyChatbotPatch,
     getState: getDashboardStoreState,
   };

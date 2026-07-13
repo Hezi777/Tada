@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/shared/lib/supabase/admin";
 import { createClient } from "@/shared/lib/supabase/server";
 import { inferColumns } from "@/features/dashboard/server/infer";
-import { normalizeChartConfig } from "@/shared/contracts";
+import { normalizeChartConfig, normalizeKpiConfig } from "@/shared/contracts";
 import {
   createDatasetState,
   setDatasetFiles,
@@ -24,13 +23,12 @@ function buildDatasetMeta(
   };
 }
 
-/** GET /api/dashboards/[id] — load a dashboard with its full dataset state */
+/** GET /api/dashboards/[id] - load a dashboard with its full dataset state */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: dashboardId } = await params;
-  const supabaseAdmin = createAdminClient();
   const supabase = await createClient();
   const {
     data: { user },
@@ -42,7 +40,7 @@ export async function GET(
   }
 
   // Verify dashboard ownership
-  const { data: dashboard, error: dashError } = await supabaseAdmin
+  const { data: dashboard, error: dashError } = await supabase
     .from("dashboards")
     .select("id, name, icon, color, user_id")
     .eq("id", dashboardId)
@@ -53,7 +51,7 @@ export async function GET(
   }
 
   // Get attached datasets
-  const { data: junctions } = await supabaseAdmin
+  const { data: junctions } = await supabase
     .from("dashboard_datasets")
     .select("dataset_id")
     .eq("dashboard_id", dashboardId);
@@ -72,7 +70,7 @@ export async function GET(
 
   // Load the most recent dataset (primary) from the attached ones
   const datasetIds = junctions.map((j) => j.dataset_id);
-  const { data: dataset, error: datasetError } = await supabaseAdmin
+  const { data: dataset, error: datasetError } = await supabase
     .from("datasets")
     .select("id, name, rows, created_at")
     .in("id", datasetIds)
@@ -101,7 +99,7 @@ export async function GET(
 
   const [{ data: chartRow }, { data: kpiRow }, { data: fileRows }] =
     await Promise.all([
-      supabaseAdmin
+      supabase
         .from("charts")
         .select("configs")
         .eq("dataset_id", datasetId)
@@ -109,7 +107,7 @@ export async function GET(
         .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      supabaseAdmin
+      supabase
         .from("kpis")
         .select("configs")
         .eq("dataset_id", datasetId)
@@ -117,7 +115,7 @@ export async function GET(
         .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      supabaseAdmin
+      supabase
         .from("dataset_files")
         .select("id, file_name, is_primary")
         .eq("dataset_id", datasetId)
@@ -127,7 +125,9 @@ export async function GET(
   const charts = Array.isArray(chartRow?.configs)
     ? chartRow.configs.map((chart) => normalizeChartConfig(chart))
     : [];
-  const kpis = Array.isArray(kpiRow?.configs) ? kpiRow.configs : [];
+  const kpis = Array.isArray(kpiRow?.configs)
+    ? kpiRow.configs.map((kpi, index) => normalizeKpiConfig(kpi, index))
+    : [];
   const files = (fileRows ?? []).map((file) => ({
     id: String(file.id),
     fileName: String(file.file_name),
@@ -174,13 +174,12 @@ export async function GET(
   });
 }
 
-/** PATCH /api/dashboards/[id] — update dashboard metadata */
+/** PATCH /api/dashboards/[id] - update dashboard metadata */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: dashboardId } = await params;
-  const supabaseAdmin = createAdminClient();
   const supabase = await createClient();
   const {
     data: { user },
@@ -197,7 +196,7 @@ export async function PATCH(
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin
+  const { error } = await supabase
     .from("dashboards")
     .update(parsed.data)
     .eq("id", dashboardId)
@@ -213,13 +212,12 @@ export async function PATCH(
   return NextResponse.json({ ok: true });
 }
 
-/** DELETE /api/dashboards/[id] — delete a dashboard */
+/** DELETE /api/dashboards/[id] - delete a dashboard */
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: dashboardId } = await params;
-  const supabaseAdmin = createAdminClient();
   const supabase = await createClient();
   const {
     data: { user },
@@ -230,7 +228,7 @@ export async function DELETE(
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const { error } = await supabaseAdmin
+  const { error } = await supabase
     .from("dashboards")
     .delete()
     .eq("id", dashboardId)

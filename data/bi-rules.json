@@ -1,0 +1,415 @@
+[
+  {
+    "rule_id": "time_series_use_line",
+    "category": "chart_selection",
+    "content": "When the x-axis is a date or time field showing change over time, use a line chart rather than bars or pie, because lines best convey trend and continuity.",
+    "action_if_fail": "switch_to_line",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "ranking_use_sorted_bar",
+    "category": "chart_selection",
+    "content": "When the goal is ranking or comparing magnitudes across categories, use a bar chart sorted by value (descending by default), not alphabetical or arbitrary order.",
+    "action_if_fail": "sort_descending",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "pie_max_slices",
+    "category": "chart_selection",
+    "content": "A pie or donut chart must not have more than 5-6 slices; with more categories it becomes unreadable and should be replaced by a sorted bar chart or have small slices grouped into an Other bucket.",
+    "action_if_fail": "convert_to_bar",
+    "severity": "error"
+  },
+  {
+    "rule_id": "pie_only_part_to_whole",
+    "category": "chart_selection",
+    "content": "Use a pie chart only for part-to-whole data where the slices are mutually exclusive and sum to a meaningful 100%; never use a pie for values that do not form a whole or for comparison of independent measures.",
+    "action_if_fail": "convert_to_bar",
+    "severity": "error"
+  },
+  {
+    "rule_id": "prefer_position_over_angle_area",
+    "category": "chart_selection",
+    "content": "Prefer encodings based on position or length (bar, line, dot plot) over angle or area encodings (pie, bubble, treemap) when precise comparison matters, because humans judge position far more accurately than angle or area.",
+    "action_if_fail": "convert_to_bar",
+    "severity": "info"
+  },
+  {
+    "rule_id": "correlation_use_scatter",
+    "category": "chart_selection",
+    "content": "To show the relationship or correlation between two numeric measures, use a scatter plot with one measure per axis rather than overlaying two series on one chart.",
+    "action_if_fail": "switch_to_scatter",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "distribution_use_histogram",
+    "category": "chart_selection",
+    "content": "To show the distribution of a single numeric column (its spread, shape, and outliers), use a histogram or box plot, not a bar chart of raw rows or a pie chart.",
+    "action_if_fail": "switch_to_histogram",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "avoid_dual_y_axes",
+    "category": "chart_selection",
+    "content": "Do not put two different y-axis scales on one chart; dual-axis charts let arbitrary scaling imply false relationships between series. Use two stacked panels or an indexed (percent-change) chart instead.",
+    "action_if_fail": "remove_secondary_axis",
+    "severity": "error"
+  },
+  {
+    "rule_id": "no_3d_charts",
+    "category": "chart_selection",
+    "content": "Never render charts in 3D or with perspective effects; depth distorts perceived values and adds no information.",
+    "action_if_fail": "remove_3d",
+    "severity": "error"
+  },
+  {
+    "rule_id": "long_labels_use_horizontal_bar",
+    "category": "chart_selection",
+    "content": "When category labels are long (roughly more than 10-12 characters) or there are many categories, use a horizontal bar chart so labels can be read without rotation or truncation.",
+    "action_if_fail": "use_horizontal_bar",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "line_chart_series_limit",
+    "category": "chart_selection",
+    "content": "Limit a single line chart to about 4-5 series; more lines create an unreadable spaghetti chart and should be split into small multiples or have minor series removed or grouped.",
+    "action_if_fail": "reduce_series_count",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "no_line_for_unordered_categories",
+    "category": "chart_selection",
+    "content": "Do not connect unordered categories with a line chart; a line implies continuity and order, so categorical comparisons must use bars instead.",
+    "action_if_fail": "convert_to_bar",
+    "severity": "error"
+  },
+  {
+    "rule_id": "stacked_bar_segment_limit",
+    "category": "chart_selection",
+    "content": "Use stacked bars only for part-to-whole comparisons with at most 3-4 segments, because only the bottom segment sits on a common baseline and can be compared accurately across bars.",
+    "action_if_fail": "limit_categories",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "single_value_use_kpi_card",
+    "category": "chart_selection",
+    "content": "If a query returns a single value or only two or three numbers, show a KPI card or simple table instead of a chart; a chart with one or two data points wastes space and adds no insight.",
+    "action_if_fail": "switch_to_table",
+    "severity": "info"
+  },
+  {
+    "rule_id": "exact_values_use_table",
+    "category": "chart_selection",
+    "content": "When users need to look up precise individual values across many dimensions rather than see patterns, use a table instead of a chart.",
+    "action_if_fail": "switch_to_table",
+    "severity": "info"
+  },
+  {
+    "rule_id": "area_chart_for_totals_only",
+    "category": "chart_selection",
+    "content": "Use area charts only for a single cumulative or total quantity over time; for comparing multiple overlapping series, plain lines are clearer because filled areas occlude each other.",
+    "action_if_fail": "switch_to_line",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "bar_axis_starts_at_zero",
+    "category": "formatting",
+    "content": "Bar chart value axes must start at zero; because bars encode value by length, a truncated baseline visually exaggerates differences and misleads the reader.",
+    "action_if_fail": "start_axis_at_zero",
+    "severity": "error"
+  },
+  {
+    "rule_id": "line_axis_zoom_allowed_with_care",
+    "category": "formatting",
+    "content": "Line chart axes may start above zero to show variation, since lines encode value by position rather than length, but the axis range must be clearly labeled so the zoom is evident.",
+    "action_if_fail": "add_axis_label",
+    "severity": "info"
+  },
+  {
+    "rule_id": "abbreviate_large_numbers",
+    "category": "formatting",
+    "content": "Abbreviate large numbers on axes and data labels using K, M, and B suffixes (e.g. 1.2K, 3.4M) instead of printing full digit strings, to reduce clutter and speed reading.",
+    "action_if_fail": "abbreviate_numbers",
+    "severity": "info"
+  },
+  {
+    "rule_id": "use_thousands_separators",
+    "category": "formatting",
+    "content": "Format unabbreviated numbers of four or more digits with thousands separators (e.g. 12,345 not 12345) in labels, tooltips, and tables.",
+    "action_if_fail": "add_thousands_separators",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "limit_decimal_precision",
+    "category": "formatting",
+    "content": "Show only as many decimal places as the decision requires, typically 0-2, and keep precision consistent within a chart; excess decimals add noise and false accuracy.",
+    "action_if_fail": "reduce_decimal_precision",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "store_dates_iso8601",
+    "category": "formatting",
+    "content": "Internally store and exchange dates in ISO 8601 format (YYYY-MM-DD) and only convert to the locale display format at render time, to prevent ambiguous parsing.",
+    "action_if_fail": "use_iso_dates",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "consistent_date_axis_labels",
+    "category": "formatting",
+    "content": "Use one consistent, compact date format along a time axis (e.g. month abbreviations within a year, year labels at year boundaries) and never mix formats on the same axis.",
+    "action_if_fail": "use_iso_dates",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "currency_symbol_shown_once",
+    "category": "formatting",
+    "content": "Indicate currency clearly but without repetition: put the currency symbol or code in the axis title or first label rather than on every tick, and keep one currency per chart.",
+    "action_if_fail": "add_axis_label",
+    "severity": "info"
+  },
+  {
+    "rule_id": "consistent_units_across_charts",
+    "category": "formatting",
+    "content": "Charts meant to be compared on the same dashboard must use the same units, scales, and value abbreviations, so identical magnitudes look identical everywhere.",
+    "action_if_fail": "normalize_units",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "percent_axis_format",
+    "category": "formatting",
+    "content": "When plotting shares or rates, format values with a percent sign and keep the axis within a sensible 0-100% range; clarify whether changes are percentage points or relative percent.",
+    "action_if_fail": "format_percent",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "legend_near_data_or_top",
+    "category": "formatting",
+    "content": "Place the legend at the top of the chart or directly label series at their line ends; avoid distant legends that force the eye to shuttle back and forth, and omit the legend entirely when there is only one series.",
+    "action_if_fail": "move_legend_top",
+    "severity": "info"
+  },
+  {
+    "rule_id": "default_sum_for_additive_measures",
+    "category": "aggregation",
+    "content": "Default to SUM for additive measures such as revenue, quantity, and cost when grouping by a dimension; sums answer the most common business questions for these fields.",
+    "action_if_fail": "use_sum_aggregation",
+    "severity": "info"
+  },
+  {
+    "rule_id": "average_for_rates_and_levels",
+    "category": "aggregation",
+    "content": "Use AVG (or median) rather than SUM for non-additive measures such as prices, percentages, scores, temperatures, and ratios, where summing produces meaningless totals.",
+    "action_if_fail": "use_avg_aggregation",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "count_for_categorical_and_ids",
+    "category": "aggregation",
+    "content": "For categorical and identifier columns, aggregate with COUNT or COUNT DISTINCT; never sum or average identifier values.",
+    "action_if_fail": "use_count_aggregation",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "never_average_averages",
+    "category": "aggregation",
+    "content": "Never average pre-aggregated averages or percentages across groups of different sizes; recompute the metric from underlying numerator and denominator as a weighted average.",
+    "action_if_fail": "recompute_weighted_average",
+    "severity": "error"
+  },
+  {
+    "rule_id": "top_n_with_other_bucket",
+    "category": "aggregation",
+    "content": "When a dimension has many distinct values, show the top 7-10 by the measure and aggregate the remainder into a single clearly labeled Other bucket.",
+    "action_if_fail": "aggregate_other_bucket",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "time_granularity_matches_range",
+    "category": "aggregation",
+    "content": "Choose time granularity from the date range: daily for spans up to about 90 days, weekly up to about a year, monthly up to about 3 years, and quarterly or yearly beyond that, keeping roughly 12-100 points on the axis.",
+    "action_if_fail": "adjust_time_granularity",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "nulls_are_not_zero",
+    "category": "aggregation",
+    "content": "Do not plot missing or null values as zero; zero is a real measurement, so render nulls as gaps in lines or exclude them from averages, and disclose how many rows were excluded.",
+    "action_if_fail": "handle_nulls_as_gaps",
+    "severity": "error"
+  },
+  {
+    "rule_id": "deduplicate_before_aggregating",
+    "category": "aggregation",
+    "content": "Check for and remove duplicate rows (e.g. repeated transaction IDs) before aggregating, since duplicates silently inflate sums and counts.",
+    "action_if_fail": "deduplicate_rows",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "fill_missing_time_periods",
+    "category": "aggregation",
+    "content": "When aggregating by time, include periods with no data as explicit zero-count or gap entries instead of skipping them, so the time axis stays evenly spaced and trends are not distorted.",
+    "action_if_fail": "fill_time_gaps",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "limit_categories_per_chart",
+    "category": "readability",
+    "content": "Keep a single chart to roughly 10-12 categories at most; beyond that, apply a top-N filter with an Other bucket or switch to a searchable table.",
+    "action_if_fail": "limit_categories",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "truncate_labels_with_tooltip",
+    "category": "readability",
+    "content": "Truncate category labels longer than the available space with an ellipsis and reveal the full text in a tooltip, rather than letting labels overlap or shrink the plot area.",
+    "action_if_fail": "truncate_labels",
+    "severity": "info"
+  },
+  {
+    "rule_id": "avoid_rotated_axis_labels",
+    "category": "readability",
+    "content": "Avoid diagonal or vertical axis labels, which are slow to read; if horizontal labels do not fit, switch to a horizontal bar chart instead.",
+    "action_if_fail": "use_horizontal_bar",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "limit_distinct_colors",
+    "category": "readability",
+    "content": "Use at most 6-8 distinct categorical colors in one chart; with more categories, group values or use a single hue with emphasis on the items that matter.",
+    "action_if_fail": "reduce_color_count",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "colorblind_safe_palette",
+    "category": "readability",
+    "content": "Use a colorblind-safe palette and avoid red-green as the only distinction between series, since roughly 1 in 12 men cannot reliably separate them.",
+    "action_if_fail": "apply_colorblind_palette",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "wcag_contrast_for_chart_elements",
+    "category": "readability",
+    "content": "Meaningful chart elements (bars, lines, points) need at least a 3:1 contrast ratio against the background and against adjacent series, and chart text needs at least 4.5:1, per WCAG.",
+    "action_if_fail": "increase_contrast",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "never_color_alone_for_meaning",
+    "category": "readability",
+    "content": "Never rely on color alone to convey meaning; pair color with direct labels, patterns, markers, or position so the chart works in grayscale and for colorblind users.",
+    "action_if_fail": "add_direct_labels",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "descriptive_title_and_axis_labels",
+    "category": "readability",
+    "content": "Every chart needs a concise descriptive title stating what is measured, over what period, and in what units; label axes unless the meaning is unmistakable from the title and tick labels.",
+    "action_if_fail": "add_axis_label",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "restrained_gridlines_high_data_ink",
+    "category": "readability",
+    "content": "Keep gridlines few, thin, and light gray, and remove decorative borders, backgrounds, shadows, and other non-data ink so the data itself dominates the chart.",
+    "action_if_fail": "reduce_gridlines",
+    "severity": "info"
+  },
+  {
+    "rule_id": "minimum_font_size",
+    "category": "readability",
+    "content": "Keep all chart text at a minimum of about 10-12px on screen; axis labels, legends, and data labels smaller than this are effectively unreadable on dashboards.",
+    "action_if_fail": "increase_font_size",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "prefer_direct_labels_over_legend",
+    "category": "readability",
+    "content": "For line charts with few series, label each line directly at its end instead of using a separate legend, which reduces lookup effort and ambiguity.",
+    "action_if_fail": "add_direct_labels",
+    "severity": "info"
+  },
+  {
+    "rule_id": "no_decorative_chartjunk",
+    "category": "readability",
+    "content": "Do not add decorative images, gradients, skeuomorphic gauges, or animation that carries no data; visual embellishment slows comprehension on dashboards.",
+    "action_if_fail": "remove_decoration",
+    "severity": "info"
+  },
+  {
+    "rule_id": "ils_currency_formatting",
+    "category": "israeli_data",
+    "content": "Format Israeli shekel amounts with the ₪ symbol logically before the number with no space (e.g. ₪1,234.56), per the Academy of the Hebrew Language convention; in RTL Hebrew text this renders visually to the right of the digits.",
+    "action_if_fail": "format_currency_ils",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "israeli_dates_parse_dd_mm",
+    "category": "israeli_data",
+    "content": "Ambiguous slash-separated dates in Israeli datasets (e.g. 03/04/2025) must be parsed as DD/MM/YYYY, never the US MM/DD order, and stored internally as ISO 8601.",
+    "action_if_fail": "use_iso_dates",
+    "severity": "error"
+  },
+  {
+    "rule_id": "israeli_dates_display_dd_mm_yyyy",
+    "category": "israeli_data",
+    "content": "Display dates to Israeli users in DD/MM/YYYY (or D.M.YYYY) format in labels, tooltips, and tables, matching the local convention.",
+    "action_if_fail": "format_date_dd_mm_yyyy",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "preserve_hebrew_column_names",
+    "category": "israeli_data",
+    "content": "Keep Hebrew column names as human-readable chart and axis labels rather than transliterating them; normalize only by trimming whitespace, removing nikud, and unifying final-letter forms for matching.",
+    "action_if_fail": "preserve_hebrew_labels",
+    "severity": "info"
+  },
+  {
+    "rule_id": "rtl_layout_for_hebrew_dashboards",
+    "category": "israeli_data",
+    "content": "When a dashboard's primary language is Hebrew, apply right-to-left layout: titles and legends right-aligned, tooltips and tables RTL, and category axes ordered right-to-left where natural.",
+    "action_if_fail": "apply_rtl_layout",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "numbers_stay_ltr_in_rtl",
+    "category": "israeli_data",
+    "content": "Within RTL Hebrew layouts, numbers, dates, and currency amounts must still render left-to-right with their digit order intact; wrap them in LTR bidi isolation so values like 1,234 or 03/04/2025 are not visually reversed.",
+    "action_if_fail": "isolate_bidi_text",
+    "severity": "error"
+  },
+  {
+    "rule_id": "isolate_mixed_hebrew_english_labels",
+    "category": "israeli_data",
+    "content": "Labels mixing Hebrew with Latin text or symbols (e.g. a Hebrew product name with an English brand or the ₪ sign) must use Unicode bidi isolation marks (LRM/RLM/FSI) so the segments do not reorder incorrectly.",
+    "action_if_fail": "isolate_bidi_text",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "hebrew_capable_fonts",
+    "category": "israeli_data",
+    "content": "Render Hebrew labels with a font that includes Hebrew glyphs (e.g. Noto Sans Hebrew, Heebo, Assistant, Rubik) to avoid tofu boxes or fallback mismatch, and avoid faux italics, which Hebrew typography does not use.",
+    "action_if_fail": "use_hebrew_font",
+    "severity": "info"
+  },
+  {
+    "rule_id": "israeli_week_starts_sunday",
+    "category": "israeli_data",
+    "content": "For Israeli data, weeks start on Sunday and the working week runs Sunday-Thursday; weekly aggregation, calendar heatmaps, and weekday ordering must use Sunday as the first day, with Friday-Saturday as the weekend.",
+    "action_if_fail": "set_week_start_sunday",
+    "severity": "warning"
+  },
+  {
+    "rule_id": "israeli_fiscal_year_is_calendar_year",
+    "category": "israeli_data",
+    "content": "Israel's fiscal and tax year matches the calendar year (January 1 to December 31), so default year-to-date and fiscal-year groupings for Israeli data should use calendar years unless the user specifies otherwise.",
+    "action_if_fail": "use_calendar_fiscal_year",
+    "severity": "info"
+  },
+  {
+    "rule_id": "israeli_ids_phones_are_categorical",
+    "category": "israeli_data",
+    "content": "Detect Israeli phone numbers (10 digits starting 05x or 0x) and 9-digit national ID numbers as categorical string columns, preserving leading zeros and never summing, averaging, or charting them as numeric measures.",
+    "action_if_fail": "treat_as_categorical",
+    "severity": "error"
+  }
+]
