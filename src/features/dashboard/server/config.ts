@@ -1171,7 +1171,11 @@ export async function buildInitialChartConfigs(
 
 // ── KPI generation: LLM-first, heuristic fallback ──
 
-function buildPrimaryKpi(rows: Row[], column: Column): KPIConfig | null {
+// KPI shape before the Apple-widget `size`/`order` geometry is attached
+// (added once, by index, in buildKpiConfigs).
+type KpiDraft = Omit<KPIConfig, "size" | "order">;
+
+function buildPrimaryKpi(rows: Row[], column: Column): KpiDraft | null {
   const values = rows
     .map((row) => toNumber(row[column.name]))
     .filter((value): value is number => value !== null);
@@ -1205,7 +1209,7 @@ function buildPrimaryKpi(rows: Row[], column: Column): KPIConfig | null {
 function buildSecondaryNumericKpi(
   rows: Row[],
   column: Column,
-): KPIConfig | null {
+): KpiDraft | null {
   const values = rows
     .map((row) => toNumber(row[column.name]))
     .filter((value): value is number => value !== null);
@@ -1222,7 +1226,7 @@ function buildSecondaryNumericKpi(
   };
 }
 
-function buildCategoryKpi(rows: Row[], column: Column): KPIConfig | null {
+function buildCategoryKpi(rows: Row[], column: Column): KpiDraft | null {
   const counts = new Map<string, number>();
   for (const row of rows) {
     const raw = row[column.name];
@@ -1253,7 +1257,7 @@ function buildCategoryKpi(rows: Row[], column: Column): KPIConfig | null {
   };
 }
 
-function buildDateRangeKpi(rows: Row[], column: Column): KPIConfig | null {
+function buildDateRangeKpi(rows: Row[], column: Column): KpiDraft | null {
   const dates = rows
     .map((row) => toDate(row[column.name]))
     .filter((value): value is Date => value !== null)
@@ -1276,7 +1280,7 @@ function buildDateRangeKpi(rows: Row[], column: Column): KPIConfig | null {
   };
 }
 
-function buildCountKpi(rows: Row[], column: Column): KPIConfig | null {
+function buildCountKpi(rows: Row[], column: Column): KpiDraft | null {
   if (rows.length === 0) {
     return null;
   }
@@ -1290,7 +1294,7 @@ function buildCountKpi(rows: Row[], column: Column): KPIConfig | null {
   };
 }
 
-function buildPrimaryRowCountKpi(fallbackColumnName: string): KPIConfig {
+function buildPrimaryRowCountKpi(fallbackColumnName: string): KpiDraft {
   return {
     id: "kpi_primary",
     column: fallbackColumnName,
@@ -1301,7 +1305,7 @@ function buildPrimaryRowCountKpi(fallbackColumnName: string): KPIConfig {
   };
 }
 
-function buildFallbackKpis(rows: Row[], columns: Column[]): KPIConfig[] {
+function buildFallbackKpis(rows: Row[], columns: Column[]): KpiDraft[] {
   const primaryNumeric = pickPrimaryNumeric(rows, columns);
   const primaryCategory = pickPrimaryCategory(rows, columns);
   const primaryDate = pickPrimaryDate(columns);
@@ -1312,7 +1316,7 @@ function buildFallbackKpis(rows: Row[], columns: Column[]): KPIConfig[] {
     primaryNumeric ? buildSecondaryNumericKpi(rows, primaryNumeric) : null,
     primaryCategory ? buildCategoryKpi(rows, primaryCategory) : null,
     primaryDate ? buildDateRangeKpi(rows, primaryDate) : null,
-  ].filter((kpi): kpi is KPIConfig => Boolean(kpi));
+  ].filter((kpi): kpi is KpiDraft => Boolean(kpi));
 
   if (!kpis.some((kpi) => kpi.isPrimary)) {
     kpis.unshift(buildPrimaryRowCountKpi(fallbackColumnName));
@@ -1340,7 +1344,7 @@ function buildFallbackKpis(rows: Row[], columns: Column[]): KPIConfig[] {
   return kpis.slice(0, BI_RULE_LIMITS.maxKpis);
 }
 
-function parseKpiSuggestionPayload(text: string): KPIConfig[] | null {
+function parseKpiSuggestionPayload(text: string): KpiDraft[] | null {
   const trimmed = text.trim();
   const start = trimmed.indexOf("{");
   const end = trimmed.lastIndexOf("}");
@@ -1367,7 +1371,7 @@ function parseKpiSuggestionPayload(text: string): KPIConfig[] | null {
     ]);
 
     return parsed.kpis
-      .map((kpi, index): KPIConfig | null => {
+      .map((kpi, index): KpiDraft | null => {
         const column = typeof kpi.column === "string" ? kpi.column : "";
         const aggregation =
           typeof kpi.aggregation === "string" &&
@@ -1396,7 +1400,7 @@ function parseKpiSuggestionPayload(text: string): KPIConfig[] | null {
           isPrimary: index === 0,
         };
       })
-      .filter((kpi): kpi is KPIConfig => Boolean(kpi));
+      .filter((kpi): kpi is KpiDraft => Boolean(kpi));
   } catch {
     return null;
   }
@@ -1405,7 +1409,7 @@ function parseKpiSuggestionPayload(text: string): KPIConfig[] | null {
 async function suggestKpisWithLLM(
   rows: Row[],
   columns: Column[],
-): Promise<KPIConfig[] | null> {
+): Promise<KpiDraft[] | null> {
   const apiKey = getGroqApiKey();
   if (!apiKey) {
     return null;
@@ -1494,8 +1498,10 @@ export async function buildKpiConfigs(
   columns: Column[],
 ): Promise<KPIConfig[]> {
   const suggested = await suggestKpisWithLLM(rows, columns);
-  if (suggested) {
-    return suggested;
-  }
-  return buildFallbackKpis(rows, columns);
+  const drafts = suggested ?? buildFallbackKpis(rows, columns);
+  return drafts.map((kpi, index) => ({
+    ...kpi,
+    size: "medium",
+    order: index,
+  }));
 }

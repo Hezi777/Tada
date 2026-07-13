@@ -566,21 +566,21 @@
   /* Soft pastel mesh surfaces for KPI / feature cards (light). */
   .mesh-blue {
     background:
-      radial-gradient(at 0% 0%, rgba(47, 109, 246, 0.14), transparent 55%),
-      radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.12), transparent 55%),
-      radial-gradient(at 100% 100%, rgba(0, 50, 125, 0.08), transparent 55%),
+      radial-gradient(at 0% 0%, rgba(47, 109, 246, 0.06), transparent 55%),
+      radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.05), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(0, 50, 125, 0.04), transparent 55%),
       #ffffff;
   }
   .mesh-teal {
     background:
-      radial-gradient(at 0% 0%, rgba(20, 184, 166, 0.16), transparent 55%),
-      radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.12), transparent 55%),
+      radial-gradient(at 0% 0%, rgba(20, 184, 166, 0.07), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.05), transparent 55%),
       #ffffff;
   }
   .mesh-violet {
     background:
-      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.16), transparent 55%),
-      radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.12), transparent 55%),
+      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.07), transparent 55%),
+      radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.05), transparent 55%),
       #ffffff;
   }
   /* Deep navy mesh for the primary/anchor card. */
@@ -720,3 +720,112 @@
     opacity: 0;
   }
 }
+
+/* ── Maximal-premium surface system (light + dark, one language) ──────────
+   Accent gradient tokens (brand blue) + the `.premium-card` surface used for
+   widgets across the dashboard: gradient-tinted background, layered soft
+   shadow + accent-tinted glow halo, hairline border. `.glass` is the overlay
+   variant. Glow/gradient live on surfaces & fills only — text keeps the
+   existing WCAG-AA `--color-text-*` tokens in both themes. */
+@layer utilities {
+  :root {
+    --accent-gradient-from: #2f6df6;
+    --accent-gradient-to: #00327d;
+    --premium-glow: rgba(47, 109, 246, 0.16);
+  }
+
+  .dark {
+    --premium-glow: rgba(47, 109, 246, 0.32);
+  }
+
+  .accent-gradient {
+    background: linear-gradient(135deg, var(--accent-gradient-from) 0%, var(--accent-gradient-to) 100%);
+  }
+
+  .text-accent-gradient {
+    background: linear-gradient(135deg, var(--accent-gradient-from) 0%, var(--accent-gradient-to) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Premium widget surface: subtle accent-tinted gradient + hairline border +
+     layered shadow with an accent glow halo (soft colored shadow in light,
+     luminous glow in dark). */
+  .premium-card {
+    position: relative;
+    background:
+      linear-gradient(160deg, rgba(47, 109, 246, 0.05) 0%, transparent 45%),
+      var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.04),
+      0 18px 44px -28px var(--premium-glow),
+      0 14px 36px -18px rgba(16, 24, 40, 0.16);
+  }
+
+  .dark .premium-card {
+    background:
+      linear-gradient(160deg, rgba(47, 109, 246, 0.1) 0%, transparent 50%),
+      var(--color-surface);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      0 0 48px -8px var(--premium-glow),
+      0 16px 44px -18px rgba(0, 0, 0, 0.65);
+  }
+
+  /* Glass overlay surface (sheets, dropdowns, floating chrome). */
+  .glass {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.6));
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--color-border);
+  }
+
+  .dark .glass {
+    background: linear-gradient(180deg, rgba(23, 27, 34, 0.78), rgba(23, 27, 34, 0.6));
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--color-border);
+  }
+
+  /* Spring hover-lift for premium widgets; smooth size-change transition for
+     grid re-flow (col/row span changes). Both respect reduced-motion. */
+  .premium-hover {
+    transition:
+      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      border-color 200ms ease;
+  }
+
+  .premium-hover:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.04),
+      0 26px 60px -28px var(--premium-glow),
+      0 18px 44px -18px rgba(16, 24, 40, 0.22);
+  }
+
+  .dark .premium-hover:hover {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      0 0 64px -8px var(--premium-glow),
+      0 22px 52px -18px rgba(0, 0, 0, 0.7);
+  }
+
+  .premium-transition {
+    transition:
+      grid-column 320ms cubic-bezier(0.4, 0, 0.2, 1),
+      grid-row 320ms cubic-bezier(0.4, 0, 0.2, 1),
+      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .premium-hover,
+    .premium-hover:hover,
+    .premium-transition {
+      transition-duration: 0.01ms;
+      transform: none;
+    }
+  }
+}
+

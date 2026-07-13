@@ -11,6 +11,7 @@ import {
   type DashboardListItem,
   type DeleteChainedFileRequest,
   type GenerateDashboardRequest,
+  type KPIConfig,
   type UpdateDashboardRequest,
   type UploadDashboardResponse,
   type UploadProfileResponse,
@@ -165,6 +166,7 @@ export async function sendChat(input: {
   message: string;
   chartConfigs: ChartConfig[];
   kpis: ChatKpiValue[];
+  focusChartId?: string;
 }): Promise<ChatDashboardResponse> {
   const response = await fetch(`${apiBase}/api/chat`, {
     method: "POST",
@@ -202,6 +204,7 @@ export async function loadLatestDashboard(): Promise<DashboardLoadResponse> {
 export async function persistDashboardCharts(input: {
   datasetId: string;
   charts: ChartConfig[];
+  kpis?: KPIConfig[];
 }): Promise<void> {
   const response = await fetch(`${apiBase}/api/dashboard/charts`, {
     method: "PATCH",

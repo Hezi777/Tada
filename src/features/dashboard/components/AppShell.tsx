@@ -6,36 +6,15 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useLanguage, useTranslation } from "@/shared/i18n";
-import {
-  CircleUserRound,
-  FolderClosed,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Monitor,
-  Moon,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Settings,
-  Sun,
-  X,
-} from "lucide-react";
+import { useLanguage } from "@/shared/i18n";
+import { Menu, Monitor, Moon, Sun, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/shared/ui/tooltip";
 import { Dashboard } from "./Dashboard";
 import FileManager from "./FileManager";
 import { SettingsPanel } from "./SettingsPanel";
 import { FloatingChat } from "./FloatingChat";
-import { logout } from "@/features/auth/server/actions";
+import { Sidebar, type NavTab } from "./Sidebar";
 import { createClient } from "@/shared/lib/supabase/client";
 import { useDashboardStore } from "@/features/dashboard/client/store";
 
@@ -45,7 +24,6 @@ interface AppShellProps {
 }
 
 type ThemeMode = "system" | "light" | "dark";
-type NavTab = "dashboard" | "dashboards" | "settings";
 
 const THEME_STORAGE_KEY = "tada-theme";
 const THEME_EVENT = "tada-theme-change";
@@ -103,52 +81,6 @@ function applyThemeMode(mode: ThemeMode, prefersDark: boolean) {
   root.classList.toggle("dark", isDark);
 }
 
-function NavItem({
-  label,
-  icon,
-  active,
-  collapsed,
-  onClick,
-}: {
-  label: string;
-  icon: ReactNode;
-  active: boolean;
-  collapsed: boolean;
-  onClick: () => void;
-}) {
-  const button = (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-current={active ? "page" : undefined}
-      aria-label={collapsed ? label : undefined}
-      className={`flex h-10 w-full items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)] ${
-        collapsed ? "justify-center px-0" : "px-3"
-      } ${
-        active
-          ? "mesh-navy font-bold text-white shadow-premium"
-          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
-      }`}
-    >
-      <span className={active ? "text-white" : "text-[var(--color-text-muted)]"}>
-        {icon}
-      </span>
-      {collapsed ? null : label}
-    </button>
-  );
-
-  if (!collapsed) {
-    return button;
-  }
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
-    </Tooltip>
-  );
-}
-
 function ThemeToggle({
   themeMode,
   onCycle,
@@ -189,7 +121,6 @@ export function AppShell({
   dashboardContent,
   showFloatingChat = true,
 }: AppShellProps) {
-  const { t } = useTranslation();
   const lang = useLanguage();
   const isRtl = lang === "he";
   // localStorage-backed prefs read via useSyncExternalStore: the server snapshot
@@ -268,240 +199,6 @@ export function AppShell({
     setSidebarOpen(false);
   };
 
-  const renderSidebarContent = (collapsed: boolean) => (
-    <div className="flex h-full flex-col">
-      <div
-        className={`flex h-16 shrink-0 items-center gap-2 ${
-          collapsed ? "justify-center px-2" : "px-5"
-        }`}
-      >
-        <Link
-          href="/"
-          aria-label="Tada home"
-          className="flex items-center gap-2 transition-opacity hover:opacity-80"
-        >
-          <Image
-            src="/tada-logo.svg"
-            alt="Tada"
-            width={32}
-            height={32}
-            priority
-            className="h-8 w-8 shrink-0"
-          />
-          {collapsed ? null : (
-            <span className="text-xl font-black tracking-tight text-[var(--color-text-primary)]">
-              Tada
-            </span>
-          )}
-        </Link>
-
-        {collapsed ? null : (
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            aria-label="Collapse sidebar"
-            title="Collapse sidebar"
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)] ${
-              isRtl ? "mr-auto" : "ml-auto"
-            }`}
-          >
-            <PanelLeftClose className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
-          </button>
-        )}
-      </div>
-
-      {collapsed ? (
-        <div className="flex justify-center px-3 pb-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={toggleCollapsed}
-                aria-label="Expand sidebar"
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
-              >
-                <PanelLeftOpen className={`h-4 w-4 ${isRtl ? "rotate-180" : ""}`} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Expand sidebar</TooltipContent>
-          </Tooltip>
-        </div>
-      ) : null}
-
-      <nav className="flex-1 overflow-y-auto px-3 py-2">
-        {collapsed ? null : (
-          <div className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-            {t("nav.group.workspace")}
-          </div>
-        )}
-        <div className="flex flex-col gap-1">
-          <NavItem
-            label={t("nav.overview")}
-            icon={<LayoutDashboard className="h-4 w-4" />}
-            active={activeTab === "dashboard"}
-            collapsed={collapsed}
-            onClick={() => handleNavigate("dashboard")}
-          />
-          <NavItem
-            label={t("nav.files")}
-            icon={<FolderClosed className="h-4 w-4" />}
-            active={activeTab === "dashboards"}
-            collapsed={collapsed}
-            onClick={() => handleNavigate("dashboards")}
-          />
-        </div>
-
-        {collapsed ? (
-          <div className="my-3 border-t border-[var(--color-border)]" />
-        ) : (
-          <div className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-            {t("nav.group.account")}
-          </div>
-        )}
-        <div className="flex flex-col gap-1">
-          <NavItem
-            label={t("nav.settings")}
-            icon={<Settings className="h-4 w-4" />}
-            active={activeTab === "settings"}
-            collapsed={collapsed}
-            onClick={() => handleNavigate("settings")}
-          />
-        </div>
-      </nav>
-
-      <div className="shrink-0 border-t border-[var(--color-border)] p-3">
-        {collapsed ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/pricing"
-                aria-label={t("shell.beta")}
-                className="mesh-teal shadow-premium flex items-center justify-center rounded-xl p-3 transition hover:opacity-90"
-              >
-                <span className="inline-flex items-center rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[11px] font-bold text-white">
-                  {t("shell.beta")}
-                </span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">{t("shell.betaNote")}</TooltipContent>
-          </Tooltip>
-        ) : (
-          <Link
-            href="/pricing"
-            className="mesh-teal shadow-premium block rounded-xl p-3 transition hover:opacity-90"
-          >
-            <span className="inline-flex items-center rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[11px] font-bold text-white">
-              {t("shell.beta")}
-            </span>
-            <p className="mt-2 text-xs font-medium text-[var(--color-text-secondary)]">
-              {t("shell.betaNote")}
-            </p>
-          </Link>
-        )}
-
-        <div
-          className={`mt-3 flex items-center gap-2 ${
-            collapsed ? "flex-col" : "px-1"
-          }`}
-        >
-          {collapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => handleNavigate("settings")}
-                  aria-label="Open settings"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-card text-[var(--color-text-secondary)] shadow-[0_8px_24px_rgba(25,28,30,0.06)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
-                >
-                  {avatarUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={avatarUrl}
-                      alt="Your profile"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <CircleUserRound className="h-5 w-5" />
-                  )}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                {userEmail ?? t("nav.settings")}
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <button
-              type="button"
-              onClick={() => handleNavigate("settings")}
-              aria-label="Open settings"
-              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-card text-[var(--color-text-secondary)] shadow-[0_8px_24px_rgba(25,28,30,0.06)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
-            >
-              {avatarUrl ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={avatarUrl}
-                  alt="Your profile"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <CircleUserRound className="h-5 w-5" />
-              )}
-            </button>
-          )}
-
-          {collapsed ? null : (
-            <span className="min-w-0 flex-1 truncate text-xs text-[var(--color-text-secondary)]">
-              {userEmail ?? ""}
-            </span>
-          )}
-
-          {collapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <form action={logout}>
-                  <Button
-                    type="submit"
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
-                    aria-label="Logout"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </form>
-              </TooltipTrigger>
-              <TooltipContent side="right">Logout</TooltipContent>
-            </Tooltip>
-          ) : (
-            <form action={logout}>
-              <Button
-                type="submit"
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
-                aria-label="Logout"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </form>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  const sidebarContent = (
-    <TooltipProvider delayDuration={150}>
-      {renderSidebarContent(collapsed)}
-    </TooltipProvider>
-  );
-
-  const mobileSidebarContent = (
-    <TooltipProvider delayDuration={150}>
-      {renderSidebarContent(false)}
-    </TooltipProvider>
-  );
-
   return (
     <div className="h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text-primary)]">
       {/* Desktop sidebar */}
@@ -514,7 +211,15 @@ export function AppShell({
             : "left-0 border-r border-[var(--color-border)]"
         }`}
       >
-        {sidebarContent}
+        <Sidebar
+          activeTab={activeTab}
+          onNavigate={handleNavigate}
+          collapsed={collapsed}
+          onToggleCollapsed={toggleCollapsed}
+          isRtl={isRtl}
+          avatarUrl={avatarUrl}
+          userEmail={userEmail}
+        />
       </aside>
 
       {/* Mobile/tablet sidebar drawer */}
@@ -566,7 +271,15 @@ export function AppShell({
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-              {mobileSidebarContent}
+              <Sidebar
+                activeTab={activeTab}
+                onNavigate={handleNavigate}
+                collapsed={false}
+                onToggleCollapsed={toggleCollapsed}
+                isRtl={isRtl}
+                avatarUrl={avatarUrl}
+                userEmail={userEmail}
+              />
             </motion.aside>
           </>
         ) : null}

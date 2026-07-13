@@ -156,8 +156,24 @@ export const KPIConfigSchema = z.object({
   label: z.string().min(1),
   description: z.string().min(1),
   isPrimary: z.boolean(),
+  // Apple-widget geometry: size preset + order in the unified widget list.
+  size: ChartSizeSchema.default("medium"),
+  order: z.number().int().nonnegative().default(0),
 });
 export type KPIConfig = z.infer<typeof KPIConfigSchema>;
+
+/** Backfill `size`/`order` for KPI configs persisted before the
+ * Apple-widget canvas (geometry now lives in these two fields only). */
+export function normalizeKpiConfig(
+  kpi: Omit<KPIConfig, "size" | "order"> & Partial<Pick<KPIConfig, "size" | "order">>,
+  index = 0,
+): KPIConfig {
+  return {
+    ...kpi,
+    size: kpi.size ?? "medium",
+    order: kpi.order ?? index,
+  };
+}
 
 export const ChatKpiValueSchema = z.object({
   id: z.string().min(1),
@@ -232,6 +248,7 @@ export const ChatDashboardRequestSchema = z.object({
   message: z.string().min(1),
   chartConfigs: z.array(ChartConfigSchema),
   kpis: z.array(ChatKpiValueSchema),
+  focusChartId: z.string().min(1).optional(),
 });
 export type ChatDashboardRequest = z.infer<typeof ChatDashboardRequestSchema>;
 

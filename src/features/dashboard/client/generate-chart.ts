@@ -70,3 +70,48 @@ export async function generateChartFromPrompt(
 
   return { assistantMessage: response.assistantMessage, added: false };
 }
+
+export type UpdateChartResult = {
+  assistantMessage: string;
+  updated: boolean;
+};
+
+/**
+ * Ask the AI to rewrite a single existing chart in place from a natural-
+ * language prompt (the pencil "edit chart" flow). Targets the chart via
+ * focusChartId so the LLM returns an "update" patch for that chart only.
+ */
+export async function updateChartFromPrompt(
+  chartId: string,
+  message: string,
+): Promise<UpdateChartResult> {
+  const state = getDashboardStoreState();
+  if (!state.datasetId) {
+    throw new Error("no_dataset");
+  }
+
+  const liveKpis: ChatKpiValue[] = state.kpis.map((kpi) => ({
+    id: kpi.id,
+    column: kpi.column,
+    aggregation: kpi.aggregation,
+    label: kpi.label,
+    isPrimary: kpi.isPrimary,
+    value: computeKpiValue(kpi, state.rows),
+  }));
+
+  const response = await sendChat({
+    datasetId: state.datasetId,
+    message,
+    chartConfigs: state.charts,
+    kpis: liveKpis,
+    focusChartId: chartId,
+  });
+
+  if (response.patch?.action === "update" && response.patch.chartId === chartId) {
+    applyChatbotPatch(response.patch);
+    emitChartReveal(chartId);
+    return { assistantMessage: response.assistantMessage, updated: true };
+  }
+
+  return { assistantMessage: response.assistantMessage, updated: false };
+}
