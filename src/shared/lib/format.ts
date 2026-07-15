@@ -104,5 +104,7 @@ export function truncateLabel(label: string, maxLength = 14): string {
   if (label.length <= maxLength) {
     return label;
   }
-  return `${label.slice(0, maxLength - 1)}…`;
+  // Truncate at the logical end and bidi-isolate the result so the ellipsis
+  // renders on the correct visual side of RTL/mixed-direction labels.
+  return bidiIsolate(`${label.slice(0, maxLength - 1)}…`);
 }
