@@ -1,8 +1,7 @@
 import { CartesianGrid, Scatter, ScatterChart, XAxis, YAxis } from "recharts";
-import type { SerializedRow } from "@/shared/contracts";
+import type { ChartConfig, SerializedRow } from "@/shared/contracts";
 import { ChartContainer, ChartTooltip } from "@/shared/ui/chart";
 import { buildScatterSeries } from "@/features/dashboard/client/runtime";
-import type { LayoutItem } from "@/features/dashboard/client/layout";
 import { ChartEmptyState } from "./ChartEmptyState";
 import {
   buildScatterChartConfig,
@@ -77,15 +76,26 @@ function ScatterTooltip({
 }
 
 type ScatterChartViewProps = {
-  chart: LayoutItem;
+  chart: ChartConfig;
   rows: SerializedRow[];
-  /** When true, disables Recharts animation (e.g. while dragging/resizing). */
+  /** Fixed plot box (grid.ts chartPlotBox) — never measured. Scatter
+   * supports large/xlarge only (docs/WIDGET_SIZING.md §2), and the two
+   * classes share this one view; only the plot box differs. */
+  width: number;
+  height: number;
+  /** When true, disables Recharts animation (e.g. while dragging). */
   isInteracting?: boolean;
 };
 
 /** Scatter plot with clean accent-filled dots (subtle radial gradient), no
  * glow. */
-export function ScatterChartView({ chart, rows, isInteracting = false }: ScatterChartViewProps) {
+export function ScatterChartView({
+  chart,
+  rows,
+  width,
+  height,
+  isInteracting = false,
+}: ScatterChartViewProps) {
   const series = buildScatterSeries(chart, rows);
   if (series.length === 0) {
     return <ChartEmptyState />;
@@ -102,7 +112,9 @@ export function ScatterChartView({ chart, rows, isInteracting = false }: Scatter
   return (
     <ChartContainer
       config={chartConfig}
-      className="h-full min-h-[160px] w-full rounded-[20px] bg-card"
+      width={width}
+      height={height}
+      className="rounded-[20px] bg-card"
     >
       <ScatterChart margin={CARTESIAN_MARGIN}>
         <defs>

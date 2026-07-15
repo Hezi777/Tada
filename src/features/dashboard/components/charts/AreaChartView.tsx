@@ -1,12 +1,11 @@
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import type { SerializedRow } from "@/shared/contracts";
+import type { ChartConfig, SerializedRow } from "@/shared/contracts";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/shared/ui/chart";
 import { buildAreaSeries } from "@/features/dashboard/client/runtime";
-import type { LayoutItem } from "@/features/dashboard/client/layout";
 import { ChartEmptyState } from "./ChartEmptyState";
 import {
   buildValueChartConfig,
@@ -27,23 +26,35 @@ import {
   GRADIENT_PRIMARY_STOPS,
   Y_AXIS_WIDTH,
   gradientId,
+  type ChartRenderClass,
 } from "./chart-theme";
 
 type AreaChartViewProps = {
-  chart: LayoutItem;
+  chart: ChartConfig;
   rows: SerializedRow[];
+  /** Render class — Small never reaches this view (headline substitution).
+   * Medium renders the axis-free sparkline view with first/last x labels. */
+  size: ChartRenderClass;
+  /** Fixed plot box (grid.ts chartPlotBox) — never measured. */
+  width: number;
+  height: number;
   /** Optional muted dashed "previous period" series, keyed by the same
    * `label` as the primary series. Off by default. */
   comparisonSeries?: Array<{ label: string; value: number }>;
-  /** When true, disables Recharts animation (e.g. while dragging/resizing). */
+  /** When true, disables Recharts animation (e.g. while dragging). */
   isInteracting?: boolean;
 };
 
 /** Area chart with a soft gradient fill under a single accent stroke, plus
- * an optional muted dashed comparison line. */
+ * an optional muted dashed comparison line. The medium view is a sparkline:
+ * no y-axis, no gridlines, x labels at the first and last points only
+ * (degradation contract, docs/WIDGET_SIZING.md §5). */
 export function AreaChartView({
   chart,
   rows,
+  size,
+  width,
+  height,
   comparisonSeries,
   isInteracting = false,
 }: AreaChartViewProps) {
@@ -54,8 +65,10 @@ export function AreaChartView({
 
   const chartConfig = buildValueChartConfig(metricLabel(chart));
   const currency = chartCurrency(chart);
+  const isSparkline = size === "medium";
   const fillGradientId = gradientId(chart.id, "area-fill");
   const glowFilterId = gradientId(chart.id, "area-glow");
+  const endpointTicks = [series[0].label, series[series.length - 1].label];
 
   const data = comparisonSeries
     ? series.map((entry) => {
@@ -69,7 +82,9 @@ export function AreaChartView({
   return (
     <ChartContainer
       config={chartConfig}
-      className="h-full min-h-[160px] w-full rounded-[20px] bg-card"
+      width={width}
+      height={height}
+      className="rounded-[20px] bg-card"
     >
       <AreaChart data={data} margin={CARTESIAN_MARGIN}>
         <defs>
@@ -100,26 +115,32 @@ export function AreaChartView({
             />
           </filter>
         </defs>
-        <CartesianGrid vertical={false} stroke={CHART_GRID_COLOR} />
+        {isSparkline ? null : (
+          <CartesianGrid vertical={false} stroke={CHART_GRID_COLOR} />
+        )}
         <XAxis
           dataKey="label"
           axisLine={false}
           tickLine={false}
           fontSize={11}
-          tickMargin={10}
+          tickMargin={isSparkline ? 4 : 10}
           minTickGap={20}
+          ticks={isSparkline ? endpointTicks : undefined}
+          interval={isSparkline ? 0 : undefined}
           tickFormatter={formatAxisValue}
           stroke={CHART_AXIS_COLOR}
         />
-        <YAxis
-          axisLine={false}
-          tickLine={false}
-          fontSize={11}
-          tickMargin={10}
-          width={Y_AXIS_WIDTH}
-          tickFormatter={(value: number) => formatAxisValue(value, currency)}
-          stroke={CHART_AXIS_COLOR}
-        />
+        {isSparkline ? null : (
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            fontSize={11}
+            tickMargin={10}
+            width={Y_AXIS_WIDTH}
+            tickFormatter={(value: number) => formatAxisValue(value, currency)}
+            stroke={CHART_AXIS_COLOR}
+          />
+        )}
         <ChartTooltip
           cursor={false}
           content={

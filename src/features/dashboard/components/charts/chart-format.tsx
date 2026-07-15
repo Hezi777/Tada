@@ -1,4 +1,4 @@
-import type { LayoutItem } from "@/features/dashboard/client/layout";
+import type { ChartConfig } from "@/shared/contracts";
 import { formatNumber as legacyFormatNumber } from "@/features/dashboard/client/runtime";
 import {
   abbreviateNumber,
@@ -33,10 +33,12 @@ export function formatMetric(
 }
 
 /** Formats an axis tick: currency/number abbreviation for numbers, Israeli
- * DD/MM date conventions for ISO date/month strings. */
+ * DD/MM date conventions for ISO date/month strings. `maxChars` is the
+ * size-class truncation budget for category labels (LABEL_TRUNCATION). */
 export function formatAxisValue(
   value: string | number,
   currency: string | null = null,
+  maxChars = 18,
 ): string {
   if (typeof value === "number") {
     return currency ? formatCurrency(value, currency, true) : abbreviateNumber(value);
@@ -53,7 +55,7 @@ export function formatAxisValue(
     return ltrIsolate(`${month}/${year.slice(2)}`);
   }
 
-  return truncateLabel(value, 18);
+  return truncateLabel(value, maxChars);
 }
 
 export function buildValueChartConfig(label: string): ChartPrimitiveConfig {
@@ -66,7 +68,7 @@ export function buildValueChartConfig(label: string): ChartPrimitiveConfig {
 }
 
 /** The measure a chart aggregates, for tooltip labels. */
-export function metricLabel(chart: LayoutItem): string {
+export function metricLabel(chart: ChartConfig): string {
   const measure =
     chart.columns.find(
       (column) => column !== chart.groupBy && column !== chart.timeColumn,
@@ -82,7 +84,7 @@ export function metricLabel(chart: LayoutItem): string {
 
 /** The currency symbol for the chart's aggregated measure, or null when the
  * measure isn't money. Symbol comes from the column name; defaults to $. */
-export function chartCurrency(chart: LayoutItem): string | null {
+export function chartCurrency(chart: ChartConfig): string | null {
   const measure =
     chart.columns.find(
       (column) => column !== chart.groupBy && column !== chart.timeColumn,
@@ -104,7 +106,7 @@ export function columnCurrency(name: string): string | null {
   return detectCurrencySymbol(name) ?? "$";
 }
 
-export function buildScatterChartConfig(chart: LayoutItem): ChartPrimitiveConfig {
+export function buildScatterChartConfig(chart: ChartConfig): ChartPrimitiveConfig {
   return {
     x: {
       label: chart.columns[0] ?? "X",

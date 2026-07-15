@@ -2,11 +2,16 @@ import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import { GripVertical, Pencil } from "lucide-react";
 import type { DraggableAttributes } from "@dnd-kit/core";
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
-import type { SerializedRow } from "@/shared/contracts";
+import type { ChartConfig, SerializedRow } from "@/shared/contracts";
+import { clampToSupportedSize } from "@/shared/contracts";
 
 import { Badge } from "@/shared/ui/badge";
-import { Card, CardContent, CardHeader } from "@/shared/ui/card";
-import type { LayoutItem } from "@/features/dashboard/client/layout";
+import { Card } from "@/shared/ui/card";
+import {
+  chartPlotBox,
+  resolveRenderClass,
+  type CanvasTier,
+} from "@/features/dashboard/client/grid";
 import {
   consumeRecentReveal,
   onChartReveal,
@@ -20,10 +25,19 @@ import { AreaChartView } from "./charts/AreaChartView";
 import { BarChartView } from "./charts/BarChartView";
 import { DonutChartView } from "./charts/DonutChartView";
 import { ScatterChartView } from "./charts/ScatterChartView";
+import { ChartEmptyState } from "./charts/ChartEmptyState";
+import {
+  ChartHeadline,
+  computeChartHeadline,
+} from "./charts/ChartHeadline";
+import type { ChartRenderClass } from "./charts/chart-theme";
 
 type DashboardChartCardProps = {
-  chart: LayoutItem;
+  chart: ChartConfig;
   rows: SerializedRow[];
+  /** Canvas tier from the trait resolver — every dimension below is a
+   * constant lookup (docs/WIDGET_SIZING.md §3). */
+  tier: CanvasTier;
   isEditing?: boolean;
   isInteracting?: boolean;
   /** Drag-handle props from `useSortable`, spread onto the drag handle. */
@@ -31,37 +45,79 @@ type DashboardChartCardProps = {
     attributes?: DraggableAttributes;
     listeners?: SyntheticListenerMap;
   };
-  /** S/M/L size control rendered in the edit-mode chrome, next to the pencil. */
+  /** Size-class control rendered in the edit-mode chrome, next to the pencil. */
   sizeControl?: ReactNode;
 };
 
-const DashboardChartContent = memo(function DashboardChartContent({
+function DashboardChartContent({
   chart,
   rows,
+  size,
+  width,
+  height,
   isInteracting,
 }: {
-  chart: LayoutItem;
+  chart: ChartConfig;
   rows: SerializedRow[];
+  size: ChartRenderClass;
+  width: number;
+  height: number;
   isInteracting: boolean;
 }) {
   if (chart.type === "area") {
-    return <AreaChartView chart={chart} rows={rows} isInteracting={isInteracting} />;
+    return (
+      <AreaChartView
+        chart={chart}
+        rows={rows}
+        size={size}
+        width={width}
+        height={height}
+        isInteracting={isInteracting}
+      />
+    );
   }
 
   if (chart.type === "scatter") {
-    return <ScatterChartView chart={chart} rows={rows} isInteracting={isInteracting} />;
+    return (
+      <ScatterChartView
+        chart={chart}
+        rows={rows}
+        width={width}
+        height={height}
+        isInteracting={isInteracting}
+      />
+    );
   }
 
   if (chart.type === "donut") {
-    return <DonutChartView chart={chart} rows={rows} isInteracting={isInteracting} />;
+    return (
+      <DonutChartView
+        chart={chart}
+        rows={rows}
+        size={size === "xlarge" ? "large" : size}
+        width={width}
+        height={height}
+        isInteracting={isInteracting}
+      />
+    );
   }
 
-  return <BarChartView chart={chart} rows={rows} isInteracting={isInteracting} />;
-});
+  return (
+    <BarChartView
+      chart={chart}
+      rows={rows}
+      size={size}
+      width={width}
+      height={height}
+      isInteracting={isInteracting}
+    />
+  );
+}
 
 const DashboardChartCard = memo(function DashboardChartCard({
   chart,
   rows,
+  tier,
   isEditing = false,
   isInteracting = false,
   dragHandleProps,
@@ -121,36 +177,77 @@ const DashboardChartCard = memo(function DashboardChartCard({
     };
   }, [chart.id]);
 
+  // Defensive clamp: persisted configs predating the size-class model may
+  // hold a class this type doesn't support.
+  const size = clampToSupportedSize(chart.type, chart.size);
+  const renderClass = resolveRenderClass(size, tier);
+
+  let body: ReactNode;
+  if (renderClass === "small") {
+    // The Small class renders the chart's headline number as a KPI —
+    // never a miniature chart (docs/WIDGET_SIZING.md §4).
+    const headline = computeChartHeadline(chart, rows);
+    body = (
+      <div className="flex h-full min-h-0 flex-col px-6 pb-5 pt-5">
+        <p className="line-clamp-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
+          {chart.title}
+        </p>
+        {headline ? <ChartHeadline headline={headline} /> : <ChartEmptyState />}
+      </div>
+    );
+  } else {
+    const plot = chartPlotBox(size as Exclude<typeof size, "small">, tier);
+    const isCompact = renderClass === "medium";
+    body = (
+      <div className="flex h-full min-h-0 flex-col px-6 pb-5 pt-4">
+        {isCompact ? (
+          <h3 className="line-clamp-1 font-display text-[15px] font-extrabold leading-snug tracking-[-0.01em] text-[var(--color-text-primary)]">
+            {chart.title}
+          </h3>
+        ) : (
+          <div className="flex flex-row items-start justify-between gap-3 pt-2">
+            <div className="min-w-0">
+              <h3 className="line-clamp-2 font-display text-[17px] font-extrabold leading-snug tracking-[-0.01em] text-[var(--color-text-primary)]">
+                {chart.title}
+              </h3>
+              <p className="mt-1 line-clamp-1 text-[12px] leading-snug text-[var(--color-text-secondary)]">
+                {chart.insight}
+              </p>
+            </div>
+            <div className="flex items-center gap-1">
+              {chart.pinned ? (
+                <Badge className="rounded-full border-0 bg-[var(--color-surface-muted)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]">
+                  pinned
+                </Badge>
+              ) : null}
+              <Badge className="rounded-full border border-[var(--color-border)] bg-transparent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)] hover:bg-transparent">
+                {chart.type}
+              </Badge>
+            </div>
+          </div>
+        )}
+        <div className="mt-auto overflow-hidden">
+          <DashboardChartContent
+            chart={chart}
+            rows={rows}
+            size={renderClass as ChartRenderClass}
+            width={plot.width}
+            height={plot.height}
+            isInteracting={isInteracting}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Card
-      className={`premium-card premium-hover @container relative flex h-full flex-col overflow-hidden rounded-[20px] p-0 ${
+      className={`premium-card premium-hover relative flex h-full flex-col overflow-hidden rounded-[20px] p-0 ${
         isEditing ? "border-dashed border-[var(--color-accent)]/40" : ""
       }`}
       data-chart-card={chart.id}
     >
-      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-6 pb-0 pt-6">
-        <div className="min-w-0">
-          <h3 className="line-clamp-2 font-display text-[17px] font-extrabold leading-snug tracking-[-0.01em] text-[var(--color-text-primary)]">
-            {chart.title}
-          </h3>
-          <p className="mt-1 hidden line-clamp-2 text-[12px] leading-snug text-[var(--color-text-secondary)] @sm:block">
-            {chart.insight}
-          </p>
-        </div>
-        <div className="flex items-center gap-1">
-          {chart.pinned ? (
-            <Badge className="rounded-full border-0 bg-[var(--color-surface-muted)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]">
-              pinned
-            </Badge>
-          ) : null}
-          <Badge className="rounded-full border border-[var(--color-border)] bg-transparent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)] hover:bg-transparent">
-            {chart.type}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-4">
-        <DashboardChartContent chart={chart} rows={rows} isInteracting={isInteracting} />
-      </CardContent>
+      {body}
       {isRevealing ? (
         <div
           aria-hidden="true"

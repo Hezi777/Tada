@@ -79,8 +79,53 @@ export const CHART_GLOW_OPACITY = 0.35;
  * this count, fall back to gap-based tick thinning. */
 export const LOW_CARDINALITY_THRESHOLD = 6;
 
-/** Donut ring radii as percentages of the container's bounding box. Recharts
- * resolves these against the rendered <ResponsiveContainer> size on every
- * layout pass, so the ring always fits without needing a ResizeObserver. */
-export const DONUT_OUTER_RADIUS = "85%";
-export const DONUT_INNER_RADIUS = "62%";
+// ── Size-class constants (docs/WIDGET_SIZING.md) ──
+// Chart render classes are medium/large/xlarge; `small` renders a headline
+// (KPI) substitution and never reaches these tables.
+
+export type ChartRenderClass = "medium" | "large" | "xlarge";
+
+/** Fixed donut ring radii in px per render class — never derived from the
+ * container. Floors: outer Ø ≥ 96px, inner Ø ≥ 56px for a center label. */
+export const DONUT_RADII: Record<
+  "medium" | "large",
+  { outer: number; inner: number }
+> = {
+  medium: { outer: 48, inner: 30 },
+  // Ø160 leaves two fixed chip-legend rows inside the large plot box (232px).
+  large: { outer: 80, inner: 50 },
+};
+
+/** Bar thickness cap per render class (replaces the fluid colSpan-derived
+ * cap); the floor everywhere is 8px. */
+export const MAX_BAR_SIZE: Record<ChartRenderClass, number> = {
+  medium: 32,
+  large: 48,
+  xlarge: 56,
+};
+
+/** Bar category budgets per render class: KEPT categories (an Other bucket
+ * adds one more when the data exceeds the budget), per the degradation
+ * contract: reduce data, never shrink text. */
+export const BAR_CATEGORY_BUDGET: Record<
+  ChartRenderClass,
+  { vertical: number; horizontal: number }
+> = {
+  medium: { vertical: 5, horizontal: 3 },
+  large: { vertical: 8, horizontal: 8 },
+  xlarge: { vertical: 12, horizontal: 12 },
+};
+
+/** Donut slice budgets (incl. the Other bucket). */
+export const DONUT_SLICE_BUDGET: Record<"medium" | "large", number> = {
+  medium: 5, // ring + top-3 label rows: 4 + Other
+  large: 6, // BI_RULE_LIMITS.maxDonutSegments
+};
+
+/** Category-label truncation budgets (chars) per render class; full text
+ * always available in the tooltip. Bidi-safe via `truncateLabel`. */
+export const LABEL_TRUNCATION: Record<ChartRenderClass, number> = {
+  medium: 12,
+  large: 22,
+  xlarge: 22,
+};

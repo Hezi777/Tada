@@ -21,7 +21,7 @@ import {
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
-import { Area, AreaChart, ResponsiveContainer } from "recharts";
+import { Area, AreaChart } from "recharts";
 import {
   DndContext,
   type DragEndEvent,
@@ -40,6 +40,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { ChartConfig, ChartSize, KPIConfig, SerializedRow } from "@/shared/contracts";
+import { supportsSize } from "@/shared/contracts";
 import type { CategoricalChartSeries, KpiTrend } from "@/features/dashboard/client/runtime";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -53,8 +54,16 @@ import {
   hasRenderableChartData,
   isChartVisible,
 } from "@/features/dashboard/client/runtime";
-import { calculateLayout, type LayoutItem } from "@/features/dashboard/client/layout";
-import { spanClassesFor, widgetType } from "@/features/dashboard/client/grid";
+import {
+  GRID_GAP,
+  ROW_UNIT,
+  TIERS,
+  widgetDimensions,
+  widgetSpans,
+  widgetType,
+  type CanvasTier,
+} from "@/features/dashboard/client/grid";
+import { useCanvasTier } from "@/features/dashboard/client/use-canvas-tier";
 import {
   promoteHiddenChart,
   removeChart,
@@ -260,10 +269,19 @@ const BIDI_MARKS = /[⁦⁧⁨⁩]/g;
  * Pick a KPI value font size by ROLE (primary vs secondary), not string
  * length. The primary KPI is the largest (top-left, F-pattern); secondary
  * KPIs are smaller. Very long values still step down a size so they don't
- * overflow the card.
+ * overflow the card. The small size class caps everything a step lower —
+ * a 1×1 cell can't host display sizes.
  */
-function kpiValueSizeClass(value: string | number, isPrimary: boolean): string {
+function kpiValueSizeClass(
+  value: string | number,
+  isPrimary: boolean,
+  isSmall = false,
+): string {
   const visibleLength = String(value).replace(BIDI_MARKS, "").length;
+  if (isSmall) {
+    const base = "display-number font-black tracking-tight tabular-nums";
+    return visibleLength > 9 ? `${base} text-2xl` : `${base} text-3xl`;
+  }
   if (isPrimary) {
     // Primary sits beside the hero illustration in a narrow card, so the value
     // steps down by length to stay on one line without overlapping the art.
@@ -278,31 +296,43 @@ function kpiValueSizeClass(value: string | number, isPrimary: boolean): string {
 /** Brand-blue accent used for the sparkline stroke + gradient fill. */
 const KPI_SPARKLINE_ACCENT = "#2f6df6";
 
-function KpiSparkline({ data }: { data: CategoricalChartSeries }) {
+/** Fixed sparkline strip height inside medium/large KPI cards. */
+const KPI_SPARKLINE_HEIGHT = 40;
+
+function KpiSparkline({
+  data,
+  width,
+  height,
+}: {
+  data: CategoricalChartSeries;
+  width: number;
+  height: number;
+}) {
   const gradientId = `kpi-sparkline-${data.length}-${data[0]?.label ?? "x"}`;
 
   return (
-    <div className="h-10 w-full sm:h-14">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={KPI_SPARKLINE_ACCENT} stopOpacity={0.25} />
-              <stop offset="100%" stopColor={KPI_SPARKLINE_ACCENT} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <Area
-            type="monotone"
-            dataKey="value"
-            stroke={KPI_SPARKLINE_ACCENT}
-            strokeWidth={2}
-            fill={`url(#${gradientId})`}
-            dot={false}
-            isAnimationActive={false}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+    <AreaChart
+      data={data}
+      width={width}
+      height={height}
+      margin={{ top: 2, right: 0, left: 0, bottom: 0 }}
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={KPI_SPARKLINE_ACCENT} stopOpacity={0.25} />
+          <stop offset="100%" stopColor={KPI_SPARKLINE_ACCENT} stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      <Area
+        type="monotone"
+        dataKey="value"
+        stroke={KPI_SPARKLINE_ACCENT}
+        strokeWidth={2}
+        fill={`url(#${gradientId})`}
+        dot={false}
+        isAnimationActive={false}
+      />
+    </AreaChart>
   );
 }
 
@@ -333,6 +363,8 @@ export function KpiCard({
   meshClassName = "mesh-navy",
   trend,
   chrome,
+  size = "medium",
+  tier = "t4",
 }: {
   key?: Key;
   icon: LucideIcon;
@@ -344,56 +376,109 @@ export function KpiCard({
   trend: KpiTrend | null;
   /** Edit-mode chrome (drag handle + size control), rendered top-right. */
   chrome?: React.ReactNode;
+  /** Size class selects the VIEW (docs/WIDGET_SIZING.md §5), it never
+   * scales one: small = value+label(+delta) stack, medium = landscape with
+   * a side sparkline, large = rich stack with full-width sparkline,
+   * breakdown row, and (primary only) the hero illustration. */
+  size?: ChartSize;
+  tier?: CanvasTier;
 }) {
   const displayValue = formatMetric(value);
   const illustrationSrc = resolveIllustrationForIcon(Icon);
+  const cardWidth = widgetDimensions(size, tier).width;
 
-  if (isPrimary) {
+  const surfaceClass = isPrimary
+    ? `border-0 shadow-premium ${meshClassName} text-white`
+    : "premium-card text-[var(--color-text-primary)]";
+  const iconBoxClass = isPrimary
+    ? "bg-white/10 text-white"
+    : "bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)] dark:bg-white/10";
+  const valueColor = isPrimary ? "text-white" : "text-[var(--color-text-primary)]";
+  const labelColor = isPrimary ? "text-white/70" : "text-[var(--color-text-secondary)]";
+
+  const statusBadge = trend ? (
+    <KpiDeltaBadge deltaPct={trend.deltaPct} />
+  ) : (
+    <span
+      className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+        isPrimary
+          ? "bg-white/10 text-white/80"
+          : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
+      }`}
+    >
+      {eyebrow}
+    </span>
+  );
+
+  if (size === "small") {
+    // 1×1: icon + delta row, value, one-line label. Nothing else fits — and
+    // nothing else should.
     return (
       <Card
-        className={`dashboard-hover premium-hover @container relative h-full overflow-hidden rounded-[20px] border-0 shadow-premium ${meshClassName} text-white`}
+        className={`dashboard-hover premium-hover relative h-full overflow-hidden rounded-[20px] ${surfaceClass}`}
       >
         {chrome}
-        <CardContent className="relative flex h-full min-h-[184px] flex-col justify-between overflow-hidden p-5">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
-            <Icon className="h-5 w-5" strokeWidth={2.25} />
+        <CardContent className="relative flex h-full flex-col justify-between overflow-hidden p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconBoxClass}`}
+            >
+              <Icon className="h-4 w-4" strokeWidth={2.25} />
+            </div>
+            {statusBadge}
           </div>
+          <div>
+            <div
+              className={`truncate ${kpiValueSizeClass(displayValue, isPrimary, true)} ${valueColor}`}
+            >
+              {displayValue}
+            </div>
+            <p className={`mt-1 truncate text-xs font-semibold leading-snug ${labelColor}`}>
+              {label}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-          {/* Value and illustration share a row (illustration is in-flow and
-              shrink-0) so the number can never overlap the art; the value steps
-              its font size down by length to fit the remaining width. The label
-              gets its own full-width row below so it is never truncated. */}
-          <div className="mt-4">
-            <div className="flex items-end justify-between gap-2">
+  if (size === "medium") {
+    // 2×1 landscape: value+label on the reading-start side, fixed-size
+    // sparkline beside them. The old vertical stack overflowed the 160px row
+    // (the min-h-[184px] clip this view replaces).
+    const sparklineWidth = Math.floor((cardWidth - 40) * 0.45);
+    return (
+      <Card
+        className={`dashboard-hover premium-hover relative h-full overflow-hidden rounded-[20px] ${surfaceClass}`}
+      >
+        {chrome}
+        <CardContent className="relative flex h-full flex-col justify-between overflow-hidden p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconBoxClass}`}
+            >
+              <Icon className="h-4 w-4" strokeWidth={2.25} />
+            </div>
+            {statusBadge}
+          </div>
+          <div className="flex items-end justify-between gap-4">
+            <div className="min-w-0 flex-1">
               <div
-                className={`min-w-0 flex-1 ${kpiValueSizeClass(displayValue, true)} text-white`}
+                className={`truncate ${kpiValueSizeClass(displayValue, isPrimary, !isPrimary)} ${valueColor}`}
               >
                 {displayValue}
               </div>
-
-              {illustrationSrc ? (
-                <Image
-                  src={illustrationSrc}
-                  alt=""
-                  width={112}
-                  height={112}
-                  className="pointer-events-none h-20 w-20 shrink-0 object-contain sm:h-24 sm:w-24"
-                />
-              ) : (
-                <Icon
-                  strokeWidth={1.5}
-                  className="pointer-events-none h-12 w-12 shrink-0 text-white/10"
-                />
-              )}
+              <p className={`mt-1 truncate text-sm font-semibold leading-snug ${labelColor}`}>
+                {label}
+              </p>
             </div>
-
-            <p className="mt-2 text-sm font-semibold leading-snug text-white/70">
-              {label}
-            </p>
-
             {trend ? (
-              <div className="mt-3 -mx-1 hidden @sm:block">
-                <KpiSparkline data={trend.sparkline} />
+              <div className="shrink-0 overflow-hidden">
+                <KpiSparkline
+                  data={trend.sparkline}
+                  width={sparklineWidth}
+                  height={KPI_SPARKLINE_HEIGHT}
+                />
               </div>
             ) : null}
           </div>
@@ -402,46 +487,82 @@ export function KpiCard({
     );
   }
 
+  // 2×2 large: the rich stack — icon, value (beside the hero illustration on
+  // the primary card), label, full-width sparkline, breakdown row.
+  const sparklineWidth = cardWidth - 40 + 8;
   return (
-    <Card className="dashboard-hover premium-card premium-hover @container relative h-full overflow-hidden rounded-[20px] text-[var(--color-text-primary)]">
+    <Card
+      className={`dashboard-hover premium-hover relative h-full overflow-hidden rounded-[20px] ${surfaceClass}`}
+    >
       {chrome}
-      <CardContent className="relative flex h-full min-h-[184px] flex-col justify-between overflow-hidden p-5">
+      <CardContent className="relative flex h-full flex-col justify-between overflow-hidden p-5">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)] dark:bg-white/10">
+          <div
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconBoxClass}`}
+          >
             <Icon className="h-5 w-5" strokeWidth={2.25} />
           </div>
-          {trend ? (
-            <KpiDeltaBadge deltaPct={trend.deltaPct} />
-          ) : (
-            <span className="inline-flex shrink-0 rounded-full bg-[var(--color-surface-muted)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-secondary)]">
-              {eyebrow}
-            </span>
-          )}
+          {isPrimary ? null : statusBadge}
         </div>
 
         <div className="mt-4">
-          <div className={`truncate ${kpiValueSizeClass(displayValue, false)} text-[var(--color-text-primary)]`}>
-            {displayValue}
+          <div className="flex items-end justify-between gap-2">
+            <div
+              className={`min-w-0 flex-1 ${kpiValueSizeClass(displayValue, isPrimary)} ${valueColor}`}
+            >
+              {displayValue}
+            </div>
+            {isPrimary ? (
+              illustrationSrc ? (
+                <Image
+                  src={illustrationSrc}
+                  alt=""
+                  width={112}
+                  height={112}
+                  className="pointer-events-none h-24 w-24 shrink-0 object-contain"
+                />
+              ) : (
+                <Icon
+                  strokeWidth={1.5}
+                  className="pointer-events-none h-12 w-12 shrink-0 text-white/10"
+                />
+              )
+            ) : null}
           </div>
-          <p className="mt-2 text-sm font-semibold leading-snug text-[var(--color-text-secondary)]">
+
+          <p className={`mt-2 text-sm font-semibold leading-snug ${labelColor}`}>
             {label}
           </p>
+
+          {trend ? (
+            <div className="mt-3 -mx-1 overflow-hidden">
+              <KpiSparkline
+                data={trend.sparkline}
+                width={sparklineWidth}
+                height={KPI_SPARKLINE_HEIGHT}
+              />
+            </div>
+          ) : null}
         </div>
 
         {trend ? (
-          <div className="mt-3 -mx-1 hidden @sm:block">
-            <KpiSparkline data={trend.sparkline} />
-          </div>
-        ) : null}
-
-        {/* @lg: secondary breakdown row — surfaces the aggregation/eyebrow
-            detail that's hidden behind the delta badge at smaller sizes. */}
-        {trend ? (
-          <div className="mt-3 hidden items-center justify-between border-t border-[var(--color-border)] pt-3 @lg:flex">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+          <div
+            className={`mt-3 flex items-center justify-between border-t pt-3 ${
+              isPrimary ? "border-white/15" : "border-[var(--color-border)]"
+            }`}
+          >
+            <span
+              className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                isPrimary ? "text-white/60" : "text-[var(--color-text-muted)]"
+              }`}
+            >
               {eyebrow}
             </span>
-            <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+            <span
+              className={`text-xs font-medium ${
+                isPrimary ? "text-white/70" : "text-[var(--color-text-secondary)]"
+              }`}
+            >
               {trend.sparkline.length} pts
             </span>
           </div>
@@ -455,34 +576,53 @@ const SIZE_OPTIONS: Array<{ value: ChartSize; label: string }> = [
   { value: "small", label: "S" },
   { value: "medium", label: "M" },
   { value: "large", label: "L" },
+  { value: "xlarge", label: "XL" },
 ];
 
-/** Small S/M/L segmented control shown on widgets in edit mode. */
+/** S/M/L/XL segmented control shown on widgets in edit mode. Classes the
+ * widget type doesn't support render as DISABLED stops — a type with no
+ * honest rendering at a class simply doesn't offer it, it never fakes one
+ * (docs/WIDGET_SIZING.md §2). */
 function WidgetSizeControl({
+  type,
   size,
   onChange,
 }: {
+  type: ReturnType<typeof widgetType>;
   size: ChartSize;
   onChange: (size: ChartSize) => void;
 }) {
   return (
     <div className="flex items-center gap-0.5 rounded-full bg-card/90 p-0.5 shadow-card backdrop-blur">
-      {SIZE_OPTIONS.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => onChange(option.value)}
-          aria-pressed={size === option.value}
-          aria-label={`Set widget size to ${option.label}`}
-          className={`transition-ui flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
-            size === option.value
-              ? "bg-[var(--color-accent)] text-white"
-              : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
+      {SIZE_OPTIONS.map((option) => {
+        const supported = supportsSize(type, option.value);
+        return (
+          <button
+            key={option.value}
+            type="button"
+            disabled={!supported}
+            onClick={() => onChange(option.value)}
+            aria-pressed={size === option.value}
+            aria-label={
+              supported
+                ? `Set widget size to ${option.label}`
+                : `${option.label} is not available for ${type} widgets`
+            }
+            title={
+              supported ? undefined : `Not available for ${type} widgets`
+            }
+            className={`transition-ui flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
+              size === option.value
+                ? "bg-[var(--color-accent)] text-white"
+                : supported
+                  ? "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                  : "cursor-not-allowed text-[var(--color-text-muted)] opacity-35"
+            }`}
+          >
+            {option.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -493,41 +633,57 @@ type DragHandleProps = {
 };
 
 /**
- * Sortable wrapper for a single Apple-widget (KPI or chart). Applies the
- * col/row span classes from `grid.ts` and `@container` for adaptive content.
+ * Sortable wrapper for a single Apple-widget (KPI or chart). Grid spans come
+ * from `grid.ts` as fixed constants per (size class, tier) — content inside
+ * selects its view from the same class, never from measured width.
  * Chrome (drag handle + size control, and for charts the pencil) is rendered
  * by `children` via the render-prop so each widget type keeps its own chrome
  * layout/position.
  */
 function SortableWidget({
   id,
-  type,
   size,
+  tier,
   children,
 }: {
   id: string;
-  type: ReturnType<typeof widgetType>;
   size: ChartSize;
+  tier: CanvasTier;
   children: (drag: DragHandleProps) => React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id });
 
+  const spans = widgetSpans(size, tier);
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    gridColumn: `span ${spans.cols}`,
+    gridRow: `span ${spans.rows}`,
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`premium-transition relative @container ${spanClassesFor(type, size)}`}
-    >
+    <div ref={setNodeRef} style={style} className="premium-transition relative">
       {children({ attributes, listeners })}
     </div>
   );
+}
+
+/** Fixed-px canvas grid (docs/WIDGET_SIZING.md §3): the tier decides column
+ * count and cell width; the canvas renders at its fixed width, centered.
+ * No fluid `1fr` columns — every widget dimension is a lookup. */
+function canvasGridStyle(tier: CanvasTier): React.CSSProperties {
+  const { columns, cell, canvas } = TIERS[tier];
+  return {
+    display: "grid",
+    gridTemplateColumns: `repeat(${columns}, ${cell}px)`,
+    gridAutoRows: `${ROW_UNIT}px`,
+    gridAutoFlow: "row dense",
+    gap: GRID_GAP,
+    width: canvas,
+    marginInline: "auto",
+  };
 }
 
 function DashboardSkeleton() {
@@ -899,15 +1055,9 @@ export function Dashboard() {
     [sortedKpiEntries, visibleCharts],
   );
 
-  // Layout-derived colSpan (12-col scale) for chart-internal sizing helpers
-  // (e.g. bar max width); independent of the Apple-grid col/row span classes.
-  const chartLayoutById = useMemo(() => {
-    const map = new Map<string, LayoutItem>();
-    for (const item of calculateLayout(visibleCharts)) {
-      map.set(item.id, item);
-    }
-    return map;
-  }, [visibleCharts]);
+  // Canvas trait resolver: the ONLY runtime layout observation. Everything
+  // below the wrapper renders from fixed (size class × tier) constants.
+  const { ref: canvasRef, tier } = useCanvasTier<HTMLDivElement>();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -1134,7 +1284,7 @@ export function Dashboard() {
             charts={orderedCharts}
           />
 
-          <div className="px-5 pb-6">
+          <div ref={canvasRef} className="px-5 pb-6">
             {widgetIds.length === 0 && fallbackKpiCards.length === 0 ? (
               <Card className="transition-ui flex h-full min-h-[320px] items-center justify-center px-6 hover:shadow-premium">
                 <EmptyState
@@ -1163,13 +1313,13 @@ export function Dashboard() {
                 onDragEnd={handleDragEnd}
               >
                 <SortableContext items={widgetIds} strategy={rectSortingStrategy}>
-                  <div className="grid grid-cols-1 gap-5 [grid-auto-flow:row_dense] auto-rows-[160px] sm:grid-cols-2 lg:grid-cols-4">
+                  <div style={canvasGridStyle(tier)}>
                     {sortedKpiEntries.map(({ card, config }) => (
                       <SortableWidget
                         key={card.id}
                         id={card.id}
-                        type="kpi"
                         size={config.size}
+                        tier={tier}
                       >
                         {(drag) => (
                           <KpiCard
@@ -1179,10 +1329,13 @@ export function Dashboard() {
                             eyebrow={card.eyebrow}
                             isPrimary={card.isPrimary}
                             trend={card.trend}
+                            size={config.size}
+                            tier={tier}
                             chrome={
                               isEditing ? (
                                 <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
                                   <WidgetSizeControl
+                                    type="kpi"
                                     size={config.size}
                                     onChange={(size) => updateKpi(config.id, { size })}
                                   />
@@ -1201,70 +1354,83 @@ export function Dashboard() {
                         )}
                       </SortableWidget>
                     ))}
-                    {visibleCharts.map((chart) => {
-                      const item = chartLayoutById.get(chart.id);
-                      const layoutChart: LayoutItem = {
-                        ...chart,
-                        colSpan: item?.colSpan ?? 4,
-                      };
-                      return (
-                        <SortableWidget
-                          key={chart.id}
-                          id={chart.id}
-                          type={widgetType(chart)}
-                          size={chart.size}
-                        >
-                          {(drag) => (
-                            <DashboardChartCard
-                              chart={layoutChart}
-                              rows={rows}
-                              isEditing={isEditing}
-                              isInteracting={isInteracting}
-                              dragHandleProps={drag}
-                              sizeControl={
-                                <WidgetSizeControl
-                                  size={chart.size}
-                                  onChange={(size) => updateChart(chart.id, { size })}
-                                />
-                              }
-                            />
-                          )}
-                        </SortableWidget>
-                      );
-                    })}
+                    {visibleCharts.map((chart) => (
+                      <SortableWidget
+                        key={chart.id}
+                        id={chart.id}
+                        size={chart.size}
+                        tier={tier}
+                      >
+                        {(drag) => (
+                          <DashboardChartCard
+                            chart={chart}
+                            rows={rows}
+                            tier={tier}
+                            isEditing={isEditing}
+                            isInteracting={isInteracting}
+                            dragHandleProps={drag}
+                            sizeControl={
+                              <WidgetSizeControl
+                                type={widgetType(chart)}
+                                size={chart.size}
+                                onChange={(size) => updateChart(chart.id, { size })}
+                              />
+                            }
+                          />
+                        )}
+                      </SortableWidget>
+                    ))}
                   </div>
                 </SortableContext>
               </DndContext>
             )}
             {fallbackKpiCards.length > 0 ? (
-              <div className="mt-5 grid grid-cols-1 gap-5 [grid-auto-flow:row_dense] auto-rows-[160px] sm:grid-cols-2 lg:grid-cols-4">
-                {fallbackKpiCards.map((card) => (
-                  <div
-                    key={card.id}
-                    className={`@container ${spanClassesFor("kpi", "medium")}`}
-                  >
-                    <KpiCard
-                      icon={card.icon}
-                      value={card.value}
-                      label={card.label}
-                      eyebrow={card.eyebrow}
-                      isPrimary={card.isPrimary}
-                      trend={card.trend}
-                    />
-                  </div>
-                ))}
+              <div className="mt-5" style={canvasGridStyle(tier)}>
+                {fallbackKpiCards.map((card) => {
+                  const spans = widgetSpans("medium", tier);
+                  return (
+                    <div
+                      key={card.id}
+                      style={{
+                        gridColumn: `span ${spans.cols}`,
+                        gridRow: `span ${spans.rows}`,
+                      }}
+                    >
+                      <KpiCard
+                        icon={card.icon}
+                        value={card.value}
+                        label={card.label}
+                        eyebrow={card.eyebrow}
+                        isPrimary={card.isPrimary}
+                        trend={card.trend}
+                        size="medium"
+                        tier={tier}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             ) : null}
             {isGeneratingChart ? (
-              <div className="mt-5 grid grid-cols-1 gap-5 auto-rows-[160px] sm:grid-cols-2 lg:grid-cols-4">
-                <div className={spanClassesFor("bar", "medium")}>
+              <div className="mt-5" style={canvasGridStyle(tier)}>
+                <div
+                  style={{
+                    gridColumn: `span ${widgetSpans("large", tier).cols}`,
+                    gridRow: `span ${widgetSpans("large", tier).rows}`,
+                  }}
+                >
                   <GeneratingChartCard />
                 </div>
               </div>
             ) : null}
             {isEditing && !isGeneratingChart ? (
-              <div className="mt-5 grid grid-cols-1 gap-5 auto-rows-[160px] sm:grid-cols-2 lg:grid-cols-4">
-                <div className={spanClassesFor("bar", "medium")}>
+              <div className="mt-5" style={canvasGridStyle(tier)}>
+                <div
+                  style={{
+                    gridColumn: `span ${widgetSpans("large", tier).cols}`,
+                    gridRow: `span ${widgetSpans("large", tier).rows}`,
+                  }}
+                >
                   <AddChartTile />
                 </div>
               </div>
