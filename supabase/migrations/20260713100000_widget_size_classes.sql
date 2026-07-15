@@ -5,8 +5,22 @@
 --   bar/area/scatter: small(2×1)→medium, medium(2×2)→large, large(4×2)→xlarge
 --   donut:            medium(2×2)→large, large(2×3)→large (nearest class)
 --   kpi configs are untouched (their small/medium/large geometry is unchanged).
--- One-time remap; safe to re-run only before any post-migration edits, so it
--- is intentionally a single migration rather than idempotent logic.
+--
+-- Idempotency guard: "xlarge" can only exist AFTER this remap ran, so if any
+-- persisted config already uses it, the remap is done — skip. This keeps the
+-- data migration safe to re-run (e.g. pasted into the SQL editor twice)
+-- without double-shifting medium→large→xlarge.
+do $$
+begin
+if exists (
+  select 1
+  from public.charts,
+       lateral jsonb_array_elements(configs) as c
+  where c ->> 'size' = 'xlarge'
+) then
+  raise notice 'widget size classes already remapped; skipping';
+  return;
+end if;
 
 update public.charts
 set configs = (
@@ -36,3 +50,4 @@ set configs = (
   from jsonb_array_elements(configs) with ordinality as t(c, ordinality)
 )
 where configs <> '[]'::jsonb;
+end $$;
