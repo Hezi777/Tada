@@ -3,6 +3,8 @@ import {
   BI_RULE_LIMITS,
   ChartAggregationSchema,
   ChartConfigSchema,
+  ChartSizeSchema,
+  clampToSupportedSize,
   normalizeChartConfig,
   type ChartConfig,
   type ChartSource,
@@ -604,7 +606,7 @@ function buildAreaChart(
     aggregation,
     groupBy: null,
     timeColumn: dateColumn.name,
-    size: "large",
+    size: "xlarge",
   };
 }
 
@@ -637,7 +639,7 @@ function buildBarChart(
     aggregation,
     groupBy: categoryColumn.name,
     timeColumn: null,
-    size: "medium",
+    size: "large",
   };
 }
 
@@ -669,7 +671,7 @@ function buildDonutChart(
     aggregation,
     groupBy: categoryColumn.name,
     timeColumn: null,
-    size: "small",
+    size: "large",
   };
 }
 
@@ -734,7 +736,7 @@ function buildScatterChart(
     aggregation: null,
     groupBy: null,
     timeColumn: null,
-    size: "medium",
+    size: "large",
   };
 }
 
@@ -772,7 +774,7 @@ function buildRecordCountDonut(rows: Row[]): IncomingChartConfig | null {
     aggregation: "count",
     groupBy: null,
     timeColumn: null,
-    size: "small",
+    size: "medium",
   };
 }
 
@@ -1019,8 +1021,12 @@ function normalizeSuggestedChart(
     aggregation,
     groupBy: typeof chart.groupBy === "string" ? chart.groupBy : null,
     timeColumn: typeof chart.timeColumn === "string" ? chart.timeColumn : null,
-    size:
-      chart.size === "small" || chart.size === "large" ? chart.size : "medium",
+    size: clampToSupportedSize(
+      type,
+      ChartSizeSchema.safeParse(chart.size).success
+        ? (chart.size as ChartConfig["size"])
+        : "medium",
+    ),
   };
 }
 
@@ -1090,7 +1096,8 @@ async function suggestChartsWithLLM(
     "You design dashboard charts. Return strict JSON only.",
     "Follow these data-visualization rules exactly:",
     ...ruleLines,
-    'Schema: {"charts":[{"type":"area|bar|donut|scatter","title":"string","insight":"string","columns":["col"],"aggregation":"sum|avg|count|min|max|null","groupBy":"string|null","timeColumn":"string|null","size":"small|medium|large"}]}',
+    'Schema: {"charts":[{"type":"area|bar|donut|scatter","title":"string","insight":"string","columns":["col"],"aggregation":"sum|avg|count|min|max|null","groupBy":"string|null","timeColumn":"string|null","size":"small|medium|large|xlarge"}]}',
+    "Size classes by role: the single most important time-series trend gets xlarge; rankings and part-to-whole comparisons get large; supporting charts get medium; small renders only a headline number. Donuts support medium/large only; scatters large/xlarge only.",
     targetCount
       ? `Return exactly ${targetCount} charts. Use only provided column names.`
       : "Return 2 to 6 charts. Use only provided column names.",

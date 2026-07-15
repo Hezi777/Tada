@@ -64,8 +64,62 @@ export const ChartAggregationSchema = z.enum([
 ]);
 export type ChartAggregation = z.infer<typeof ChartAggregationSchema>;
 
-export const ChartSizeSchema = z.enum(["small", "medium", "large"]);
+// Discrete widget size classes with fixed grid geometry (docs/WIDGET_SIZING.md):
+// small 1×1, medium 2×1, large 2×2, xlarge 4×2 cells. A widget renders a
+// different view per class; it never scales or measures its container.
+export const ChartSizeSchema = z.enum(["small", "medium", "large", "xlarge"]);
 export type ChartSize = z.infer<typeof ChartSizeSchema>;
+
+export const SIZE_CLASS_ORDER = ChartSizeSchema.options;
+
+/** Which size classes each widget type offers. A type with no honest
+ * rendering at a class does not support it — the size-control stop is
+ * disabled, never faked with a fallback rendering. */
+export const WIDGET_SIZE_SUPPORT: Record<
+  "kpi" | ChartType,
+  readonly ChartSize[]
+> = {
+  kpi: ["small", "medium", "large"],
+  bar: ["small", "medium", "large", "xlarge"],
+  area: ["small", "medium", "large", "xlarge"],
+  donut: ["medium", "large"],
+  scatter: ["large", "xlarge"],
+};
+
+export function supportsSize(
+  type: "kpi" | ChartType,
+  size: ChartSize,
+): boolean {
+  return WIDGET_SIZE_SUPPORT[type].includes(size);
+}
+
+/** Nearest supported class by distance in the size order, ties broken
+ * toward the smaller class (e.g. donut small→medium, scatter medium→large). */
+export function clampToSupportedSize(
+  type: "kpi" | ChartType,
+  size: ChartSize,
+): ChartSize {
+  const supported = WIDGET_SIZE_SUPPORT[type];
+  if (supported.includes(size)) {
+    return size;
+  }
+  const index = SIZE_CLASS_ORDER.indexOf(size);
+  let best = supported[0];
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const candidate of supported) {
+    const distance = Math.abs(SIZE_CLASS_ORDER.indexOf(candidate) - index);
+    if (
+      distance < bestDistance ||
+      (distance === bestDistance &&
+        SIZE_CLASS_ORDER.indexOf(candidate) <
+          SIZE_CLASS_ORDER.indexOf(best))
+    ) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
 
 export const ChartSourceSchema = z.enum([
   "ai_initial",
@@ -141,6 +195,7 @@ export function normalizeChartConfig(
   return {
     ...chart,
     visible,
+    size: clampToSupportedSize(chart.type, chart.size),
     pinned: chart.pinned ?? false,
     priority: chart.priority ?? chart.order,
     lastTouchedBy:
@@ -170,7 +225,7 @@ export function normalizeKpiConfig(
 ): KPIConfig {
   return {
     ...kpi,
-    size: kpi.size ?? "medium",
+    size: clampToSupportedSize("kpi", kpi.size ?? "medium"),
     order: kpi.order ?? index,
   };
 }

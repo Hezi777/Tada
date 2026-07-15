@@ -505,7 +505,9 @@ function normalizeIncomingChatChart(
   const visibleCharts = currentCharts.filter(isChartVisible);
   return normalizeChartConfig({
     ...config,
-    size: config.size === "large" ? "medium" : config.size,
+    // Chatbot-added charts never take the hero (xlarge) slot;
+    // normalizeChartConfig clamps to the type's supported size classes.
+    size: config.size === "xlarge" ? "large" : config.size,
     visible: true,
     pinned: false,
     priority: visibleCharts.length,
