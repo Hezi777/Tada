@@ -32,17 +32,43 @@ function useChart() {
   return context;
 }
 
+const RECHARTS_THEME_CLASSES =
+  "text-xs [&_.recharts-cartesian-axis-tick_text]:fill-[var(--color-chart-axis)] [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-[var(--color-chart-grid)] [&_.recharts-curve.recharts-tooltip-cursor]:stroke-[var(--color-chart-cursor-line)] [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-[var(--color-chart-grid)] [&_.recharts-radial-bar-background-sector]:fill-[var(--color-surface-muted)] [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-[var(--color-chart-hover)] [&_.recharts-reference-line_[stroke='#ccc']]:stroke-[var(--color-border)] [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none";
+
 const ChartContainer = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
     config: ChartConfig;
+    /** Fixed pixel dimensions (widget size-class model, docs/WIDGET_SIZING.md).
+     * When both are set the chart renders at exactly this size — no
+     * ResponsiveContainer, no measurement. */
+    width?: number;
+    height?: number;
     children: React.ComponentProps<
       typeof RechartsPrimitive.ResponsiveContainer
     >["children"];
   }
->(({ id, className, children, config, ...props }, ref) => {
+>(({ id, className, children, config, width, height, ...props }, ref) => {
   const uniqueId = React.useId();
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
+
+  if (typeof width === "number" && typeof height === "number") {
+    const chart = React.Children.only(children) as React.ReactElement;
+    return (
+      <ChartContext.Provider value={{ config }}>
+        <div
+          data-chart={chartId}
+          ref={ref}
+          className={cn(RECHARTS_THEME_CLASSES, className)}
+          style={{ width, height }}
+          {...props}
+        >
+          <ChartStyle id={chartId} config={config} />
+          {React.cloneElement(chart, { width, height })}
+        </div>
+      </ChartContext.Provider>
+    );
+  }
 
   return (
     <ChartContext.Provider value={{ config }}>
@@ -50,7 +76,8 @@ const ChartContainer = React.forwardRef<
         data-chart={chartId}
         ref={ref}
         className={cn(
-          "relative flex min-h-0 flex-1 justify-center overflow-hidden text-xs [&_.recharts-cartesian-axis-tick_text]:fill-[var(--color-chart-axis)] [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-[var(--color-chart-grid)] [&_.recharts-curve.recharts-tooltip-cursor]:stroke-[var(--color-chart-cursor-line)] [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-none [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-[var(--color-chart-grid)] [&_.recharts-radial-bar-background-sector]:fill-[var(--color-surface-muted)] [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-[var(--color-chart-hover)] [&_.recharts-reference-line_[stroke='#ccc']]:stroke-[var(--color-border)] [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-none [&_.recharts-surface]:outline-none",
+          "relative flex min-h-0 flex-1 justify-center overflow-hidden",
+          RECHARTS_THEME_CLASSES,
           className,
         )}
         {...props}

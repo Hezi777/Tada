@@ -1,9 +1,7 @@
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts";
-import type { SerializedRow } from "@/shared/contracts";
+import type { ChartConfig, SerializedRow } from "@/shared/contracts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/shared/ui/chart";
 import { buildGroupedSeries } from "@/features/dashboard/client/runtime";
-import type { LayoutItem } from "@/features/dashboard/client/layout";
-import { truncateLabel } from "@/shared/lib/format";
 import { ChartEmptyState } from "./ChartEmptyState";
 import {
   buildValueChartConfig,
@@ -15,6 +13,7 @@ import {
 import {
   ACCENT,
   ACCENT_BRIGHT,
+  BAR_CATEGORY_BUDGET,
   CHART_ANIMATION_DURATION,
   CHART_ANIMATION_EASING,
   CHART_AXIS_COLOR,
@@ -22,20 +21,15 @@ import {
   CHART_GLOW_OPACITY,
   CHART_GRID_COLOR,
   CHART_LABEL_COLOR,
+  LABEL_TRUNCATION,
+  MAX_BAR_SIZE,
   gradientId,
   HORIZONTAL_BAR_MARGIN,
   LOW_CARDINALITY_THRESHOLD,
   VERTICAL_BAR_MARGIN,
   Y_AXIS_WIDTH,
+  type ChartRenderClass,
 } from "./chart-theme";
-
-/** Caps bar thickness so full-width charts don't stretch a handful of bars
- * across the whole card. Wider cards get a slightly higher cap. */
-function getMaxBarSize(chart: LayoutItem): number {
-  if (chart.colSpan >= 12) return 56;
-  if (chart.colSpan >= 8) return 48;
-  return 40;
-}
 
 /** Direct value labels stay legible only when there aren't too many bars;
  * past this we drop the labels and keep the value axis instead. */
@@ -48,26 +42,44 @@ const labelDomain: [number, (max: number) => number] = [
 ];
 
 type BarChartViewProps = {
-  chart: LayoutItem;
+  chart: ChartConfig;
   rows: SerializedRow[];
-  /** When true, disables Recharts animation (e.g. while dragging/resizing). */
+  /** Render class — Small never reaches this view (headline substitution). */
+  size: ChartRenderClass;
+  /** Fixed plot box (grid.ts chartPlotBox) — never measured. */
+  width: number;
+  height: number;
+  /** When true, disables Recharts animation (e.g. while dragging). */
   isInteracting?: boolean;
 };
 
 /** Bar chart (vertical or horizontal, per `chart.orientation`). Uniform brand
  * gradient bars (zero baseline), value-sorted, with direct data labels when the
- * category count is low — in which case the redundant value axis is hidden. */
-export function BarChartView({ chart, rows, isInteracting = false }: BarChartViewProps) {
-  const series = buildGroupedSeries(chart, rows);
+ * category count is low — in which case the redundant value axis is hidden.
+ * The medium view drops the value axis and gridlines entirely (degradation
+ * contract, docs/WIDGET_SIZING.md §5). */
+export function BarChartView({
+  chart,
+  rows,
+  size,
+  width,
+  height,
+  isInteracting = false,
+}: BarChartViewProps) {
+  const isHorizontal = chart.orientation === "horizontal";
+  const budget =
+    BAR_CATEGORY_BUDGET[size][isHorizontal ? "horizontal" : "vertical"];
+  const series = buildGroupedSeries(chart, rows, { categoryLimit: budget });
   if (series.length === 0) {
     return <ChartEmptyState />;
   }
 
   const chartConfig = buildValueChartConfig(metricLabel(chart));
-  const isHorizontal = chart.orientation === "horizontal";
   const currency = chartCurrency(chart);
-  const maxBarSize = getMaxBarSize(chart);
-  const showLabels = series.length <= DATA_LABEL_MAX_BARS;
+  const isCompact = size === "medium";
+  const maxBarSize = MAX_BAR_SIZE[size];
+  const labelChars = LABEL_TRUNCATION[size];
+  const showLabels = isCompact || series.length <= DATA_LABEL_MAX_BARS;
   const fillId = gradientId(chart.id, "bar-fill");
   const glowFilterId = gradientId(chart.id, "bar-glow");
   const labelFormatter = (value: number) => formatAxisValue(value, currency);
@@ -78,7 +90,9 @@ export function BarChartView({ chart, rows, isInteracting = false }: BarChartVie
     return (
       <ChartContainer
         config={chartConfig}
-        className="h-full min-h-[160px] w-full rounded-[20px] bg-card"
+        width={width}
+        height={height}
+        className="rounded-[20px] bg-card"
       >
         <BarChart data={series} layout="vertical" margin={HORIZONTAL_BAR_MARGIN}>
           <defs>
@@ -96,7 +110,9 @@ export function BarChartView({ chart, rows, isInteracting = false }: BarChartVie
               />
             </filter>
           </defs>
-          <CartesianGrid horizontal={false} stroke={CHART_GRID_COLOR} />
+          {isCompact ? null : (
+            <CartesianGrid horizontal={false} stroke={CHART_GRID_COLOR} />
+          )}
           <XAxis
             type="number"
             hide={showLabels}
@@ -115,9 +131,11 @@ export function BarChartView({ chart, rows, isInteracting = false }: BarChartVie
             tickLine={false}
             fontSize={11}
             tickMargin={8}
-            width={128}
+            width={isCompact ? 88 : 128}
             interval={series.length <= LOW_CARDINALITY_THRESHOLD ? 0 : undefined}
-            tickFormatter={(value: string) => truncateLabel(value, 22)}
+            tickFormatter={(value: string) =>
+              formatAxisValue(value, null, labelChars)
+            }
             stroke={CHART_AXIS_COLOR}
           />
           <ChartTooltip
@@ -158,7 +176,9 @@ export function BarChartView({ chart, rows, isInteracting = false }: BarChartVie
   return (
     <ChartContainer
       config={chartConfig}
-      className="h-full min-h-[160px] w-full rounded-[20px] bg-card"
+      width={width}
+      height={height}
+      className="rounded-[20px] bg-card"
     >
       <BarChart data={series} margin={VERTICAL_BAR_MARGIN}>
         <defs>
@@ -176,16 +196,20 @@ export function BarChartView({ chart, rows, isInteracting = false }: BarChartVie
             />
           </filter>
         </defs>
-        <CartesianGrid vertical={false} stroke={CHART_GRID_COLOR} />
+        {isCompact ? null : (
+          <CartesianGrid vertical={false} stroke={CHART_GRID_COLOR} />
+        )}
         <XAxis
           dataKey="label"
           axisLine={false}
           tickLine={false}
           fontSize={11}
-          tickMargin={10}
+          tickMargin={isCompact ? 6 : 10}
           minTickGap={18}
           interval={series.length <= LOW_CARDINALITY_THRESHOLD ? 0 : undefined}
-          tickFormatter={formatAxisValue}
+          tickFormatter={(value: string | number) =>
+            formatAxisValue(value, null, labelChars)
+          }
           stroke={CHART_AXIS_COLOR}
         />
         <YAxis
