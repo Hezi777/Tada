@@ -50,7 +50,7 @@ Tada turns CSV, Excel, and PDF files into interactive dashboards without any man
 | Grounded generation        | Chart configs are generated with rules retrieved from the BI Rules RAG, then enforced by a deterministic rule engine (donut→bar conversion, top-N + Other bucketing, horizontal bars for long labels, aggregation fixes) |
 | Grounded chat              | Hebrew/English Q&A, trend explanations, and add/remove/edit-chart commands, grounded in retrieval over the per-dataset vector index with caching                                                                         |
 | KPI cards                  | Primary metric highlighted in accent color; money-like columns formatted as ₪ with bidi-safe rendering                                                                                                                   |
-| Chart canvas               | Bento grid with drag-and-drop reordering, per-card resize (S/M/L), and a Manage Views sheet to pin/show/hide/delete charts                                                                                               |
+| Chart canvas               | Apple-widget grid with drag-and-drop reordering, discrete size classes (S/M/L/XL — a different view is rendered per class, not a resized chart), and a Manage Views sheet to pin/show/hide/delete charts                  |
 | Multi-dashboard workspaces | Named dashboards with custom icons and colors; instant switch via cached state                                                                                                                                           |
 | Authentication             | Supabase email/password + Google OAuth, with server-side session validation on all API routes                                                                                                                            |
 | Persistence & security     | Datasets, charts, KPIs, and both vector indexes in Supabase Postgres with checked-in idempotent migrations and per-command RLS policies                                                                                  |
@@ -120,7 +120,7 @@ After generation, the dataset is distilled into compact text chunks (overview, p
 
 ## Getting Started
 
-**Prerequisites:** Node.js 20+, a Supabase project, a Groq API key
+**Prerequisites:** Node.js 20.9+ (CI runs on 22), a Supabase project, a Groq API key
 
 ```bash
 git clone https://github.com/Hezi777/Tada.git
