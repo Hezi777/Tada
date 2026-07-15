@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { notFound } from "next/navigation";
 import { DollarSign, ShoppingCart, Users } from "lucide-react";
 import type { ChartConfig, ChartSize, SerializedRow } from "@/shared/contracts";
@@ -210,8 +210,13 @@ export default function DevChartsShowcasePage() {
   // Fixed-dimension charts render real SVG during SSR, and Recharts' global
   // clipPath id counter differs between server and client passes — render
   // the matrix client-side only (dev page; the app loads data post-mount).
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  // useSyncExternalStore is the hydration-safe client check (false on the
+  // server, true after hydration) with no setState-in-effect.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   function toggleTheme() {
     const next = !isDark;
