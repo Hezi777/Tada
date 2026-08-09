@@ -244,7 +244,7 @@ export function FloatingChat() {
   };
 
   const composer = (
-    <div className="border-t border-[var(--color-border)] bg-card px-4 py-3">
+    <div className="border-t border-[var(--dashboard-hairline)] bg-[var(--dashboard-paper)] px-4 py-3">
       <div className="flex items-end gap-2">
         <Textarea
           ref={textareaRef}
@@ -257,7 +257,7 @@ export function FloatingChat() {
             }
           }}
           placeholder={t("chat.placeholder")}
-          className="max-h-32 min-h-[44px] flex-1 resize-none border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus-visible:ring-[var(--color-accent)]"
+          className="max-h-32 min-h-[44px] flex-1 resize-none rounded-xl border border-[var(--dashboard-hairline)] bg-[var(--dashboard-paper-muted)] px-4 py-3 text-sm text-[var(--color-text-primary)] shadow-none placeholder:text-[var(--color-text-muted)] focus-visible:ring-[var(--dashboard-brand)]"
           aria-label="Type your message"
           disabled={!canChat || isSending}
           rows={1}
@@ -267,7 +267,7 @@ export function FloatingChat() {
           variant="primary-accent"
           onClick={handleSend}
           disabled={!canChat || isSending || !input.trim()}
-          className="transition-ui h-11 w-11 shrink-0 border-0 shadow-[0_10px_24px_-12px_rgba(0,50,125,0.6)] hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+          className="transition-ui h-11 w-11 shrink-0 rounded-xl border-0 shadow-none disabled:opacity-50"
           aria-label="Send message"
         >
           {isSending ? (
@@ -282,17 +282,17 @@ export function FloatingChat() {
 
   const chatBody = (
     <>
-      <ScrollArea className="dashboard-scroll flex-1 bg-card">
+      <ScrollArea className="dashboard-scroll flex-1 bg-[var(--dashboard-paper)]">
         <div className="space-y-4 px-4 py-4">
           {!canChat ? (
-            <Card className="rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
-              Upload a file to start chatting with Tada Wiz.
+            <Card className="rounded-xl border border-[var(--dashboard-hairline)] bg-[var(--dashboard-paper-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
+              Upload a file to ask Tada about your data.
             </Card>
           ) : null}
 
           {canChat && messages.length === 0 ? (
             <div className="space-y-3">
-              <Card className="rounded-[20px] border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
+              <Card className="rounded-xl border border-[var(--dashboard-hairline)] bg-[var(--dashboard-paper-muted)] px-4 py-5 text-center text-sm text-[var(--color-text-secondary)] shadow-none">
                 {t("chat.empty")}
               </Card>
               <div className="flex flex-wrap gap-2">
@@ -301,7 +301,7 @@ export function FloatingChat() {
                     key={key}
                     type="button"
                     onClick={() => setInput(t(key))}
-                    className="rounded-full border border-[var(--color-border)] bg-card px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+                    className="rounded-lg border border-[var(--dashboard-hairline)] bg-[var(--dashboard-paper)] px-3 py-2 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:border-[var(--dashboard-brand)] hover:text-[var(--dashboard-brand)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {t(key)}
                   </button>
@@ -321,8 +321,8 @@ export function FloatingChat() {
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-6 ${
                   message.role === "user"
-                    ? "bg-[var(--color-accent)] text-white"
-                    : "border border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]"
+                    ? "bg-[var(--dashboard-brand)] text-white"
+                    : "border border-[var(--dashboard-hairline)] bg-[var(--dashboard-paper-muted)] text-[var(--color-text-primary)]"
                 }`}
               >
                 {message.content}
@@ -426,17 +426,13 @@ export function FloatingChat() {
         }
       `}</style>
 
-      {/* FAB with pulse ring */}
-      <div className="fixed bottom-6 right-6 z-50">
-        {!isOpen && (
-          <span className="fab-pulse-ring absolute inset-0 rounded-full" />
-        )}
+      <div className="tada-chat-launcher fixed bottom-6 z-50">
         <Button
           type="button"
           variant="primary-accent"
           onClick={() => setIsOpen((current) => !current)}
-          className="transition-ui relative h-[52px] w-[52px] border-0 shadow-[0_18px_36px_-18px_rgba(0,50,125,0.55)] hover:scale-105 hover:shadow-[0_22px_40px_-18px_rgba(0,50,125,0.65)]"
-          aria-label={isOpen ? "Close Tada Wiz" : "Open Tada Wiz"}
+          className="transition-ui relative h-11 w-11 gap-2 rounded-xl border border-[var(--dashboard-hairline)] bg-[var(--dashboard-ink)] px-0 text-[var(--dashboard-paper)] shadow-[var(--dashboard-shadow)] hover:bg-[var(--dashboard-ink)] hover:opacity-90 sm:w-auto sm:px-4"
+          aria-label={isOpen ? "Close Ask Tada" : "Open Ask Tada"}
           aria-expanded={isOpen}
         >
           <AnimatePresence mode="wait" initial={false}>
@@ -453,7 +449,7 @@ export function FloatingChat() {
                 }
                 transition={{ duration: 0.15 }}
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </motion.span>
             ) : (
               <motion.span
@@ -468,27 +464,30 @@ export function FloatingChat() {
                 }
                 transition={{ duration: 0.15 }}
               >
-                <Sparkles className="h-5 w-5" />
+                <Sparkles className="h-4 w-4" />
               </motion.span>
             )}
           </AnimatePresence>
+          <span className="hidden text-sm font-semibold sm:inline">
+            {isOpen ? "Close" : "Ask Tada"}
+          </span>
         </Button>
       </div>
 
       {isMobile ? (
         <Drawer open={isOpen} onOpenChange={setIsOpen}>
           <DrawerContent className="mt-0 h-[85vh] overflow-hidden rounded-t-[24px] border-0 bg-card p-0 shadow-[0_-12px_40px_rgba(0,0,0,0.18)]">
-            <DrawerHeader className="mesh-navy px-5 py-4 text-left text-white">
+            <DrawerHeader className="border-b border-[var(--dashboard-hairline)] bg-[var(--dashboard-paper)] px-5 py-4 text-left text-[var(--color-text-primary)]">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--dashboard-paper-muted)] text-[var(--dashboard-brand)]">
                     <WandSparkles className="h-4.5 w-4.5" />
                   </div>
                   <div>
-                    <DrawerTitle className="text-base font-extrabold text-white">
-                      Tada Wiz
+                    <DrawerTitle className="text-base font-semibold text-[var(--color-text-primary)]">
+                      Ask Tada
                     </DrawerTitle>
-                    <DrawerDescription className="mt-0.5 text-[13px] text-white/75">
+                    <DrawerDescription className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
                       {t("chat.subtitle")}
                     </DrawerDescription>
                   </div>
@@ -498,8 +497,8 @@ export function FloatingChat() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-full text-white hover:bg-white/10 hover:text-white"
-                    aria-label="Close Tada Wiz"
+                    className="h-8 w-8 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--dashboard-paper-muted)] hover:text-[var(--color-text-primary)]"
+                    aria-label="Close Ask Tada"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -526,18 +525,18 @@ export function FloatingChat() {
                   : { opacity: 0, y: 10, scale: 0.95 }
               }
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="shadow-premium fixed bottom-24 right-6 z-50 h-[500px] w-[380px] overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-card"
+              className="tada-chat-panel fixed bottom-20 z-50 h-[500px] w-[380px] overflow-hidden rounded-[20px] border border-[var(--dashboard-hairline)] bg-[var(--dashboard-paper)] shadow-[var(--dashboard-shadow)]"
             >
               <div className="flex h-full flex-col">
-                <div className="mesh-navy px-5 py-4 text-white">
+                <div className="border-b border-[var(--dashboard-hairline)] bg-[var(--dashboard-paper)] px-5 py-4 text-[var(--color-text-primary)]">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--dashboard-paper-muted)] text-[var(--dashboard-brand)]">
                         <WandSparkles className="h-4.5 w-4.5" />
                       </div>
                       <div>
-                        <div className="text-base font-extrabold">Tada Wiz</div>
-                        <p className="mt-0.5 text-[13px] text-white/75">
+                        <div className="text-base font-semibold">Ask Tada</div>
+                        <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
                           {t("chat.subtitle")}
                         </p>
                       </div>
@@ -547,8 +546,8 @@ export function FloatingChat() {
                       variant="ghost"
                       size="icon"
                       onClick={() => setIsOpen(false)}
-                      className="h-8 w-8 rounded-full text-white hover:bg-white/10 hover:text-white"
-                      aria-label="Close Tada Wiz"
+                      className="h-8 w-8 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--dashboard-paper-muted)] hover:text-[var(--color-text-primary)]"
+                      aria-label="Close Ask Tada"
                     >
                       <X className="h-4 w-4" />
                     </Button>

@@ -19,6 +19,14 @@
     --color-chart-axis: #6b7280;
     --color-chart-hover: rgba(0, 50, 125, 0.05);
     --color-chart-cursor-line: rgba(0, 50, 125, 0.18);
+    --dashboard-canvas: #f1f2f4;
+    --dashboard-paper: #fcfcfd;
+    --dashboard-paper-muted: #f6f7f8;
+    --dashboard-ink: #15171a;
+    --dashboard-hairline: rgba(21, 23, 26, 0.1);
+    --dashboard-brand: #2867f0;
+    --dashboard-signal: #ff6b55;
+    --dashboard-shadow: 0 20px 60px -46px rgba(21, 23, 26, 0.28);
 
     --background: 210 43% 98%;
     --foreground: 217 30% 13%;
@@ -80,6 +88,14 @@
     --color-chart-axis: #8891a0;
     --color-chart-hover: rgba(255, 255, 255, 0.045);
     --color-chart-cursor-line: rgba(255, 255, 255, 0.16);
+    --dashboard-canvas: #0d1015;
+    --dashboard-paper: #171b21;
+    --dashboard-paper-muted: #1d222a;
+    --dashboard-ink: #f2f4f7;
+    --dashboard-hairline: rgba(255, 255, 255, 0.1);
+    --dashboard-brand: #6d9cff;
+    --dashboard-signal: #ff806d;
+    --dashboard-shadow: 0 24px 70px -44px rgba(0, 0, 0, 0.88);
 
     /* shadcn HSL tokens (button/card/popover/input primitives). */
     --background: 220 22% 8%;
@@ -512,11 +528,10 @@
   }
 
   .dashboard-surface {
-    background: #ffffff;
-    border-radius: 20px;
-    box-shadow:
-      0 22px 52px -38px rgba(25, 28, 30, 0.14),
-      0 2px 10px rgba(25, 28, 30, 0.03);
+    background: var(--dashboard-paper);
+    border: 1px solid var(--dashboard-hairline);
+    border-radius: 22px;
+    box-shadow: var(--dashboard-shadow);
   }
 
   .dashboard-hover {
@@ -527,37 +542,32 @@
   }
 
   .dashboard-hover:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 32px 70px -42px rgba(25, 28, 30, 0.18),
-      0 8px 24px rgba(25, 28, 30, 0.05);
+    transform: translateY(-1px);
+    border-color: color-mix(
+      in srgb,
+      var(--dashboard-brand) 24%,
+      var(--dashboard-hairline)
+    );
+    box-shadow: 0 24px 64px -44px
+      color-mix(in srgb, var(--dashboard-brand) 18%, transparent);
   }
 
-  @keyframes fab-ring-pulse {
-    0% {
-      transform: scale(1);
-      opacity: 0.5;
-    }
-
-    70% {
-      transform: scale(1.7);
-      opacity: 0;
-    }
-
-    100% {
-      transform: scale(1.7);
-      opacity: 0;
-    }
+  .dashboard-provenance {
+    background: color-mix(in srgb, var(--dashboard-paper) 92%, transparent);
+    border-color: var(--dashboard-hairline);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.55) inset;
   }
 
-  .fab-pulse-ring::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 9999px;
-    border: 2px solid var(--color-accent);
-    animation: fab-ring-pulse 2.5s ease-in-out infinite;
-    pointer-events: none;
+  .dark .dashboard-provenance {
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.035) inset;
+  }
+
+  .tada-chat-launcher {
+    inset-inline-end: 1.5rem;
+  }
+
+  .tada-chat-panel {
+    inset-inline-end: 1.5rem;
   }
 }
 
@@ -828,4 +838,3 @@
     }
   }
 }
-

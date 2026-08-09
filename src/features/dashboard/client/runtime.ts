@@ -164,6 +164,12 @@ export function validateChartCollection(
     ) {
       return "Area charts require a valid date or time column.";
     }
+    if (chart.type === "donut") {
+      const series = buildGroupedSeries(chart, context.rows);
+      if (series.length === 0 || series.some((entry) => entry.value <= 0)) {
+        return "Donut charts require positive, non-empty parts of a whole.";
+      }
+    }
     if (chart.type === "scatter") {
       if (chart.columns.length !== 2) {
         return "Scatter charts require exactly two numeric columns.";
@@ -293,7 +299,7 @@ export function buildAreaSeries(
 
   return Array.from(buckets.entries())
     .sort((left, right) => left[0].localeCompare(right[0]))
-    .slice(0, CHART_LIMITS.area)
+    .slice(-CHART_LIMITS.area)
     .map(([label, values]) => ({
       label,
       value: reduceAggregation(

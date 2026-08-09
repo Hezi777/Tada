@@ -1,21 +1,16 @@
-import { memo, useEffect, useRef, useState, type ReactNode } from "react";
-import { GripVertical, Pencil } from "lucide-react";
+import { memo, useState, type ReactNode } from "react";
+import { GripVertical, Pencil, Pin } from "lucide-react";
 import type { DraggableAttributes } from "@dnd-kit/core";
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import type { ChartConfig, SerializedRow } from "@/shared/contracts";
 import { clampToSupportedSize } from "@/shared/contracts";
 
-import { Badge } from "@/shared/ui/badge";
 import { Card } from "@/shared/ui/card";
 import {
   chartPlotBox,
   resolveRenderClass,
   type CanvasTier,
 } from "@/features/dashboard/client/grid";
-import {
-  consumeRecentReveal,
-  onChartReveal,
-} from "@/features/dashboard/client/chart-effects";
 import { updateChartFromPrompt } from "@/features/dashboard/client/generate-chart";
 import { useToast } from "@/shared/hooks/use-toast";
 import { useTranslation } from "@/shared/i18n";
@@ -26,15 +21,13 @@ import { BarChartView } from "./charts/BarChartView";
 import { DonutChartView } from "./charts/DonutChartView";
 import { ScatterChartView } from "./charts/ScatterChartView";
 import { ChartEmptyState } from "./charts/ChartEmptyState";
-import {
-  ChartHeadline,
-  computeChartHeadline,
-} from "./charts/ChartHeadline";
+import { ChartHeadline, computeChartHeadline } from "./charts/ChartHeadline";
 import type { ChartRenderClass } from "./charts/chart-theme";
 
 type DashboardChartCardProps = {
   chart: ChartConfig;
   rows: SerializedRow[];
+  insight?: string;
   /** Canvas tier from the trait resolver — every dimension below is a
    * constant lookup (docs/WIDGET_SIZING.md §3). */
   tier: CanvasTier;
@@ -117,6 +110,7 @@ function DashboardChartContent({
 const DashboardChartCard = memo(function DashboardChartCard({
   chart,
   rows,
+  insight,
   tier,
   isEditing = false,
   isInteracting = false,
@@ -149,34 +143,6 @@ const DashboardChartCard = memo(function DashboardChartCard({
     }
   };
 
-  // One-time "magic" reveal glow when this chart is freshly created by the AI.
-  const [isRevealing, setIsRevealing] = useState(false);
-  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    const startReveal = () => {
-      setIsRevealing(true);
-      if (revealTimerRef.current) {
-        clearTimeout(revealTimerRef.current);
-      }
-      revealTimerRef.current = setTimeout(() => setIsRevealing(false), 2200);
-    };
-    const unsubscribe = onChartReveal((id) => {
-      if (id === chart.id) {
-        startReveal();
-      }
-    });
-    // Catch a reveal emitted just before this card mounted (new AI charts).
-    if (consumeRecentReveal(chart.id)) {
-      startReveal();
-    }
-    return () => {
-      unsubscribe();
-      if (revealTimerRef.current) {
-        clearTimeout(revealTimerRef.current);
-      }
-    };
-  }, [chart.id]);
-
   // Defensive clamp: persisted configs predating the size-class model may
   // hold a class this type doesn't support.
   const size = clampToSupportedSize(chart.type, chart.size);
@@ -188,8 +154,8 @@ const DashboardChartCard = memo(function DashboardChartCard({
     // never a miniature chart (docs/WIDGET_SIZING.md §4).
     const headline = computeChartHeadline(chart, rows);
     body = (
-      <div className="flex h-full min-h-0 flex-col px-6 pb-5 pt-5">
-        <p className="line-clamp-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
+      <div className="flex h-full min-h-0 flex-col px-5 pb-5 pt-5">
+        <p className="line-clamp-1 text-[12px] font-medium text-[var(--color-text-secondary)]">
           {chart.title}
         </p>
         {headline ? <ChartHeadline headline={headline} /> : <ChartEmptyState />}
@@ -197,36 +163,25 @@ const DashboardChartCard = memo(function DashboardChartCard({
     );
   } else {
     const plot = chartPlotBox(size as Exclude<typeof size, "small">, tier);
-    const isCompact = renderClass === "medium";
     body = (
-      <div className="flex h-full min-h-0 flex-col px-6 pb-5 pt-4">
-        {isCompact ? (
-          <h3 className="line-clamp-1 font-display text-[15px] font-extrabold leading-snug tracking-[-0.01em] text-[var(--color-text-primary)]">
-            {chart.title}
-          </h3>
-        ) : (
-          <div className="flex flex-row items-start justify-between gap-3 pt-2">
-            <div className="min-w-0">
-              <h3 className="line-clamp-2 font-display text-[17px] font-extrabold leading-snug tracking-[-0.01em] text-[var(--color-text-primary)]">
-                {chart.title}
-              </h3>
-              <p className="mt-1 line-clamp-1 text-[12px] leading-snug text-[var(--color-text-secondary)]">
-                {chart.insight}
-              </p>
-            </div>
-            <div className="flex items-center gap-1">
-              {chart.pinned ? (
-                <Badge className="rounded-full border-0 bg-[var(--color-surface-muted)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]">
-                  pinned
-                </Badge>
-              ) : null}
-              <Badge className="rounded-full border border-[var(--color-border)] bg-transparent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)] hover:bg-transparent">
-                {chart.type}
-              </Badge>
-            </div>
+      <div className="flex h-full min-h-0 flex-col px-5 pb-4 pt-5">
+        <div className="flex flex-row items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="line-clamp-1 font-display text-[17px] font-semibold leading-snug tracking-[-0.025em] text-[var(--color-text-primary)]">
+              {chart.title}
+            </h3>
+            <p className="mt-1 line-clamp-1 text-[11px] leading-snug text-[var(--color-text-muted)]">
+              {insight ?? chart.insight}
+            </p>
           </div>
-        )}
-        <div className="mt-auto overflow-hidden">
+          {chart.pinned ? (
+            <Pin
+              className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-text-muted)]"
+              aria-label="Pinned"
+            />
+          ) : null}
+        </div>
+        <div className="mx-auto mt-auto max-w-full overflow-hidden">
           <DashboardChartContent
             chart={chart}
             rows={rows}
@@ -242,22 +197,12 @@ const DashboardChartCard = memo(function DashboardChartCard({
 
   return (
     <Card
-      className={`premium-card premium-hover relative flex h-full flex-col overflow-hidden rounded-[20px] p-0 ${
+      className={`relative flex h-full flex-col overflow-hidden rounded-[18px] border-[var(--color-border)] bg-card p-0 shadow-none ${
         isEditing ? "border-dashed border-[var(--color-accent)]/40" : ""
       }`}
       data-chart-card={chart.id}
     >
       {body}
-      {isRevealing ? (
-        <div
-          aria-hidden="true"
-          className="ai-glow-ring ai-glow-ring-mask pointer-events-none absolute inset-0 z-20 rounded-[20px]"
-          style={{
-            animation:
-              "tada-glow-spin 4s linear infinite, tada-reveal-fade 2.2s ease-out forwards",
-          }}
-        />
-      ) : null}
       {isUpdating ? (
         <div className="absolute inset-0 z-30">
           <GeneratingChartCard label={t("chart.edit.updating")} />

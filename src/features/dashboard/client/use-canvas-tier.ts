@@ -6,9 +6,8 @@ import { resolveTier, type CanvasTier } from "./grid";
 /**
  * The single allowed layout observation in the widget system — the "trait
  * resolver" of docs/WIDGET_SIZING.md §3. Watches the canvas wrapper and
- * resolves a DISCRETE tier (like UITraitCollection resolving a size class);
- * everything below receives fixed dimensions from `grid.ts` lookups.
- * Charts themselves never measure.
+ * resolves a discrete content-density tier. The canvas columns are fluid,
+ * while charts receive conservative dimensions from `grid.ts` lookups.
  */
 export function useCanvasTier<T extends HTMLElement>(): {
   ref: React.RefObject<T>;
