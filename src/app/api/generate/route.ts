@@ -65,7 +65,6 @@ export async function POST(request: Request) {
     }
 
     const { charts, kpis } = await generateDashboardArtifacts(rows, columns, {
-      supabase,
       topic,
       chartCount,
     });
