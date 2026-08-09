@@ -6,8 +6,9 @@ and rendered. Supersedes the fluid-resize model (`layout.ts` 12-col engine,
 "Charts & edit mode" workstream + "Medium chart width" decision point in
 `docs/dashboard-polish-audit.md`.
 
-Status: **approved spec, not yet implemented.** The offender list in §8 is the
-implementation work-list.
+Status: **implemented on `feat/widget-size-classes` in July 2026.** Sections
+below document the design contract; use the current code and tests as the
+implementation source of truth.
 
 ---
 
@@ -106,25 +107,25 @@ below it receives constants. Charts never measure. Tiers key off the canvas
 (not the viewport) because the collapsible sidebar changes available width
 without a viewport change.
 
-| Tier | Canvas width available | Columns | Cell width | Canvas render width |
+| Tier | Canvas width available | Columns | Chart content width | Canvas render width |
 |---|---|---|---|---|
-| t1 (compact) | < 620px | 1 | 336px | 336px |
-| t2 (regular) | 620–1003px | 2 | 300px | 620px |
-| t3 (wide) | 1004–1299px | 4 | 236px | 1004px |
-| t4 (xwide) | ≥ 1300px | 4 | 300px | 1260px |
+| t1 (compact) | < 660px | 1 | 280px | 100% |
+| t2 (regular) | 660–1043px | 2 | 300px | 100% |
+| t3 (wide) | 1044–1339px | 4 | 236px | 100% |
+| t4 (xwide) | ≥ 1340px | 4 | 300px | 100% |
 
-The canvas renders at its fixed tier width, **centered**; leftover space is
-margin (like an iPad home screen). This is the visible cost of fixed
-dimensions and it is intentional.
+The canvas fills its available width using equal `minmax(0, 1fr)` columns.
+The content widths above are conservative dimensions for chart internals, so
+charts remain deterministic while cards use the full responsive column width.
 
 Class geometry per tier (width × height, px; height = rows×160 + (rows−1)×20):
 
 | Class | t1 | t2 | t3 | t4 |
 |---|---|---|---|---|
-| S  | 336×160 | 300×160 | 236×160 | 300×160 |
-| M  | 336×160 ¹ | 620×160 | 492×160 | 620×160 |
-| L  | 336×340 | 620×340 | 492×340 | 620×340 |
-| XL | 336×340 ² | 620×340 ² | 1004×340 | 1260×340 |
+| S  | 280×160 | 300×160 | 236×160 | 300×160 |
+| M  | 280×160 ¹ | 620×160 | 492×160 | 620×160 |
+| L  | 280×340 | 620×340 | 492×340 | 620×340 |
+| XL | 280×340 ² | 620×340 ² | 1004×340 | 1260×340 |
 
 ¹ At t1 an M widget occupies the single column (1×1) and uses the S-side
 data budget (§5) at the M view's layout.

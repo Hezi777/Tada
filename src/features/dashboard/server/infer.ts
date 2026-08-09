@@ -2,7 +2,9 @@ import type { Column, ColumnKind } from "./types";
 
 type Row = Record<string, unknown>;
 
-const IGNORE_NAME_TOKENS = ["id", "uuid", "key", "hash", "title", "name"];
+const IDENTIFIER_NAME_PATTERN = /(^|[_\s-])(id|uuid|key|hash)([_\s-]|$)/i;
+const DIMENSION_NAME_PATTERN =
+  /(^|[_\s-])(category|vendor|supplier|product|service|region|department|channel|status|type|name|title)([_\s-]|$)|קטגוריה|ספק|מוצר|אזור|מחלקה|ערוץ|סטטוס|שם|כותרת/i;
 
 function isNonEmpty(value: unknown): boolean {
   return value !== null && value !== undefined && value !== "";
@@ -70,7 +72,7 @@ function classifyColumn(name: string, values: unknown[]): ColumnKind {
   }
 
   const lowerName = name.toLowerCase();
-  if (IGNORE_NAME_TOKENS.some((token) => lowerName.includes(token))) {
+  if (IDENTIFIER_NAME_PATTERN.test(lowerName)) {
     return "ignored";
   }
 
@@ -108,15 +110,24 @@ function classifyColumn(name: string, values: unknown[]): ColumnKind {
     return "date";
   }
 
-  if (uniqueRatio > 0.9 || avgStringLength > 30) {
-    return "ignored";
-  }
-
   if (numericRatio >= 0.8) {
     return "numeric";
   }
 
   const stringLike = stringCount / nonEmptyCount >= 0.8;
+  if (
+    stringLike &&
+    DIMENSION_NAME_PATTERN.test(name) &&
+    uniqueCount <= 50 &&
+    avgStringLength <= 30
+  ) {
+    return "categorical";
+  }
+
+  if (uniqueRatio > 0.9 || avgStringLength > 30) {
+    return "ignored";
+  }
+
   if (stringLike && uniqueRatio <= 0.2 && uniqueCount <= 50) {
     return "categorical";
   }
@@ -133,17 +144,4 @@ export function inferColumns(rows: Row[]): Column[] {
       kind: classifyColumn(name, values),
     };
   });
-}
-
-export function pickPrimaryColumns(columns: Column[]): {
-  primaryNumeric: Column | null;
-  primaryCategory: Column | null;
-  primaryDate: Column | null;
-} {
-  const primaryNumeric =
-    columns.find((column) => column.kind === "numeric") ?? null;
-  const primaryCategory =
-    columns.find((column) => column.kind === "categorical") ?? null;
-  const primaryDate = columns.find((column) => column.kind === "date") ?? null;
-  return { primaryNumeric, primaryCategory, primaryDate };
 }

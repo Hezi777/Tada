@@ -17,7 +17,7 @@ export function GeneratingChartCard({
   const reduceMotion = useReducedMotion();
 
   return (
-    <div className="relative h-full min-h-[260px] w-full">
+    <div className="relative h-full w-full">
       {/* Soft outer halo */}
       <div
         aria-hidden="true"
@@ -32,7 +32,7 @@ export function GeneratingChartCard({
       <div
         role="status"
         aria-label={`${label}…`}
-        className="relative flex h-full min-h-[260px] flex-col items-center justify-center gap-5 overflow-hidden rounded-[20px] bg-card p-6"
+        className="relative flex h-full flex-col items-center justify-center gap-5 overflow-hidden rounded-[20px] bg-card p-6"
       >
         {/* Breathing orb */}
         <motion.div

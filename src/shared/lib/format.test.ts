@@ -90,8 +90,12 @@ describe("helpers", () => {
     expect(looksLikeCurrencyColumn("region")).toBe(false);
   });
 
-  it("truncates long labels with an ellipsis", () => {
-    expect(truncateLabel("a very long category label", 10)).toBe("a very lo…");
+  it("truncates long labels with an ellipsis, bidi-isolated", () => {
+    // Truncated output is FSI…PDI-wrapped so the ellipsis renders on the
+    // correct visual side of RTL/mixed-direction labels.
+    expect(truncateLabel("a very long category label", 10)).toBe(
+      "⁨a very lo…⁩",
+    );
     expect(truncateLabel("short", 10)).toBe("short");
   });
 

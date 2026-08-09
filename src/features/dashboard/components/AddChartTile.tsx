@@ -47,7 +47,7 @@ export function AddChartTile() {
           <button
             type="button"
             disabled={isBusy}
-            className="transition-ui group flex h-full min-h-[260px] w-full flex-col items-center justify-center gap-3 rounded-[20px] border-2 border-dashed border-[var(--color-border)] bg-transparent text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]/50 hover:bg-[var(--color-surface-muted)]/40 hover:text-[var(--color-accent)] disabled:opacity-60"
+            className="transition-ui group flex h-full w-full flex-col items-center justify-center gap-3 rounded-[20px] border-2 border-dashed border-[var(--color-border)] bg-transparent text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]/50 hover:bg-[var(--color-surface-muted)]/40 hover:text-[var(--color-accent)] disabled:opacity-60"
           >
             <span className="transition-ui flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-surface-muted)] text-[var(--color-accent)] group-hover:scale-105">
               <Plus className="h-6 w-6" />

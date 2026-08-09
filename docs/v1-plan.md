@@ -1,6 +1,8 @@
 # Tada v1 Ship Plan (`feat/v1-ship-fable5`)
 
-Contract for the v1 build. If reality diverges, this file gets updated first.
+Historical build contract for the June 2026 Fable 5 implementation sprint.
+The work described here is implemented; current status and priorities live in
+`docs/project-status-2026-08.md`.
 
 ## Scope
 

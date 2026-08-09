@@ -164,6 +164,12 @@ export function validateChartCollection(
     ) {
       return "Area charts require a valid date or time column.";
     }
+    if (chart.type === "donut") {
+      const series = buildGroupedSeries(chart, context.rows);
+      if (series.length === 0 || series.some((entry) => entry.value <= 0)) {
+        return "Donut charts require positive, non-empty parts of a whole.";
+      }
+    }
     if (chart.type === "scatter") {
       if (chart.columns.length !== 2) {
         return "Scatter charts require exactly two numeric columns.";
@@ -293,7 +299,7 @@ export function buildAreaSeries(
 
   return Array.from(buckets.entries())
     .sort((left, right) => left[0].localeCompare(right[0]))
-    .slice(0, CHART_LIMITS.area)
+    .slice(-CHART_LIMITS.area)
     .map(([label, values]) => ({
       label,
       value: reduceAggregation(
@@ -306,6 +312,7 @@ export function buildAreaSeries(
 export function buildGroupedSeries(
   chart: ChartConfig,
   rows: SerializedRow[],
+  opts: { categoryLimit?: number } = {},
 ): CategoricalChartSeries {
   if (chart.groupBy) {
     const valueColumn =
@@ -339,8 +346,13 @@ export function buildGroupedSeries(
       }))
       .sort((left, right) => right.value - left.value);
 
-    // categoryLimit is set by the BI rules engine (top-N + Other bucket).
-    const donutLimit = chart.categoryLimit ?? CHART_LIMITS.donut;
+    // categoryLimit comes from the BI rules engine (top-N + Other bucket);
+    // opts.categoryLimit is the size-class data budget (docs/WIDGET_SIZING.md)
+    // — the tighter of the two wins.
+    const donutLimit = Math.min(
+      opts.categoryLimit ?? Number.POSITIVE_INFINITY,
+      chart.categoryLimit ?? CHART_LIMITS.donut,
+    );
     if (chart.type === "donut" && series.length > donutLimit) {
       const kept = series.slice(0, donutLimit - 1);
       const otherValue = series
@@ -352,8 +364,14 @@ export function buildGroupedSeries(
     }
 
     if (chart.type === "bar") {
-      const barLimit = chart.categoryLimit ?? CHART_LIMITS.bar;
-      if (chart.categoryLimit && series.length > barLimit) {
+      const barLimit = Math.min(
+        opts.categoryLimit ?? Number.POSITIVE_INFINITY,
+        chart.categoryLimit ?? CHART_LIMITS.bar,
+      );
+      if (
+        (chart.categoryLimit || opts.categoryLimit) &&
+        series.length > barLimit
+      ) {
         const kept = series.slice(0, barLimit);
         const otherValue = series
           .slice(barLimit)
