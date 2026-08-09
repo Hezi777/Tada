@@ -1,15 +1,12 @@
 "use client";
 
 import { type Key, useCallback, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import {
   ArrowDown,
   ArrowUp,
   CalendarDays,
   CalendarRange,
-  Check,
   Eye,
-  Pencil,
   EyeOff,
   GripVertical,
   Hash,
@@ -21,7 +18,6 @@ import {
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
-import { Area, AreaChart } from "recharts";
 import {
   DndContext,
   type DragEndEvent,
@@ -39,16 +35,22 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { ChartConfig, ChartSize, KPIConfig, SerializedRow } from "@/shared/contracts";
-import { supportsSize } from "@/shared/contracts";
-import type { CategoricalChartSeries, KpiTrend } from "@/features/dashboard/client/runtime";
+import type {
+  ChartConfig,
+  ChartSize,
+  KPIConfig,
+  SerializedRow,
+} from "@/shared/contracts";
+import type {
+  CategoricalChartSeries,
+  KpiTrend,
+} from "@/features/dashboard/client/runtime";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { Skeleton } from "@/shared/ui/skeleton";
 import {
-  computeKpiTrend,
   computeKpiValue,
   formatNumber as legacyFormatNumber,
   hasRenderableChartData,
@@ -60,18 +62,17 @@ import {
   TIERS,
   widgetDimensions,
   widgetSpans,
-  widgetType,
   type CanvasTier,
 } from "@/features/dashboard/client/grid";
 import { useCanvasTier } from "@/features/dashboard/client/use-canvas-tier";
+import { useDashboardTrust } from "@/features/dashboard/client/use-dashboard-trust";
+import type { DashboardDateRange } from "@/features/dashboard/client/trust";
 import {
   promoteHiddenChart,
   removeChart,
   reorderWidgets,
   setChartVisibility,
   toggleChartPinned,
-  updateChart,
-  updateKpi,
   useDashboardStore,
   initializeDashboardStore,
   setActiveDashboard,
@@ -79,24 +80,19 @@ import {
   setDashboardList,
   restoreCachedDashboard,
 } from "@/features/dashboard/client/store";
-import {
-  listDashboards,
-  loadDashboard,
-  createDashboard,
-} from "@/shared/lib/api";
+import { loadDashboard, createDashboard } from "@/shared/lib/api";
 import CreateDashboardModal from "@/features/dashboard/components/CreateDashboardModal";
 import { DashboardSwitcher } from "@/features/dashboard/components/DashboardSwitcher";
 import { DashboardChartCard } from "@/features/dashboard/components/DashboardChartCard";
 import { GeneratingChartCard } from "@/features/dashboard/components/GeneratingChartCard";
+import { DashboardTrustControls } from "@/features/dashboard/components/DashboardTrustControls";
 import { AddChartTile } from "@/features/dashboard/components/AddChartTile";
 import { onChartGenerating } from "@/features/dashboard/client/chart-effects";
 import { useTranslation } from "@/shared/i18n";
 import type { DashboardListItem } from "@/shared/contracts";
 import { BI_RULE_LIMITS } from "@/shared/contracts";
 import {
-  DASHBOARD_COLORS,
   formatAggregationLabel,
-  resolveIllustrationForIcon,
   resolveKpiIcon,
 } from "@/features/dashboard/client/design";
 import {
@@ -283,8 +279,8 @@ function kpiValueSizeClass(
     return visibleLength > 9 ? `${base} text-2xl` : `${base} text-3xl`;
   }
   if (isPrimary) {
-    // Primary sits beside the hero illustration in a narrow card, so the value
-    // steps down by length to stay on one line without overlapping the art.
+    // The primary metric carries the hierarchy, but still steps down for long
+    // currency values so it remains on one line.
     const base = "display-number font-black tracking-tight tabular-nums";
     if (visibleLength > 10) return `${base} text-2xl sm:text-3xl`;
     if (visibleLength > 7) return `${base} text-3xl sm:text-4xl`;
@@ -293,7 +289,7 @@ function kpiValueSizeClass(
   return visibleLength > 11 ? "t-metric text-2xl sm:text-3xl" : "t-metric";
 }
 
-/** Brand-blue accent used for the sparkline stroke + gradient fill. */
+/** Brand-blue accent used for the sparkline stroke. */
 const KPI_SPARKLINE_ACCENT = "#2f6df6";
 
 /** Fixed sparkline strip height inside medium/large KPI cards. */
@@ -308,31 +304,35 @@ function KpiSparkline({
   width: number;
   height: number;
 }) {
-  const gradientId = `kpi-sparkline-${data.length}-${data[0]?.label ?? "x"}`;
+  const values = data.map((entry) => entry.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const points = values
+    .map((value, index) => {
+      const x =
+        data.length === 1 ? width / 2 : (index / (data.length - 1)) * width;
+      const y = height - 3 - ((value - min) / range) * (height - 6);
+      return `${x},${y}`;
+    })
+    .join(" ");
 
   return (
-    <AreaChart
-      data={data}
+    <svg
       width={width}
       height={height}
-      margin={{ top: 2, right: 0, left: 0, bottom: 0 }}
+      viewBox={`0 0 ${width} ${height}`}
+      aria-hidden="true"
     >
-      <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={KPI_SPARKLINE_ACCENT} stopOpacity={0.25} />
-          <stop offset="100%" stopColor={KPI_SPARKLINE_ACCENT} stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      <Area
-        type="monotone"
-        dataKey="value"
+      <polyline
+        points={points}
+        fill="none"
         stroke={KPI_SPARKLINE_ACCENT}
         strokeWidth={2}
-        fill={`url(#${gradientId})`}
-        dot={false}
-        isAnimationActive={false}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
-    </AreaChart>
+    </svg>
   );
 }
 
@@ -360,7 +360,6 @@ export function KpiCard({
   label,
   eyebrow,
   isPrimary = false,
-  meshClassName = "mesh-navy",
   trend,
   chrome,
   size = "medium",
@@ -372,7 +371,6 @@ export function KpiCard({
   label: string;
   eyebrow: string;
   isPrimary?: boolean;
-  meshClassName?: string;
   trend: KpiTrend | null;
   /** Edit-mode chrome (drag handle + size control), rendered top-right. */
   chrome?: React.ReactNode;
@@ -384,17 +382,16 @@ export function KpiCard({
   tier?: CanvasTier;
 }) {
   const displayValue = formatMetric(value);
-  const illustrationSrc = resolveIllustrationForIcon(Icon);
   const cardWidth = widgetDimensions(size, tier).width;
 
   const surfaceClass = isPrimary
-    ? `border-0 shadow-premium ${meshClassName} text-white`
-    : "premium-card text-[var(--color-text-primary)]";
+    ? "border-[var(--color-border)] bg-card text-[var(--color-text-primary)] shadow-[0_18px_60px_-52px_rgba(47,109,246,0.8)]"
+    : "border-[var(--color-border)] bg-card text-[var(--color-text-primary)] shadow-none";
   const iconBoxClass = isPrimary
-    ? "bg-white/10 text-white"
-    : "bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)] dark:bg-white/10";
-  const valueColor = isPrimary ? "text-white" : "text-[var(--color-text-primary)]";
-  const labelColor = isPrimary ? "text-white/70" : "text-[var(--color-text-secondary)]";
+    ? "bg-[var(--color-accent)] text-white"
+    : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]";
+  const valueColor = "text-[var(--color-text-primary)]";
+  const labelColor = "text-[var(--color-text-secondary)]";
 
   const statusBadge = trend ? (
     <KpiDeltaBadge deltaPct={trend.deltaPct} />
@@ -402,7 +399,7 @@ export function KpiCard({
     <span
       className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
         isPrimary
-          ? "bg-white/10 text-white/80"
+          ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
           : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
       }`}
     >
@@ -415,7 +412,7 @@ export function KpiCard({
     // nothing else should.
     return (
       <Card
-        className={`dashboard-hover premium-hover relative h-full overflow-hidden rounded-[20px] ${surfaceClass}`}
+        className={`relative h-full overflow-hidden rounded-[18px] ${surfaceClass}`}
       >
         {chrome}
         <CardContent className="relative flex h-full flex-col justify-between overflow-hidden p-5">
@@ -433,7 +430,9 @@ export function KpiCard({
             >
               {displayValue}
             </div>
-            <p className={`mt-1 truncate text-xs font-semibold leading-snug ${labelColor}`}>
+            <p
+              className={`mt-1 truncate text-xs font-semibold leading-snug ${labelColor}`}
+            >
               {label}
             </p>
           </div>
@@ -449,7 +448,7 @@ export function KpiCard({
     const sparklineWidth = Math.floor((cardWidth - 40) * 0.45);
     return (
       <Card
-        className={`dashboard-hover premium-hover relative h-full overflow-hidden rounded-[20px] ${surfaceClass}`}
+        className={`relative h-full overflow-hidden rounded-[18px] ${surfaceClass}`}
       >
         {chrome}
         <CardContent className="relative flex h-full flex-col justify-between overflow-hidden p-5">
@@ -468,7 +467,9 @@ export function KpiCard({
               >
                 {displayValue}
               </div>
-              <p className={`mt-1 truncate text-sm font-semibold leading-snug ${labelColor}`}>
+              <p
+                className={`mt-1 truncate text-sm font-semibold leading-snug ${labelColor}`}
+              >
                 {label}
               </p>
             </div>
@@ -487,18 +488,17 @@ export function KpiCard({
     );
   }
 
-  // 2×2 large: the rich stack — icon, value (beside the hero illustration on
-  // the primary card), label, full-width sparkline, breakdown row.
+  // 2×2 large: value, context, and an optional full-width sparkline.
   const sparklineWidth = cardWidth - 40 + 8;
   return (
     <Card
-      className={`dashboard-hover premium-hover relative h-full overflow-hidden rounded-[20px] ${surfaceClass}`}
+      className={`relative h-full overflow-hidden rounded-[18px] ${surfaceClass}`}
     >
       {chrome}
       <CardContent className="relative flex h-full flex-col justify-between overflow-hidden p-5">
         <div className="flex items-start justify-between gap-4">
           <div
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconBoxClass}`}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${iconBoxClass}`}
           >
             <Icon className="h-5 w-5" strokeWidth={2.25} />
           </div>
@@ -513,24 +513,15 @@ export function KpiCard({
               {displayValue}
             </div>
             {isPrimary ? (
-              illustrationSrc ? (
-                <Image
-                  src={illustrationSrc}
-                  alt=""
-                  width={112}
-                  height={112}
-                  className="pointer-events-none h-24 w-24 shrink-0 object-contain"
-                />
-              ) : (
-                <Icon
-                  strokeWidth={1.5}
-                  className="pointer-events-none h-12 w-12 shrink-0 text-white/10"
-                />
-              )
+              <span className="mb-1 rounded-full bg-[var(--color-accent-light)] px-3 py-1 text-[11px] font-semibold text-[var(--color-accent)]">
+                {eyebrow}
+              </span>
             ) : null}
           </div>
 
-          <p className={`mt-2 text-sm font-semibold leading-snug ${labelColor}`}>
+          <p
+            className={`mt-2 text-sm font-semibold leading-snug ${labelColor}`}
+          >
             {label}
           </p>
 
@@ -546,84 +537,17 @@ export function KpiCard({
         </div>
 
         {trend ? (
-          <div
-            className={`mt-3 flex items-center justify-between border-t pt-3 ${
-              isPrimary ? "border-white/15" : "border-[var(--color-border)]"
-            }`}
-          >
-            <span
-              className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                isPrimary ? "text-white/60" : "text-[var(--color-text-muted)]"
-              }`}
-            >
+          <div className="mt-3 flex items-center justify-between border-t border-[var(--color-border)] pt-3">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
               {eyebrow}
             </span>
-            <span
-              className={`text-xs font-medium ${
-                isPrimary ? "text-white/70" : "text-[var(--color-text-secondary)]"
-              }`}
-            >
+            <span className="text-xs font-medium text-[var(--color-text-secondary)]">
               {trend.sparkline.length} pts
             </span>
           </div>
         ) : null}
       </CardContent>
     </Card>
-  );
-}
-
-const SIZE_OPTIONS: Array<{ value: ChartSize; label: string }> = [
-  { value: "small", label: "S" },
-  { value: "medium", label: "M" },
-  { value: "large", label: "L" },
-  { value: "xlarge", label: "XL" },
-];
-
-/** S/M/L/XL segmented control shown on widgets in edit mode. Classes the
- * widget type doesn't support render as DISABLED stops — a type with no
- * honest rendering at a class simply doesn't offer it, it never fakes one
- * (docs/WIDGET_SIZING.md §2). */
-function WidgetSizeControl({
-  type,
-  size,
-  onChange,
-}: {
-  type: ReturnType<typeof widgetType>;
-  size: ChartSize;
-  onChange: (size: ChartSize) => void;
-}) {
-  return (
-    <div className="flex items-center gap-0.5 rounded-full bg-card/90 p-0.5 shadow-card backdrop-blur">
-      {SIZE_OPTIONS.map((option) => {
-        const supported = supportsSize(type, option.value);
-        return (
-          <button
-            key={option.value}
-            type="button"
-            disabled={!supported}
-            onClick={() => onChange(option.value)}
-            aria-pressed={size === option.value}
-            aria-label={
-              supported
-                ? `Set widget size to ${option.label}`
-                : `${option.label} is not available for ${type} widgets`
-            }
-            title={
-              supported ? undefined : `Not available for ${type} widgets`
-            }
-            className={`transition-ui flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
-              size === option.value
-                ? "bg-[var(--color-accent)] text-white"
-                : supported
-                  ? "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-                  : "cursor-not-allowed text-[var(--color-text-muted)] opacity-35"
-            }`}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
   );
 }
 
@@ -651,8 +575,14 @@ function SortableWidget({
   tier: CanvasTier;
   children: (drag: DragHandleProps) => React.ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
 
   const spans = widgetSpans(size, tier);
   const style: React.CSSProperties = {
@@ -670,19 +600,18 @@ function SortableWidget({
   );
 }
 
-/** Fixed-px canvas grid (docs/WIDGET_SIZING.md §3): the tier decides column
- * count and cell width; the canvas renders at its fixed width, centered.
- * No fluid `1fr` columns — every widget dimension is a lookup. */
+/** Responsive canvas grid. The tier still controls column count and widget
+ * content density, while `minmax(0, 1fr)` lets the canvas use all available
+ * width without introducing a horizontal scrollbar. */
 function canvasGridStyle(tier: CanvasTier): React.CSSProperties {
-  const { columns, cell, canvas } = TIERS[tier];
+  const { columns } = TIERS[tier];
   return {
     display: "grid",
-    gridTemplateColumns: `repeat(${columns}, ${cell}px)`,
+    gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
     gridAutoRows: `${ROW_UNIT}px`,
     gridAutoFlow: "row dense",
     gap: GRID_GAP,
-    width: canvas,
-    marginInline: "auto",
+    width: "100%",
   };
 }
 
@@ -903,10 +832,14 @@ function ManageViewsSheet({
   open,
   onOpenChange,
   charts,
+  isEditing,
+  onEditingChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   charts: ChartConfig[];
+  isEditing: boolean;
+  onEditingChange: (editing: boolean) => void;
 }) {
   const visibleCharts = charts.filter(isChartVisible);
   const hiddenCharts = charts.filter((chart) => !isChartVisible(chart));
@@ -920,11 +853,22 @@ function ManageViewsSheet({
       >
         <SheetHeader className="px-6 py-5 text-left">
           <SheetTitle className="font-display text-[var(--color-text-primary)]">
-            Manage Views
+            Customize dashboard
           </SheetTitle>
           <SheetDescription>
-            Keep the main canvas readable while saving alternate chart views.
+            Reorder or choose which insights appear on the dashboard.
           </SheetDescription>
+          <Button
+            type="button"
+            variant={isEditing ? "default" : "outline"}
+            className="mt-4 w-full"
+            onClick={() => {
+              onEditingChange(!isEditing);
+              onOpenChange(false);
+            }}
+          >
+            {isEditing ? "Finish reordering" : "Reorder dashboard"}
+          </Button>
         </SheetHeader>
 
         <div className="dashboard-scroll h-full space-y-6 overflow-y-auto px-6 py-5">
@@ -958,8 +902,6 @@ function ManageViewsSheet({
 export function Dashboard() {
   const { t } = useTranslation();
   const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
-  const rows = useDashboardStore((snapshot) => snapshot.rows);
-  const columns = useDashboardStore((snapshot) => snapshot.columns);
   const charts = useDashboardStore((snapshot) => snapshot.charts);
   const kpiConfigs = useDashboardStore((snapshot) => snapshot.kpis);
   const fileName = useDashboardStore((snapshot) => snapshot.fileName);
@@ -967,8 +909,11 @@ export function Dashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [isGeneratingChart, setIsGeneratingChart] = useState(false);
   const [isInteracting, setIsInteracting] = useState(false);
+  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(null);
+  const { rows } = useDashboardTrust(dateRange);
 
   useEffect(() => onChartGenerating(setIsGeneratingChart), []);
+  useEffect(() => setDateRange(null), [datasetId]);
 
   const orderedCharts = useMemo(
     () => [...charts].sort((left, right) => left.order - right.order),
@@ -996,7 +941,9 @@ export function Dashboard() {
         ? "Primary KPI"
         : formatAggregationLabel(kpi.aggregation),
       isPrimary: kpi.isPrimary,
-      trend: computeKpiTrend(kpi, rows, columns),
+      // Trend badges require an explicit comparison period. Until the KPI
+      // contract carries one, showing a percentage implies unsupported meaning.
+      trend: null,
     }));
 
     // Only fill with fallback cards if backend returned fewer than 4
@@ -1016,7 +963,7 @@ export function Dashboard() {
     }
 
     return backendCards;
-  }, [kpiConfigs, rows, columns]);
+  }, [kpiConfigs, rows]);
 
   // KPI cards backed by a persisted KPIConfig participate in the sortable
   // Apple-widget canvas (drag-to-reorder + size control). Fallback cards
@@ -1030,13 +977,16 @@ export function Dashboard() {
           config: kpiConfigs.find((kpi) => kpi.id === card.id),
         }))
         .filter(
-          (entry): entry is { card: (typeof kpiCards)[number]; config: KPIConfig } =>
+          (
+            entry,
+          ): entry is { card: (typeof kpiCards)[number]; config: KPIConfig } =>
             Boolean(entry.config),
         ),
     [kpiCards, kpiConfigs],
   );
   const fallbackKpiCards = useMemo(
-    () => kpiCards.filter((card) => !kpiConfigs.some((kpi) => kpi.id === card.id)),
+    () =>
+      kpiCards.filter((card) => !kpiConfigs.some((kpi) => kpi.id === card.id)),
     [kpiCards, kpiConfigs],
   );
 
@@ -1044,7 +994,10 @@ export function Dashboard() {
   // charts (by their own `order`). Drag-to-reorder re-derives both sequences
   // from the combined drop order via `reorderWidgets`.
   const sortedKpiEntries = useMemo(
-    () => [...sortableKpiCards].sort((left, right) => left.config.order - right.config.order),
+    () =>
+      [...sortableKpiCards].sort(
+        (left, right) => left.config.order - right.config.order,
+      ),
     [sortableKpiCards],
   );
   const widgetIds = useMemo(
@@ -1055,13 +1008,15 @@ export function Dashboard() {
     [sortedKpiEntries, visibleCharts],
   );
 
-  // Canvas trait resolver: the ONLY runtime layout observation. Everything
-  // below the wrapper renders from fixed (size class × tier) constants.
+  // The canvas trait resolver selects content density and column spans. The
+  // grid itself remains fluid within the available dashboard width.
   const { ref: canvasRef, tier } = useCanvasTier<HTMLDivElement>();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   const handleDragEnd = useCallback(
@@ -1100,19 +1055,6 @@ export function Dashboard() {
       : "Upload a dataset to generate charts and KPIs";
 
     const [createOpen, setCreateOpen] = useState(false);
-
-    const fetchDashboards = useCallback(async () => {
-      try {
-        const items = await listDashboards();
-        setDashboardList(items);
-      } catch {
-        // silent
-      }
-    }, []);
-
-    useEffect(() => {
-      void fetchDashboards();
-    }, [fetchDashboards]);
 
     async function handleSwitch(dash: DashboardListItem) {
       // Try local cache first for instant switch
@@ -1160,9 +1102,9 @@ export function Dashboard() {
 
     return (
       <>
-        <div className="flex shrink-0 flex-col gap-4 px-5 pb-5 pt-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex shrink-0 flex-col gap-5 px-5 pb-5 pt-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
-            <div className="font-display text-[32px] font-black tracking-[-0.045em] text-[var(--color-text-primary)] sm:text-[36px]">
+            <div className="font-display text-[38px] font-medium tracking-[-0.05em] text-[var(--color-text-primary)] sm:text-[52px]">
               {title}
             </div>
             <p className="mt-1.5 max-w-[52rem] truncate text-sm text-[var(--color-text-secondary)]">
@@ -1194,44 +1136,17 @@ export function Dashboard() {
 
             <Button
               type="button"
-              onClick={() => setIsEditing((current) => !current)}
-              variant="outline"
-              aria-pressed={isEditing}
-              className={`h-10 rounded-full border px-4 text-sm font-semibold transition ${
-                isEditing
-                  ? "border-[var(--color-accent)] bg-[var(--color-accent-light)] text-[var(--color-accent)]"
-                  : "border-[var(--color-border)] bg-card text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)]"
-              }`}
-            >
-              {isEditing ? (
-                <>
-                  <Check className="mr-2 h-4 w-4" />
-                  {t("dash.done")}
-                </>
-              ) : (
-                <>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  {t("dash.edit")}
-                </>
-              )}
-            </Button>
-
-            <Button
-              type="button"
               onClick={() => setManageViewsOpen((current) => !current)}
               className={`h-10 rounded-full px-4 text-sm font-semibold text-white transition ${
                 manageViewsOpen
                   ? "bg-[#191c1e]"
                   : "bg-[var(--color-accent)] hover:bg-[#0047ab]"
               }`}
-              style={{
-                boxShadow: `0 24px 48px -28px ${DASHBOARD_COLORS.primary}88`,
-              }}
               variant="default"
-              aria-label="Open manage views"
+              aria-label="Customize dashboard"
             >
               <LayoutPanelLeft className="mr-2 h-4 w-4" />
-              {t("dash.manageViews")}
+              Customize
             </Button>
           </div>
         </div>
@@ -1278,10 +1193,18 @@ export function Dashboard() {
             isManageViewsOpen={isManageViewsOpen}
             setIsManageViewsOpen={setIsManageViewsOpen}
           />
+          <div className="px-5 pb-4">
+            <DashboardTrustControls
+              range={dateRange}
+              onRangeChange={setDateRange}
+            />
+          </div>
           <ManageViewsSheet
             open={isManageViewsOpen}
             onOpenChange={setIsManageViewsOpen}
             charts={orderedCharts}
+            isEditing={isEditing}
+            onEditingChange={setIsEditing}
           />
 
           <div ref={canvasRef} className="px-5 pb-6">
@@ -1312,13 +1235,16 @@ export function Dashboard() {
                 onDragStart={() => setIsInteracting(true)}
                 onDragEnd={handleDragEnd}
               >
-                <SortableContext items={widgetIds} strategy={rectSortingStrategy}>
+                <SortableContext
+                  items={widgetIds}
+                  strategy={rectSortingStrategy}
+                >
                   <div style={canvasGridStyle(tier)}>
                     {sortedKpiEntries.map(({ card, config }) => (
                       <SortableWidget
                         key={card.id}
                         id={card.id}
-                        size={config.size}
+                        size={card.isPrimary ? "medium" : config.size}
                         tier={tier}
                       >
                         {(drag) => (
@@ -1329,16 +1255,11 @@ export function Dashboard() {
                             eyebrow={card.eyebrow}
                             isPrimary={card.isPrimary}
                             trend={card.trend}
-                            size={config.size}
+                            size={card.isPrimary ? "medium" : config.size}
                             tier={tier}
                             chrome={
                               isEditing ? (
                                 <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
-                                  <WidgetSizeControl
-                                    type="kpi"
-                                    size={config.size}
-                                    onChange={(size) => updateKpi(config.id, { size })}
-                                  />
                                   <div
                                     {...drag.attributes}
                                     {...drag.listeners}
@@ -1365,17 +1286,15 @@ export function Dashboard() {
                           <DashboardChartCard
                             chart={chart}
                             rows={rows}
+                            insight={
+                              dateRange
+                                ? `Filtered to ${rows.length.toLocaleString()} rows`
+                                : undefined
+                            }
                             tier={tier}
                             isEditing={isEditing}
                             isInteracting={isInteracting}
                             dragHandleProps={drag}
-                            sizeControl={
-                              <WidgetSizeControl
-                                type={widgetType(chart)}
-                                size={chart.size}
-                                onChange={(size) => updateChart(chart.id, { size })}
-                              />
-                            }
                           />
                         )}
                       </SortableWidget>
@@ -1387,7 +1306,8 @@ export function Dashboard() {
             {fallbackKpiCards.length > 0 ? (
               <div className="mt-5" style={canvasGridStyle(tier)}>
                 {fallbackKpiCards.map((card) => {
-                  const spans = widgetSpans("medium", tier);
+                  const presentationSize = "medium";
+                  const spans = widgetSpans(presentationSize, tier);
                   return (
                     <div
                       key={card.id}
@@ -1403,7 +1323,7 @@ export function Dashboard() {
                         eyebrow={card.eyebrow}
                         isPrimary={card.isPrimary}
                         trend={card.trend}
-                        size="medium"
+                        size={presentationSize}
                         tier={tier}
                       />
                     </div>
