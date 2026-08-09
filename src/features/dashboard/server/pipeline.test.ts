@@ -31,6 +31,16 @@ const SALES_CSV = [
   }),
 ].join("\n");
 
+const ADVERSARIAL_EXPENSES_CSV = [
+  "transaction_id,expense_date,vendor_name,category,amount_ils,tax_rate_pct",
+  "10001,2026-01-03,Cafe Alef,Meals,42.90,17",
+  "10002,2026-01-17,Office Pro,Supplies,-15.50,17",
+  "10003,invalid-date,Cloud Host,Software,299.99,17",
+  "10004,2026-02-01,Landlord,Rent,4500,0",
+  "10005,2026-02-03,Cafe Alef,Meals,,17",
+  "10006,2026-03-11,Cloud Host,Software,301.25,17",
+].join("\n");
+
 function csvFile(content: string) {
   return { buffer: Buffer.from(content, "utf8"), originalname: "sales.csv" };
 }
@@ -62,6 +72,44 @@ describe("upload -> generate pipeline (offline fallback path)", () => {
       expect(chart.generatedAt).toBeTruthy();
       expect(chart.source).toBeTruthy();
     }
+  });
+
+  it("handles realistic expense exports with ids, missing values, negatives, and bad dates", async () => {
+    const result = await profileUpload(csvFile(ADVERSARIAL_EXPENSES_CSV));
+
+    expect(result.columns).toContainEqual({
+      name: "transaction_id",
+      kind: "ignored",
+    });
+    expect(result.columns).toContainEqual({
+      name: "vendor_name",
+      kind: "categorical",
+    });
+    expect(result.columns).toContainEqual({
+      name: "amount_ils",
+      kind: "numeric",
+    });
+    expect(result.profile.invalidDateRowCount).toBe(1);
+    expect(result.profile.incompleteRowCount).toBe(1);
+    expect(
+      result.profile.columns.find((column) => column.name === "amount_ils"),
+    ).toMatchObject({
+      semanticType: "currency",
+      unit: "ILS",
+    });
+
+    const { charts } = await generateDashboardArtifacts(
+      result.rows,
+      result.columns,
+      {
+        topic: "expenses",
+        chartCount: 4,
+      },
+    );
+    expect(
+      validateChartCollection(charts, result.columns, result.rows),
+    ).toBeNull();
+    expect(charts.every((chart) => chart.evidence)).toBe(true);
   });
 });
 

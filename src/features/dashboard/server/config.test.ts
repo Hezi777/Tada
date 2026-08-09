@@ -70,4 +70,37 @@ describe("buildInitialChartConfigs (offline fallback path)", () => {
       expect(isSingleValueAggregateShape).toBe(false);
     }
   });
+
+  it("grounds fallback insights in computed values", async () => {
+    const charts = await buildInitialChartConfigs(rows, columns);
+    for (const chart of charts) {
+      expect(chart.insight).toMatch(/\d/);
+      expect(chart.evidence).toBeDefined();
+      expect(chart.evidence?.includedRowCount).toBeGreaterThan(0);
+      expect(
+        chart.evidence!.includedRowCount + chart.evidence!.excludedRowCount,
+      ).toBe(rows.length);
+    }
+  });
+
+  it("discloses rows excluded from time insights", async () => {
+    const dateColumns: Column[] = [
+      { name: "sale_date", kind: "date" },
+      { name: "region", kind: "categorical" },
+      { name: "revenue", kind: "numeric" },
+    ];
+    const dateRows = [
+      { sale_date: "2026-01-01", region: "North", revenue: 100.5 },
+      { sale_date: "bad-date", region: "South", revenue: 200.25 },
+      { sale_date: "2026-02-01", region: "North", revenue: null },
+      { sale_date: "2026-03-01", region: "South", revenue: 300.75 },
+    ];
+    const charts = await buildInitialChartConfigs(dateRows, dateColumns);
+    const trend = charts.find((chart) => chart.type === "area");
+
+    expect(trend?.evidence).toMatchObject({
+      includedRowCount: 2,
+      excludedRowCount: 2,
+    });
+  });
 });

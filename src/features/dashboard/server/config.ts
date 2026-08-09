@@ -7,19 +7,15 @@ import {
   clampToSupportedSize,
   normalizeChartConfig,
   type ChartConfig,
+  type ChartEvidence,
   type ChartSource,
   type ChartType,
   type KPIConfig,
 } from "@/shared/contracts";
 import Groq from "groq-sdk";
 import { z } from "zod";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { env, getGroqApiKey } from "@/shared/lib/env";
 import { jsonCompletion } from "@/shared/lib/ai/groq";
-import {
-  retrieveBiRules,
-  type RetrievedBiRule,
-} from "@/features/rag/server/bi-rules";
 import { applyBiRules } from "./rules";
 import type { Column } from "./types";
 
@@ -42,6 +38,7 @@ type IncomingChartConfig = {
   groupBy: string | null;
   timeColumn: string | null;
   size: ChartConfig["size"];
+  evidence?: ChartEvidence;
 };
 
 function nowIso(): string {
@@ -404,7 +401,9 @@ function aggregateByTime(
     const numericValue = valueColumn ? toNumber(row[valueColumn]) : null;
 
     if (aggregation === "count" || !valueColumn) {
-      current.count += 1;
+      if (!valueColumn || numericValue !== null) {
+        current.count += 1;
+      }
     } else if (numericValue !== null) {
       current.sum += numericValue;
       current.count += 1;
@@ -460,7 +459,9 @@ function aggregateByCategory(
     const numericValue = valueColumn ? toNumber(row[valueColumn]) : null;
 
     if (aggregation === "count" || !valueColumn) {
-      current.count += 1;
+      if (!valueColumn || numericValue !== null) {
+        current.count += 1;
+      }
     } else if (numericValue !== null) {
       current.sum += numericValue;
       current.count += 1;
@@ -516,7 +517,10 @@ function reduceAggregate(
  * records instead of summing/averaging a year, id, code, or similar
  * non-additive numeric dimension.
  */
-function resolveMeasureColumn(rows: Row[], column: Column | null): Column | null {
+function resolveMeasureColumn(
+  rows: Row[],
+  column: Column | null,
+): Column | null {
   if (!column) {
     return null;
   }
@@ -530,15 +534,19 @@ function buildAreaInsight(
   if (series.length < 2) {
     return `${metricLabel} has limited time coverage in the uploaded dataset.`;
   }
+  const format = (value: number) =>
+    new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
   const first = series[0].value;
   const last = series[series.length - 1].value;
+  const firstLabel = series[0].key;
+  const lastLabel = series[series.length - 1].key;
   if (last > first * 1.05) {
-    return `${metricLabel} rises over the observed time period.`;
+    return `${metricLabel} increased from ${format(first)} in ${firstLabel} to ${format(last)} in ${lastLabel}.`;
   }
   if (last < first * 0.95) {
-    return `${metricLabel} declines over the observed time period.`;
+    return `${metricLabel} decreased from ${format(first)} in ${firstLabel} to ${format(last)} in ${lastLabel}.`;
   }
-  return `${metricLabel} stays relatively stable over time.`;
+  return `${metricLabel} changed from ${format(first)} in ${firstLabel} to ${format(last)} in ${lastLabel}.`;
 }
 
 function buildBarInsight(
@@ -550,7 +558,10 @@ function buildBarInsight(
   if (!top) {
     return `No strong ${groupBy} breakout was detected for ${metricLabel}.`;
   }
-  return `${top.key} leads ${groupBy} on ${metricLabel}.`;
+  const value = new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+  }).format(top.value);
+  return `${top.key} leads ${groupBy} on ${metricLabel} at ${value}.`;
 }
 
 function buildDonutInsight(
@@ -563,7 +574,7 @@ function buildDonutInsight(
   }
   const total = series.reduce((sum, entry) => sum + entry.value, 0);
   const share = total > 0 ? Math.round((top.value / total) * 100) : 0;
-  return `${top.key} represents about ${share}% of ${groupBy}.`;
+  return `${top.key} represents ${share}% of ${groupBy} (${top.value} of ${total}).`;
 }
 
 function buildScatterInsight(
@@ -572,9 +583,9 @@ function buildScatterInsight(
   right: string,
 ): string {
   if (correlation >= BI_RULE_LIMITS.minScatterCorrelation) {
-    return `${left} and ${right} move together with a positive correlation.`;
+    return `${left} and ${right} have a positive correlation (r=${correlation.toFixed(2)}).`;
   }
-  return `${left} and ${right} move in opposite directions with a negative correlation.`;
+  return `${left} and ${right} have a negative correlation (r=${correlation.toFixed(2)}).`;
 }
 
 function buildAreaChart(
@@ -594,6 +605,10 @@ function buildAreaChart(
     return null;
   }
   const metricLabel = numericColumn ? numericColumn.name : "record count";
+  const includedRowCount = rows.filter((row) => {
+    if (!toDate(row[dateColumn.name])) return false;
+    return !numericColumn || toNumber(row[numericColumn.name]) !== null;
+  }).length;
   return {
     type: "area",
     title: numericColumn
@@ -607,6 +622,17 @@ function buildAreaChart(
     groupBy: null,
     timeColumn: dateColumn.name,
     size: "xlarge",
+    evidence: {
+      description: `First and last chronological ${aggregation} buckets used by the trend insight.`,
+      includedRowCount,
+      excludedRowCount: rows.length - includedRowCount,
+      values: {
+        firstPeriod: series[0].key,
+        firstValue: series[0].value,
+        lastPeriod: series[series.length - 1].key,
+        lastValue: series[series.length - 1].value,
+      },
+    },
   };
 }
 
@@ -627,6 +653,12 @@ function buildBarChart(
     return null;
   }
   const metricLabel = numericColumn ? numericColumn.name : "record count";
+  const includedRowCount = rows.filter((row) => {
+    const category = row[categoryColumn.name];
+    if (category === null || category === undefined || category === "")
+      return false;
+    return !numericColumn || toNumber(row[numericColumn.name]) !== null;
+  }).length;
   return {
     type: "bar",
     title: numericColumn
@@ -640,6 +672,12 @@ function buildBarChart(
     groupBy: categoryColumn.name,
     timeColumn: null,
     size: "large",
+    evidence: {
+      description: `Highest ${categoryColumn.name} bucket after ${aggregation} aggregation.`,
+      includedRowCount,
+      excludedRowCount: rows.length - includedRowCount,
+      values: { leadingCategory: series[0].key, leadingValue: series[0].value },
+    },
   };
 }
 
@@ -659,6 +697,13 @@ function buildDonutChart(
   if (series.length === 0) {
     return null;
   }
+  const includedRowCount = rows.filter((row) => {
+    const category = row[categoryColumn.name];
+    if (category === null || category === undefined || category === "")
+      return false;
+    return !numericColumn || toNumber(row[numericColumn.name]) !== null;
+  }).length;
+  const total = series.reduce((sum, entry) => sum + entry.value, 0);
   return {
     type: "donut",
     title: numericColumn
@@ -672,6 +717,16 @@ function buildDonutChart(
     groupBy: categoryColumn.name,
     timeColumn: null,
     size: "large",
+    evidence: {
+      description: `Largest category and total used to calculate the displayed share.`,
+      includedRowCount,
+      excludedRowCount: rows.length - includedRowCount,
+      values: {
+        leadingCategory: series[0].key,
+        leadingValue: series[0].value,
+        total,
+      },
+    },
   };
 }
 
@@ -737,6 +792,21 @@ function buildScatterChart(
     groupBy: null,
     timeColumn: null,
     size: "large",
+    evidence: {
+      description:
+        "Pearson correlation calculated from rows containing both numeric values.",
+      includedRowCount: rows.filter(
+        (row) =>
+          toNumber(row[best.left.name]) !== null &&
+          toNumber(row[best.right.name]) !== null,
+      ).length,
+      excludedRowCount: rows.filter(
+        (row) =>
+          toNumber(row[best.left.name]) === null ||
+          toNumber(row[best.right.name]) === null,
+      ).length,
+      values: { correlation: best.correlation },
+    },
   };
 }
 
@@ -759,6 +829,12 @@ function buildRecordCountBar(rows: Row[]): IncomingChartConfig | null {
     groupBy: null,
     timeColumn: null,
     size: "small",
+    evidence: {
+      description: "Count of all uploaded rows.",
+      includedRowCount: rows.length,
+      excludedRowCount: 0,
+      values: { recordCount: rows.length },
+    },
   };
 }
 
@@ -775,6 +851,12 @@ function buildRecordCountDonut(rows: Row[]): IncomingChartConfig | null {
     groupBy: null,
     timeColumn: null,
     size: "medium",
+    evidence: {
+      description: "Count of all uploaded rows in the current slice.",
+      includedRowCount: rows.length,
+      excludedRowCount: 0,
+      values: { recordCount: rows.length },
+    },
   };
 }
 
@@ -805,6 +887,7 @@ function normalizeCharts(
         priority: index,
         lastTouchedBy: source === "user" ? "user" : "ai_initial",
         visibilityState: "visible",
+        evidence: chart.evidence,
       }),
     ),
   );
@@ -961,7 +1044,9 @@ function buildFallbackCharts(rows: Row[], columns: Column[]): ChartConfig[] {
  * aggregation, and groupBy (e.g. two donuts that would render the same
  * total), keeping the first occurrence.
  */
-function dedupeAndCleanCharts(charts: IncomingChartConfig[]): IncomingChartConfig[] {
+function dedupeAndCleanCharts(
+  charts: IncomingChartConfig[],
+): IncomingChartConfig[] {
   const seenSignatures = new Set<string>();
   const result: IncomingChartConfig[] = [];
 
@@ -1031,41 +1116,10 @@ function normalizeSuggestedChart(
 }
 
 export type GenerationContext = {
-  /** Authenticated client used to query the bi_rules_chunks vector index. */
-  supabase?: SupabaseClient;
   topic?: string;
   /** User-confirmed number of charts to aim for (clamped to BI limits). */
   chartCount?: number;
 };
-
-function buildRuleRetrievalQuery(columns: Column[], topic?: string): string {
-  const byKind = (kind: Column["kind"]) =>
-    columns
-      .filter((column) => column.kind === kind)
-      .map((column) => column.name)
-      .join(", ");
-  return [
-    `Choosing dashboard charts for a ${topic && topic !== "unknown" ? topic.replace(/_/g, " ") : "general business"} dataset.`,
-    `Numeric columns: ${byKind("numeric") || "none"}.`,
-    `Categorical columns: ${byKind("categorical") || "none"}.`,
-    `Date columns: ${byKind("date") || "none"}.`,
-    "Which chart selection, aggregation, formatting, readability and Israeli data rules apply?",
-  ].join(" ");
-}
-
-async function fetchGroundingRules(
-  columns: Column[],
-  context?: GenerationContext,
-): Promise<RetrievedBiRule[]> {
-  if (!context?.supabase) {
-    return [];
-  }
-  return retrieveBiRules(
-    context.supabase,
-    buildRuleRetrievalQuery(columns, context.topic),
-    { topK: 12 },
-  );
-}
 
 const ChartsSuggestionSchema = z.object({
   charts: z.array(z.record(z.unknown())),
@@ -1074,17 +1128,13 @@ const ChartsSuggestionSchema = z.object({
 async function suggestChartsWithLLM(
   rows: Row[],
   columns: Column[],
-  groundingRules: RetrievedBiRule[],
   chartCount?: number,
 ): Promise<ChartConfig[] | null> {
   if (!getGroqApiKey()) {
     return null;
   }
 
-  const ruleLines =
-    groundingRules.length > 0
-      ? groundingRules.map((rule) => `- [${rule.severity}] ${rule.content}`)
-      : BI_GENERATION_RULES.map((rule) => `- ${rule}`);
+  const ruleLines = BI_GENERATION_RULES.map((rule) => `- ${rule}`);
   const targetCount = chartCount
     ? Math.min(
         BI_RULE_LIMITS.maxCharts,
@@ -1144,11 +1194,9 @@ export async function buildInitialChartConfigs(
   columns: Column[],
   context?: GenerationContext,
 ): Promise<ChartConfig[]> {
-  const groundingRules = await fetchGroundingRules(columns, context);
   const suggested = await suggestChartsWithLLM(
     rows,
     columns,
-    groundingRules,
     context?.chartCount,
   );
   const base = suggested ?? buildFallbackCharts(rows, columns);

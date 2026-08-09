@@ -76,6 +76,50 @@ describe("profileDataset", () => {
     expect(profile.rowCount).toBe(4);
     expect(profile.columnCount).toBe(4);
   });
+
+  it("reports invalid dates and incomplete rows without dropping them", () => {
+    const qualityColumns: Column[] = [
+      { name: "sale_date", kind: "date" },
+      { name: "revenue_ils", kind: "numeric" },
+    ];
+    const profile = profileDataset(
+      [
+        { sale_date: "2026-01-01", revenue_ils: 100 },
+        { sale_date: "not-a-date", revenue_ils: 50 },
+        { sale_date: "", revenue_ils: null },
+      ],
+      qualityColumns,
+    );
+
+    expect(profile.invalidDateRowCount).toBe(1);
+    expect(profile.incompleteRowCount).toBe(1);
+    expect(
+      profile.columns.find((column) => column.name === "sale_date")
+        ?.invalidCount,
+    ).toBe(1);
+  });
+
+  it("adds conservative currency, percentage, and quantity hints", () => {
+    const semanticColumns: Column[] = [
+      { name: "revenue_ils", kind: "numeric" },
+      { name: "gross_margin_pct", kind: "numeric" },
+      { name: "units_sold", kind: "numeric" },
+    ];
+    const profile = profileDataset(
+      [{ revenue_ils: 100, gross_margin_pct: 25, units_sold: 2 }],
+      semanticColumns,
+    );
+
+    expect(profile.columns[0]).toMatchObject({
+      semanticType: "currency",
+      unit: "ILS",
+    });
+    expect(profile.columns[1]).toMatchObject({
+      semanticType: "percentage",
+      unit: "%",
+    });
+    expect(profile.columns[2]).toMatchObject({ semanticType: "quantity" });
+  });
 });
 
 describe("redactPiiColumns", () => {
