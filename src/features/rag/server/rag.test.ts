@@ -11,7 +11,7 @@ vi.mock("@/shared/lib/ai/embeddings", () => ({
   toVectorLiteral: (vector: number[]) => `[${vector.join(",")}]`,
 }));
 
-import { loadBiRules, retrieveBiRules, getBiRuleById } from "./bi-rules";
+import { loadBiRules, selectBiRules, getBiRuleById } from "./bi-rules";
 import {
   buildDatasetChunks,
   retrieveDatasetContext,
@@ -47,46 +47,16 @@ describe("loadBiRules", () => {
   });
 });
 
-describe("retrieveBiRules", () => {
-  it("maps rpc rows to retrieved rules", async () => {
-    const supabase = mockSupabase(async () => ({
-      data: [
-        {
-          rule_id: "pie_max_slices",
-          category: "chart_selection",
-          content: "No more than 6 slices.",
-          action_if_fail: "convert_to_bar",
-          severity: "error",
-          similarity: 0.91,
-        },
-      ],
-      error: null,
-    }));
-
-    const rules = await retrieveBiRules(supabase, "donut with many slices");
-    expect(rules).toHaveLength(1);
-    expect(rules[0]).toMatchObject({
-      rule_id: "pie_max_slices",
-      similarity: 0.91,
-    });
-  });
-
-  it("falls back to the local dataset when the index is unreachable", async () => {
-    const supabase = mockSupabase(async () => ({
-      data: null,
-      error: { message: "boom" },
-    }));
-
-    const rules = await retrieveBiRules(supabase, "anything", { topK: 5 });
+describe("selectBiRules", () => {
+  it("selects a stable, severity-ordered local subset", () => {
+    const rules = selectBiRules({ topK: 5 });
     expect(rules).toHaveLength(5);
-    // Fallback is severity-ordered: errors first.
     expect(rules[0].severity).toBe("error");
-    expect(rules[0].similarity).toBe(0);
+    expect(selectBiRules({ topK: 5 })).toEqual(rules);
   });
 
-  it("respects category filters in the fallback", async () => {
-    const supabase = mockSupabase(async () => ({ data: [], error: null }));
-    const rules = await retrieveBiRules(supabase, "x", {
+  it("respects category filters", () => {
+    const rules = selectBiRules({
       topK: 4,
       category: "israeli_data",
     });

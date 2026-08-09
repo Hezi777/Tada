@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Check, Loader2, ShieldCheck, Sparkles } from "lucide-react";
+import { Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import { Card } from "@/shared/ui/card";
 
 type ProcessingPhase = "profiling" | "generating";
 
 interface ProcessingViewProps {
   phase: ProcessingPhase;
-  onComplete: () => void;
-  isReady: boolean;
+  piiColumns?: string[];
 }
 
 const PHASE_CONTENT: Record<
@@ -24,70 +23,30 @@ const PHASE_CONTENT: Record<
   }
 > = {
   profiling: {
-    eyebrow: "Step 1 of 2 · Reading",
+    eyebrow: "Reading your file",
     heading: "Scanning your dataset",
     blurb:
-      "Tada is reading your file's structure and column types. You'll choose how to build it in just a moment.",
+      "Tada is reading your file's structure, column types, and data quality before building your dashboard automatically.",
     note: "Profiling runs locally - personal columns never reach the AI.",
-    steps: [
-      "Reading file structure...",
-      "Detecting column types...",
-      "Checking data quality...",
-    ],
+    steps: ["Parsing rows and profiling columns"],
   },
   generating: {
-    eyebrow: "Step 2 of 2 · Building",
-    heading: "Building your dashboard",
+    eyebrow: "Building your dashboard",
+    heading: "Finding the useful signals",
     blurb:
       "Tada is surfacing the most useful metrics and assembling charts that are ready to explore.",
     note: "This keeps setup fast with no manual chart configuration.",
-    steps: [
-      "Selecting key metrics...",
-      "Choosing chart types...",
-      "Composing your dashboard...",
-    ],
+    steps: ["Generating grounded metrics and charts"],
   },
 };
 
 export function ProcessingView({
   phase,
-  onComplete,
-  isReady,
+  piiColumns = [],
 }: ProcessingViewProps) {
   const content = PHASE_CONTENT[phase];
   const steps = content.steps;
   const reduceMotion = useReducedMotion();
-
-  const [currentStep, setCurrentStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const [stepsDone, setStepsDone] = useState(false);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentStep((prev) => {
-        if (prev < steps.length - 1) {
-          setCompletedSteps((completed) => [...completed, prev]);
-          return prev + 1;
-        }
-        clearInterval(interval);
-        setTimeout(() => {
-          setCompletedSteps((completed) => [...completed, prev]);
-          setStepsDone(true);
-        }, 600);
-        return prev;
-      });
-    }, 750);
-
-    return () => clearInterval(interval);
-  }, [steps.length]);
-
-  useEffect(() => {
-    if (stepsDone && isReady) {
-      const timeout = setTimeout(onComplete, 450);
-      return () => clearTimeout(timeout);
-    }
-    return undefined;
-  }, [stepsDone, isReady, onComplete]);
 
   return (
     <div className="flex h-full flex-col items-center justify-center px-5 py-6">
@@ -113,7 +72,9 @@ export function ProcessingView({
                 )}
               </div>
               <p className="text-sm text-[var(--color-text-secondary)]">
-                {content.note}
+                {phase === "generating" && piiColumns.length > 0
+                  ? `Personal columns detected (${piiColumns.join(", ")}). Their raw values are excluded from AI analysis.`
+                  : content.note}
               </p>
             </div>
           </Card>
@@ -129,34 +90,16 @@ export function ProcessingView({
           </div>
 
           <div className="space-y-3 text-left">
-            {steps.map((step, index) => {
-              const isActive = index === currentStep && !stepsDone;
-              const isDone = completedSteps.includes(index) || stepsDone;
+            {steps.map((step) => {
               return (
                 <div
                   key={step}
-                  className={`flex items-center gap-4 rounded-[20px] px-4 py-3.5 transition-colors duration-300 ${
-                    isActive
-                      ? "bg-[rgba(0,50,125,0.08)]"
-                      : "bg-[var(--color-surface-muted)]"
-                  } ${!isActive && !isDone ? "opacity-55" : ""}`}
+                  className="flex items-center gap-4 rounded-[20px] bg-[rgba(0,50,125,0.08)] px-4 py-3.5"
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card">
-                    {isDone ? (
-                      <Check className="h-4 w-4 text-[var(--color-accent)]" />
-                    ) : isActive ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-[var(--color-accent)] motion-reduce:animate-none" />
-                    ) : (
-                      <div className="h-2.5 w-2.5 rounded-full bg-[var(--color-text-muted)]" />
-                    )}
+                    <Loader2 className="h-4 w-4 animate-spin text-[var(--color-accent)] motion-reduce:animate-none" />
                   </div>
-                  <span
-                    className={`text-sm ${
-                      isActive
-                        ? "font-semibold text-[var(--color-text-primary)]"
-                        : "text-[var(--color-text-secondary)]"
-                    }`}
-                  >
+                  <span className="text-sm font-semibold text-[var(--color-text-primary)]">
                     {step}
                   </span>
                 </div>
@@ -200,7 +143,11 @@ function ChartBuildVisual({ reduceMotion }: { reduceMotion: boolean }) {
     >
       <defs>
         <linearGradient id="bar-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.95" />
+          <stop
+            offset="0%"
+            stopColor="var(--color-accent)"
+            stopOpacity="0.95"
+          />
           <stop
             offset="100%"
             stopColor="var(--color-accent)"
@@ -323,7 +270,9 @@ function ScanVisual({ reduceMotion }: { reduceMotion: boolean }) {
               stroke="var(--color-chart-grid)"
               strokeWidth={1}
               initial={reduceMotion ? { opacity: 1 } : { opacity: 0.5 }}
-              animate={reduceMotion ? { opacity: 1 } : { opacity: [0.5, 1, 0.5] }}
+              animate={
+                reduceMotion ? { opacity: 1 } : { opacity: [0.5, 1, 0.5] }
+              }
               transition={
                 reduceMotion
                   ? undefined

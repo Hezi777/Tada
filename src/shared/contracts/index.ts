@@ -64,8 +64,61 @@ export const ChartAggregationSchema = z.enum([
 ]);
 export type ChartAggregation = z.infer<typeof ChartAggregationSchema>;
 
-export const ChartSizeSchema = z.enum(["small", "medium", "large"]);
+// Discrete widget size classes with fixed grid geometry (docs/WIDGET_SIZING.md):
+// small 1×1, medium 2×1, large 2×2, xlarge 4×2 cells. A widget renders a
+// different view per class; it never scales or measures its container.
+export const ChartSizeSchema = z.enum(["small", "medium", "large", "xlarge"]);
 export type ChartSize = z.infer<typeof ChartSizeSchema>;
+
+export const SIZE_CLASS_ORDER = ChartSizeSchema.options;
+
+/** Which size classes each widget type offers. A type with no honest
+ * rendering at a class does not support it — the size-control stop is
+ * disabled, never faked with a fallback rendering. */
+export const WIDGET_SIZE_SUPPORT: Record<
+  "kpi" | ChartType,
+  readonly ChartSize[]
+> = {
+  kpi: ["small", "medium", "large"],
+  bar: ["small", "medium", "large", "xlarge"],
+  area: ["small", "medium", "large", "xlarge"],
+  donut: ["medium", "large"],
+  scatter: ["large", "xlarge"],
+};
+
+export function supportsSize(
+  type: "kpi" | ChartType,
+  size: ChartSize,
+): boolean {
+  return WIDGET_SIZE_SUPPORT[type].includes(size);
+}
+
+/** Nearest supported class by distance in the size order, ties broken
+ * toward the smaller class (e.g. donut small→medium, scatter medium→large). */
+export function clampToSupportedSize(
+  type: "kpi" | ChartType,
+  size: ChartSize,
+): ChartSize {
+  const supported = WIDGET_SIZE_SUPPORT[type];
+  if (supported.includes(size)) {
+    return size;
+  }
+  const index = SIZE_CLASS_ORDER.indexOf(size);
+  let best = supported[0];
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const candidate of supported) {
+    const distance = Math.abs(SIZE_CLASS_ORDER.indexOf(candidate) - index);
+    if (
+      distance < bestDistance ||
+      (distance === bestDistance &&
+        SIZE_CLASS_ORDER.indexOf(candidate) < SIZE_CLASS_ORDER.indexOf(best))
+    ) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
 
 export const ChartSourceSchema = z.enum([
   "ai_initial",
@@ -84,6 +137,14 @@ export type ChartLastTouchedBy = z.infer<typeof ChartLastTouchedBySchema>;
 
 export const ChartVisibilityStateSchema = z.enum(["visible", "hidden"]);
 export type ChartVisibilityState = z.infer<typeof ChartVisibilityStateSchema>;
+
+export const ChartEvidenceSchema = z.object({
+  description: z.string().min(1),
+  includedRowCount: z.number().int().nonnegative(),
+  excludedRowCount: z.number().int().nonnegative(),
+  values: z.record(z.union([z.string(), z.number(), z.null()])),
+});
+export type ChartEvidence = z.infer<typeof ChartEvidenceSchema>;
 
 export const ChartConfigSchema = z.object({
   id: z.string().min(1),
@@ -107,6 +168,9 @@ export const ChartConfigSchema = z.object({
   // Render hints set by the BI rules engine.
   orientation: z.enum(["vertical", "horizontal"]).optional(),
   categoryLimit: z.number().int().positive().optional(),
+  // Deterministic inputs behind heuristic insights. Optional for persisted
+  // charts created before evidence tracking and for LLM-generated charts.
+  evidence: ChartEvidenceSchema.optional(),
 });
 export type ChartConfig = z.infer<typeof ChartConfigSchema>;
 
@@ -141,6 +205,7 @@ export function normalizeChartConfig(
   return {
     ...chart,
     visible,
+    size: clampToSupportedSize(chart.type, chart.size),
     pinned: chart.pinned ?? false,
     priority: chart.priority ?? chart.order,
     lastTouchedBy:
@@ -165,12 +230,13 @@ export type KPIConfig = z.infer<typeof KPIConfigSchema>;
 /** Backfill `size`/`order` for KPI configs persisted before the
  * Apple-widget canvas (geometry now lives in these two fields only). */
 export function normalizeKpiConfig(
-  kpi: Omit<KPIConfig, "size" | "order"> & Partial<Pick<KPIConfig, "size" | "order">>,
+  kpi: Omit<KPIConfig, "size" | "order"> &
+    Partial<Pick<KPIConfig, "size" | "order">>,
   index = 0,
 ): KPIConfig {
   return {
     ...kpi,
-    size: kpi.size ?? "medium",
+    size: clampToSupportedSize("kpi", kpi.size ?? "medium"),
     order: kpi.order ?? index,
   };
 }
@@ -339,6 +405,12 @@ export const ColumnProfileSchema = z.object({
     z.object({ value: SerializedValueSchema, count: z.number().int() }),
   ),
   isPii: z.boolean(),
+  invalidCount: z.number().int().nonnegative().default(0),
+  semanticType: z
+    .enum(["currency", "percentage", "rate", "quantity", "duration"])
+    .nullable()
+    .default(null),
+  unit: z.string().min(1).nullable().default(null),
 });
 export type ColumnProfile = z.infer<typeof ColumnProfileSchema>;
 
@@ -347,6 +419,8 @@ export const DatasetProfileSchema = z.object({
   columnCount: z.number().int().nonnegative(),
   columns: z.array(ColumnProfileSchema),
   piiColumns: z.array(z.string()),
+  invalidDateRowCount: z.number().int().nonnegative().default(0),
+  incompleteRowCount: z.number().int().nonnegative().default(0),
 });
 export type DatasetProfile = z.infer<typeof DatasetProfileSchema>;
 

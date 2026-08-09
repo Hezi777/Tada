@@ -33,7 +33,6 @@
   ],
   "exclude": [
     "node_modules",
-    "src/shared/ui/chart.tsx",
     "src/shared/ui/input-otp.tsx",
     "src/shared/ui/sheet.tsx"
   ]

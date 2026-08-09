@@ -1,5 +1,9 @@
 # MVP Spec
 
+> Historical January 2026 scope. The repository has substantially exceeded
+> this MVP; see `docs/project-status-2026-08.md` for the current product stage
+> and recommended next work. Do not use this file as the active backlog.
+
 ## Goal
 
 User uploads a data file → Gets an intelligent dashboard within seconds → Can ask questions and modify charts via chat.
