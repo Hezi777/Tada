@@ -71,6 +71,8 @@ The target user is a small business owner, not a data analyst.
   - `npm run lint`
   - `npm run typecheck`
   - `npm run format`
+- Browser automation and visual QA use Playwright CLI. Do not configure or use
+  Playwright/browser MCP servers for this project.
 
 ## Landing Page Rules
 
