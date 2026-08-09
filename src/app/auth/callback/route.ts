@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/shared/lib/supabase/server";
 
-// OAuth + email-confirmation landing: exchange the auth code for a session,
-// then send the user into the app.
+// Email-confirmation landing: exchange the auth code for a session, then send
+// the user into the app.
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
