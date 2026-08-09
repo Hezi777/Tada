@@ -111,8 +111,7 @@ export function clampToSupportedSize(
     if (
       distance < bestDistance ||
       (distance === bestDistance &&
-        SIZE_CLASS_ORDER.indexOf(candidate) <
-          SIZE_CLASS_ORDER.indexOf(best))
+        SIZE_CLASS_ORDER.indexOf(candidate) < SIZE_CLASS_ORDER.indexOf(best))
     ) {
       best = candidate;
       bestDistance = distance;
@@ -139,6 +138,14 @@ export type ChartLastTouchedBy = z.infer<typeof ChartLastTouchedBySchema>;
 export const ChartVisibilityStateSchema = z.enum(["visible", "hidden"]);
 export type ChartVisibilityState = z.infer<typeof ChartVisibilityStateSchema>;
 
+export const ChartEvidenceSchema = z.object({
+  description: z.string().min(1),
+  includedRowCount: z.number().int().nonnegative(),
+  excludedRowCount: z.number().int().nonnegative(),
+  values: z.record(z.union([z.string(), z.number(), z.null()])),
+});
+export type ChartEvidence = z.infer<typeof ChartEvidenceSchema>;
+
 export const ChartConfigSchema = z.object({
   id: z.string().min(1),
   type: ChartTypeSchema,
@@ -161,6 +168,9 @@ export const ChartConfigSchema = z.object({
   // Render hints set by the BI rules engine.
   orientation: z.enum(["vertical", "horizontal"]).optional(),
   categoryLimit: z.number().int().positive().optional(),
+  // Deterministic inputs behind heuristic insights. Optional for persisted
+  // charts created before evidence tracking and for LLM-generated charts.
+  evidence: ChartEvidenceSchema.optional(),
 });
 export type ChartConfig = z.infer<typeof ChartConfigSchema>;
 
@@ -220,7 +230,8 @@ export type KPIConfig = z.infer<typeof KPIConfigSchema>;
 /** Backfill `size`/`order` for KPI configs persisted before the
  * Apple-widget canvas (geometry now lives in these two fields only). */
 export function normalizeKpiConfig(
-  kpi: Omit<KPIConfig, "size" | "order"> & Partial<Pick<KPIConfig, "size" | "order">>,
+  kpi: Omit<KPIConfig, "size" | "order"> &
+    Partial<Pick<KPIConfig, "size" | "order">>,
   index = 0,
 ): KPIConfig {
   return {
@@ -394,6 +405,12 @@ export const ColumnProfileSchema = z.object({
     z.object({ value: SerializedValueSchema, count: z.number().int() }),
   ),
   isPii: z.boolean(),
+  invalidCount: z.number().int().nonnegative().default(0),
+  semanticType: z
+    .enum(["currency", "percentage", "rate", "quantity", "duration"])
+    .nullable()
+    .default(null),
+  unit: z.string().min(1).nullable().default(null),
 });
 export type ColumnProfile = z.infer<typeof ColumnProfileSchema>;
 
@@ -402,6 +419,8 @@ export const DatasetProfileSchema = z.object({
   columnCount: z.number().int().nonnegative(),
   columns: z.array(ColumnProfileSchema),
   piiColumns: z.array(z.string()),
+  invalidDateRowCount: z.number().int().nonnegative().default(0),
+  incompleteRowCount: z.number().int().nonnegative().default(0),
 });
 export type DatasetProfile = z.infer<typeof DatasetProfileSchema>;
 

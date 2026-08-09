@@ -46,6 +46,48 @@ function averageLabelLength(values: Set<string>): number {
   return total / values.size;
 }
 
+function donutHasValidParts(chart: ChartConfig, rows: Row[]): boolean {
+  if (!chart.groupBy || chart.aggregation === "count") {
+    return true;
+  }
+  const valueColumn = chart.columns.find((column) => column !== chart.groupBy);
+  if (!valueColumn) {
+    return true;
+  }
+  const buckets = new Map<string, number[]>();
+  for (const row of rows) {
+    const group = row[chart.groupBy];
+    const value = Number(row[valueColumn]);
+    if (
+      group === null ||
+      group === undefined ||
+      group === "" ||
+      !Number.isFinite(value)
+    ) {
+      continue;
+    }
+    const values = buckets.get(String(group)) ?? [];
+    values.push(value);
+    buckets.set(String(group), values);
+  }
+  if (buckets.size === 0) {
+    return false;
+  }
+  return Array.from(buckets.values()).every((values) => {
+    let part: number;
+    if (chart.aggregation === "avg") {
+      part = values.reduce((sum, value) => sum + value, 0) / values.length;
+    } else if (chart.aggregation === "min") {
+      part = Math.min(...values);
+    } else if (chart.aggregation === "max") {
+      part = Math.max(...values);
+    } else {
+      part = values.reduce((sum, value) => sum + value, 0);
+    }
+    return part > 0;
+  });
+}
+
 function looksLikeIdentifier(rows: Row[], column: Column): boolean {
   if (ID_NAME_PATTERN.test(column.name)) {
     return true;
@@ -65,7 +107,10 @@ function looksLikeIdentifier(rows: Row[], column: Column): boolean {
   const lengths = new Set<number>();
   for (const value of values) {
     const text = String(value);
-    if (!/^\d+$/.test(text) || text.length < 5) {
+    // Short fixed-width business measures (for example five-digit daily
+    // revenue) are common. Numeric-shape inference is reserved for long
+    // identifier-like values; explicit ID headers are handled above.
+    if (!/^\d+$/.test(text) || text.length < 7) {
       return false;
     }
     lengths.add(text.length);
@@ -88,8 +133,24 @@ export function applyBiRules(
     // pie_max_slices / top_n_with_other_bucket: donuts beyond the segment
     // limit either get an Other bucket or become a sorted bar chart.
     if (next.type === "donut" && next.groupBy) {
-      const distinct = distinctValues(rows, next.groupBy).size;
-      if (distinct > 10) {
+      const groupBy = next.groupBy;
+      if (!donutHasValidParts(next, rows)) {
+        violations.push({
+          ruleId: "pie_only_part_to_whole",
+          chartId: next.id,
+          action: "convert_to_bar",
+          severity: "error",
+          applied: true,
+          detail: `Values in ${next.columns[0]} are not all positive parts of a whole; converted to a bar chart.`,
+        });
+        next = {
+          ...next,
+          type: "bar",
+          title: next.title.replace(/share/i, "breakdown"),
+        };
+      }
+      const distinct = distinctValues(rows, groupBy).size;
+      if (next.type === "donut" && distinct > 10) {
         violations.push({
           ruleId: "pie_max_slices",
           chartId: next.id,
@@ -104,7 +165,10 @@ export function applyBiRules(
           categoryLimit: 10,
           title: next.title.replace(/share/i, "breakdown"),
         };
-      } else if (distinct > BI_RULE_LIMITS.maxDonutSegments) {
+      } else if (
+        next.type === "donut" &&
+        distinct > BI_RULE_LIMITS.maxDonutSegments
+      ) {
         violations.push({
           ruleId: "top_n_with_other_bucket",
           chartId: next.id,
@@ -167,6 +231,26 @@ export function applyBiRules(
           detail: `${distinct.size} categories in ${next.groupBy}; capped to the top 10 plus an Other bucket.`,
         });
         next = { ...next, categoryLimit: 10 };
+      }
+    }
+
+    // A count is a row count, so it must not carry an explicit numeric
+    // measure. Models occasionally pair `count` with a revenue/amount column,
+    // producing a flat series of ones while the title and insight discuss the
+    // measure. Normalize that contradiction deterministically.
+    if (next.aggregation === "count" && next.columns.length > 0) {
+      const measure = columnByName.get(next.columns[0]);
+      if (measure?.kind === "numeric" && !looksLikeIdentifier(rows, measure)) {
+        const aggregation = RATE_NAME_PATTERN.test(measure.name) ? "avg" : "sum";
+        violations.push({
+          ruleId: "count_for_categorical_and_ids",
+          chartId: next.id,
+          action: aggregation === "avg" ? "use_avg_aggregation" : "use_sum_aggregation",
+          severity: "error",
+          applied: true,
+          detail: `${measure.name} is an explicit numeric measure; aggregation changed from count to ${aggregation}.`,
+        });
+        next = { ...next, aggregation };
       }
     }
 

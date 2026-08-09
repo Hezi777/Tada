@@ -66,6 +66,24 @@ describe("applyBiRules", () => {
     expect(violations[0].ruleId).toBe("top_n_with_other_bucket");
   });
 
+  it("converts donuts with non-positive parts to bars", () => {
+    const chart = makeChart({ type: "donut" });
+    const rows = [
+      { region: "North", revenue: 100 },
+      { region: "Returns", revenue: -20 },
+    ];
+    const { charts, violations } = applyBiRules([chart], columns, rows);
+
+    expect(charts[0].type).toBe("bar");
+    expect(violations).toContainEqual(
+      expect.objectContaining({
+        ruleId: "pie_only_part_to_whole",
+        action: "convert_to_bar",
+        applied: true,
+      }),
+    );
+  });
+
   it("converts area charts without a date column to bars", () => {
     const chart = makeChart({ type: "area", timeColumn: null });
     const { charts, violations } = applyBiRules(
@@ -134,6 +152,43 @@ describe("applyBiRules", () => {
     const { charts, violations } = applyBiRules([chart], rateColumns, rows);
     expect(charts[0].aggregation).toBe("avg");
     expect(violations[0].ruleId).toBe("average_for_rates_and_levels");
+  });
+
+  it("changes count with an explicit numeric measure to sum", () => {
+    const chart = makeChart({
+      type: "area",
+      columns: ["revenue"],
+      timeColumn: "date",
+      groupBy: null,
+      aggregation: "count",
+    });
+    const rows = [
+      { date: "2026-07-01", revenue: 100 },
+      { date: "2026-07-02", revenue: 250 },
+    ];
+
+    const { charts, violations } = applyBiRules([chart], columns, rows);
+
+    expect(charts[0].aggregation).toBe("sum");
+    expect(violations).toContainEqual(
+      expect.objectContaining({
+        ruleId: "count_for_categorical_and_ids",
+        action: "use_sum_aggregation",
+        applied: true,
+      }),
+    );
+  });
+
+  it("does not mistake fixed-width revenue amounts for identifiers", () => {
+    const chart = makeChart({ aggregation: "count" });
+    const rows = Array.from({ length: 8 }, (_, index) => ({
+      revenue: 12000 + index * 1000,
+      region: `R${index % 2}`,
+    }));
+
+    const { charts } = applyBiRules([chart], columns, rows);
+
+    expect(charts[0].aggregation).toBe("sum");
   });
 
   it("logs (but does not apply) info-severity single-value findings", () => {
