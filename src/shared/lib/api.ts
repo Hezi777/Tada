@@ -21,8 +21,6 @@ import { z } from "zod";
 const apiBase = "";
 
 export type DashboardState = UploadDashboardResponse;
-export type DashboardLoadResponse = UploadDashboardResponse | { empty: true };
-
 export type DashboardMeta = {
   id: string;
   name: string;
@@ -182,23 +180,6 @@ export async function sendChat(input: {
 
   const payload = await response.json();
   return ChatDashboardResponseSchema.parse(payload);
-}
-
-export async function loadLatestDashboard(): Promise<DashboardLoadResponse> {
-  const response = await fetch(`${apiBase}/api/dashboard`, {
-    method: "GET",
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    throw new Error(await readApiError(response, "dashboard_load_failed"));
-  }
-
-  const payload = await response.json();
-  if (payload && typeof payload === "object" && "empty" in payload) {
-    return { empty: true };
-  }
-  return UploadDashboardResponseSchema.parse(payload);
 }
 
 export async function persistDashboardCharts(input: {
