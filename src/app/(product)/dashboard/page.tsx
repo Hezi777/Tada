@@ -26,17 +26,11 @@ import {
   persistDashboardCharts,
   uploadDataset,
 } from "@/shared/lib/api";
-import { ConfirmGenerationStep } from "@/features/dashboard/components/ConfirmGenerationStep";
-import type { DatasetTopic, UploadProfileResponse } from "@/shared/contracts";
+import type { UploadProfileResponse } from "@/shared/contracts";
 import { useToast } from "@/shared/hooks/use-toast";
 import { useTranslation } from "@/shared/i18n";
 
-type DashboardPageState =
-  | "loading"
-  | "empty"
-  | "confirm"
-  | "processing"
-  | "loaded";
+type DashboardPageState = "loading" | "empty" | "processing" | "loaded";
 
 function DashboardStateHeader({
   title,
@@ -143,7 +137,10 @@ function DashboardLoadingState() {
     <motion.div
       initial={prefersReducedMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
+      transition={{
+        duration: prefersReducedMotion ? 0 : 0.25,
+        ease: "easeOut",
+      }}
       className="flex h-full flex-col"
       aria-busy="true"
       aria-label={t("dash.loading")}
@@ -182,11 +179,15 @@ export default function DashboardPage() {
   const [processingPhase, setProcessingPhase] = useState<
     "profiling" | "generating"
   >("profiling");
-  const [isUploadReady, setIsUploadReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const lastPersistedChartsRef = useRef<string | null>(null);
   const isHydratingRef = useRef(false);
+  const toastRef = useRef(toast);
+
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
 
   useEffect(() => {
     let cancelled = false;
@@ -235,7 +236,7 @@ export default function DashboardPage() {
             ? error.message.replace(/_/g, " ")
             : "Unable to load your dashboard.";
         setLoadError(message);
-        toast({
+        toastRef.current({
           variant: "destructive",
           title: "Couldn't load dashboard",
           description: message,
@@ -253,7 +254,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     if (!datasetId) {
@@ -279,25 +280,34 @@ export default function DashboardPage() {
 
   const [profiledUpload, setProfiledUpload] =
     useState<UploadProfileResponse | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleFileUpload = useCallback(
     async (file: File) => {
-      setIsUploadReady(false);
       setUploadError(null);
+      setProfiledUpload(null);
       setProcessingPhase("profiling");
       setPageState("processing");
 
       try {
-        // If no active dashboard, auto-create one
-        let dashboardId = activeDashboardId;
-        if (!dashboardId) {
+        const profiled = await uploadDataset(
+          file,
+          activeDashboardId ?? undefined,
+        );
+        setProfiledUpload(profiled);
+        setProcessingPhase("generating");
+        const snapshot = await generateDashboard({
+          datasetId: profiled.datasetId,
+          topic: profiled.suggestedTopic,
+          chartCount: 4,
+        });
+
+        if (!activeDashboardId) {
           const created = await createDashboard({
             name: file.name.replace(/\.[^.]+$/, ""),
             icon: "bar-chart",
             color: "#00327D",
+            datasetIds: [profiled.datasetId],
           });
-          dashboardId = created.id;
           setActiveDashboard({
             id: created.id,
             name: created.name,
@@ -306,90 +316,45 @@ export default function DashboardPage() {
           });
         }
 
-        const profiled = await uploadDataset(file, dashboardId);
-        setProfiledUpload(profiled);
-        setPageState("confirm");
+        isHydratingRef.current = true;
+        lastPersistedChartsRef.current = JSON.stringify({
+          charts: snapshot.charts,
+          kpis: snapshot.kpis,
+        });
+        initializeDashboardStore(snapshot);
+        setProfiledUpload(null);
+        setPageState("loaded");
       } catch (error) {
-        resetDashboardStore();
         const message =
           error instanceof Error && error.message
             ? error.message.replace(/_/g, " ")
-            : "Upload failed. Check the API server and try again.";
+            : "Dashboard creation failed. Try again.";
         setUploadError(message);
         toast({
           variant: "destructive",
-          title: "Upload failed",
+          title: "Couldn't create dashboard",
           description: message,
         });
-        setPageState("empty");
+        setProfiledUpload(null);
+        if (activeDashboardId && getDashboardStoreState().datasetId) {
+          setPageState("loaded");
+        } else {
+          resetDashboardStore();
+          setPageState("empty");
+        }
+      } finally {
+        isHydratingRef.current = false;
       }
     },
     [activeDashboardId, toast],
   );
 
-  const handleConfirmGeneration = useCallback(
-    async (topic: DatasetTopic, chartCount: number) => {
-      if (!profiledUpload) {
-        return;
-      }
-      setIsGenerating(true);
-      setProcessingPhase("generating");
-      setPageState("processing");
-
-      try {
-        const snapshot = await generateDashboard({
-          datasetId: profiledUpload.datasetId,
-          topic,
-          chartCount,
-        });
-        isHydratingRef.current = true;
-        lastPersistedChartsRef.current = JSON.stringify(snapshot.charts);
-        initializeDashboardStore(snapshot);
-        setProfiledUpload(null);
-        setIsUploadReady(true);
-      } catch (error) {
-        resetDashboardStore();
-        const message =
-          error instanceof Error && error.message
-            ? error.message.replace(/_/g, " ")
-            : "Dashboard generation failed. Try again.";
-        setUploadError(message);
-        toast({
-          variant: "destructive",
-          title: "Generation failed",
-          description: message,
-        });
-        setPageState("empty");
-      } finally {
-        isHydratingRef.current = false;
-        setIsGenerating(false);
-      }
-    },
-    [profiledUpload, toast],
-  );
-
   const dashboardContent = useMemo(() => {
-    if (pageState === "confirm" && profiledUpload) {
-      return (
-        <ConfirmGenerationStep
-          profiled={profiledUpload}
-          isGenerating={isGenerating}
-          onConfirm={(topic, chartCount) => {
-            void handleConfirmGeneration(topic, chartCount);
-          }}
-          onCancel={() => {
-            setProfiledUpload(null);
-            setPageState("empty");
-          }}
-        />
-      );
-    }
     if (pageState === "processing") {
       return (
         <ProcessingView
           phase={processingPhase}
-          onComplete={() => setPageState("loaded")}
-          isReady={isUploadReady}
+          piiColumns={profiledUpload?.profile.piiColumns ?? []}
         />
       );
     }
@@ -405,10 +370,7 @@ export default function DashboardPage() {
     }
     return <DashboardLoadingState />;
   }, [
-    handleConfirmGeneration,
     handleFileUpload,
-    isGenerating,
-    isUploadReady,
     loadError,
     pageState,
     processingPhase,
