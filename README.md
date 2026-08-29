@@ -173,3 +173,12 @@ Open [http://localhost:3000](http://localhost:3000). Useful scripts: `npm run ty
 5. Push your branch and open a pull request against `main`.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+---
+
+## License
+
+Copyright (c) 2026 Hen Zrihen. All rights reserved.
+
+This source is published for reference. No license to use, copy, modify, or
+distribute it is granted.
