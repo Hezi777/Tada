@@ -36,7 +36,7 @@
 
 ## About
 
-Tada turns CSV, Excel, and PDF files into interactive dashboards without any manual configuration. Upload a file and the pipeline profiles your data (pure TS — types, nulls, stats, PII detection), suggests what kind of data it is, and generates a dashboard whose charts are **grounded in a retrieval index of BI best-practice rules** — not just whatever the LLM feels like drawing. A floating copilot chat answers questions in Hebrew or English, grounded in a per-dataset vector index of your actual data. Dashboards persist per-user in Supabase behind Row-Level Security.
+Tada turns CSV, Excel, and PDF files into interactive dashboards without any manual configuration. Upload a file and the pipeline profiles your data (pure TS - types, nulls, stats, PII detection), suggests what kind of data it is, and generates a dashboard whose charts are **grounded in a retrieval index of BI best-practice rules** - not just whatever the LLM feels like drawing. A floating copilot chat answers questions in Hebrew or English, grounded in a per-dataset vector index of your actual data. Dashboards persist per-user in Supabase behind Row-Level Security.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -45,12 +45,12 @@ Tada turns CSV, Excel, and PDF files into interactive dashboards without any man
 | Area                       | Description                                                                                                                                                                                                              |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | File ingestion             | CSV, Excel (`.xlsx`/`.xls`), and PDF uploads parsed server-side with validation (size/type/row caps) and Israeli DD/MM date normalization                                                                                |
-| Automatic profiling        | Pure-TS profiling: column types, null counts, stats, top values — plus PII detection (emails, Israeli phones/IDs) that keeps personal data out of AI prompts and embeddings                                              |
+| Automatic profiling        | Pure-TS profiling: column types, null counts, stats, top values - plus PII detection (emails, Israeli phones/IDs) that keeps personal data out of AI prompts and embeddings                                              |
 | Topic detection            | The profile is embedded and classified against topic descriptors (cash flow, sales, grades, …); the user confirms topic + chart count before generation                                                                  |
 | Grounded generation        | Chart configs are generated with rules retrieved from the BI Rules RAG, then enforced by a deterministic rule engine (donut→bar conversion, top-N + Other bucketing, horizontal bars for long labels, aggregation fixes) |
 | Grounded chat              | Hebrew/English Q&A, trend explanations, and add/remove/edit-chart commands, grounded in retrieval over the per-dataset vector index with caching                                                                         |
 | KPI cards                  | Primary metric highlighted in accent color; money-like columns formatted as ₪ with bidi-safe rendering                                                                                                                   |
-| Chart canvas               | Apple-widget grid with drag-and-drop reordering, discrete size classes (S/M/L/XL — a different view is rendered per class, not a resized chart), and a Manage Views sheet to pin/show/hide/delete charts                  |
+| Chart canvas               | Apple-widget grid with drag-and-drop reordering, discrete size classes (S/M/L/XL - a different view is rendered per class, not a resized chart), and a Manage Views sheet to pin/show/hide/delete charts                  |
 | Multi-dashboard workspaces | Named dashboards with custom icons and colors; instant switch via cached state                                                                                                                                           |
 | Authentication             | Supabase email/password + Google OAuth, with server-side session validation on all API routes                                                                                                                            |
 | Persistence & security     | Datasets, charts, KPIs, and both vector indexes in Supabase Postgres with checked-in idempotent migrations and per-command RLS policies                                                                                  |
@@ -60,12 +60,12 @@ Tada turns CSV, Excel, and PDF files into interactive dashboards without any man
 
 ## Architecture: the two RAG systems
 
-Tada's core idea is that both chart generation and chat answers are _grounded_, using two separate pgvector indexes. Embeddings are computed locally with Transformers.js (`Xenova/multilingual-e5-small`, 384-dim) because Groq offers no embeddings endpoint and Hebrew data needs a multilingual model — no extra API key required.
+Tada's core idea is that both chart generation and chat answers are _grounded_, using two separate pgvector indexes. Embeddings are computed locally with Transformers.js (`Xenova/multilingual-e5-small`, 384-dim) because Groq offers no embeddings endpoint and Hebrew data needs a multilingual model - no extra API key required.
 
-**1. BI Rules RAG (`bi_rules_chunks`)** — queried at dashboard-generation time.
-A versioned dataset of ~60 data-visualization rules (`data/bi-rules.json`, sourced from Cleveland/McGill, the FT Visual Vocabulary, Datawrapper, NN/g, WCAG, and Israeli data conventions) is embedded and seeded into Postgres. When a dashboard is generated, the dataset profile is turned into a retrieval query, the most relevant rules go into the LLM prompt, and a deterministic engine (`src/features/dashboard/server/rules.ts`) then _enforces_ the machine-checkable rules on the output — applying each rule's `action_if_fail` by severity.
+**1. BI Rules RAG (`bi_rules_chunks`)** - queried at dashboard-generation time.
+A versioned dataset of ~60 data-visualization rules (`data/bi-rules.json`, sourced from Cleveland/McGill, the FT Visual Vocabulary, Datawrapper, NN/g, WCAG, and Israeli data conventions) is embedded and seeded into Postgres. When a dashboard is generated, the dataset profile is turned into a retrieval query, the most relevant rules go into the LLM prompt, and a deterministic engine (`src/features/dashboard/server/rules.ts`) then _enforces_ the machine-checkable rules on the output - applying each rule's `action_if_fail` by severity.
 
-**2. Per-user Data RAG (`user_data_chunks`)** — queried at chat time.
+**2. Per-user Data RAG (`user_data_chunks`)** - queried at chat time.
 After generation, the dataset is distilled into compact text chunks (overview, per-column stats, category aggregates, monthly time buckets, redacted sample rows), embedded, and stored scoped to the owning user (RLS-enforced). Each chat question retrieves the most relevant chunks instead of re-reading the file, with per-question caching and content-hash checks so unchanged data is never re-embedded.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -111,8 +111,8 @@ After generation, the dataset is distilled into compact text chunks (overview, p
 | State management          | Lightweight custom store (`useSyncExternalStore`)                   |
 | Schema validation         | Zod                                                                 |
 | Auth + Database + Vectors | Supabase (Auth, Postgres, pgvector, Row-Level Security, Storage)    |
-| LLM inference             | Groq — `llama-3.3-70b-versatile` (generation, classification, chat) |
-| Embeddings                | Transformers.js — `Xenova/multilingual-e5-small`, computed locally  |
+| LLM inference             | Groq - `llama-3.3-70b-versatile` (generation, classification, chat) |
+| Embeddings                | Transformers.js - `Xenova/multilingual-e5-small`, computed locally  |
 | Parsing                   | papaparse (CSV), SheetJS (Excel), unpdf (PDF)                       |
 | Testing                   | Vitest + Testing Library                                            |
 
@@ -135,14 +135,14 @@ Fill in `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 GROQ_API_KEY=<groq-api-key>
-# Optional — only needed for account deletion + the seed script:
+# Optional - only needed for account deletion + the seed script:
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 # Optional model overrides (default: llama-3.3-70b-versatile):
 # GROQ_DASHBOARD_MODEL=
 # GROQ_CHAT_MODEL=
 ```
 
-**1. Apply migrations** — run the SQL files in `supabase/migrations/` in order against your project (Supabase SQL editor, or `npx supabase db push` if you use the CLI). They are idempotent: safe to re-run.
+**1. Apply migrations** - run the SQL files in `supabase/migrations/` in order against your project (Supabase SQL editor, or `npx supabase db push` if you use the CLI). They are idempotent: safe to re-run.
 
 **2. Seed the BI rules index** (embeds `data/bi-rules.json` into pgvector; downloads the local embedding model ~30MB on first run):
 
@@ -160,7 +160,7 @@ Open [http://localhost:3000](http://localhost:3000). Useful scripts: `npm run ty
 
 **Google OAuth (optional):** create an OAuth client in Google Cloud Console and add its credentials under _Authentication → Providers → Google_ in the Supabase dashboard, with `https://<your-project>.supabase.co/auth/v1/callback` as the redirect URI. Email/password works without it.
 
-> **Notes:** Without `GROQ_API_KEY` the app still works — charts come from the deterministic heuristic engine and chat degrades gracefully. The first upload after a server start is a little slower while the local embedding model loads.
+> **Notes:** Without `GROQ_API_KEY` the app still works - charts come from the deterministic heuristic engine and chat degrades gracefully. The first upload after a server start is a little slower while the local embedding model loads.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
