@@ -41,10 +41,10 @@ function DashboardStateHeader({
 }) {
   return (
     <div className="flex shrink-0 flex-col gap-1 px-5 pb-4 pt-6">
-      <div className="font-display text-[32px] font-extrabold tracking-[-0.04em] text-[var(--color-text-primary)]">
+      <div className="text-3xl font-semibold tracking-tight text-foreground">
         {title}
       </div>
-      <p className="max-w-[52rem] text-sm text-[var(--color-text-secondary)]">
+      <p className="max-w-[52rem] text-sm text-muted-foreground">
         {subtitle}
       </p>
     </div>
@@ -69,7 +69,7 @@ function DashboardUploadEmptyState({
       />
 
       <div className="flex flex-1 items-center justify-center px-5 pb-6">
-        <Card className="w-full max-w-2xl rounded-[24px] border-0 bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
+        <Card className="w-full max-w-2xl p-8 sm:p-10">
           {errorMessage ? (
             <div
               role="alert"
@@ -79,7 +79,7 @@ function DashboardUploadEmptyState({
             </div>
           ) : null}
           <div className="mx-auto flex max-w-xl flex-col items-center text-center">
-            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[20px] bg-[rgba(0,50,125,0.08)]">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-xl bg-muted">
               <Image
                 src="/tada-logo.svg"
                 alt="Tada"
@@ -88,24 +88,24 @@ function DashboardUploadEmptyState({
                 className="h-9 w-auto"
               />
             </div>
-            <h2 className="font-display text-3xl text-[var(--color-text-primary)]">
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground">
               {t("dash.empty.title")}
             </h2>
-            <p className="mt-3 text-sm leading-7 text-[var(--color-text-secondary)]">
+            <p className="mt-3 text-sm leading-7 text-muted-foreground">
               {t("dash.empty.body")}
             </p>
 
             <Button
               type="button"
               size="lg"
-              className="mt-8 rounded-full bg-[var(--color-accent)] px-8 text-white hover:bg-[var(--color-accent-secondary)]"
+              className="mt-8 px-8"
               onClick={() => inputRef.current?.click()}
             >
               <FileSpreadsheet className="mr-2 h-4 w-4" />
               {t("dash.empty.choose")}
             </Button>
 
-            <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-[var(--color-text-muted)]">
+            <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
               {t("dash.empty.hint")}
             </p>
 

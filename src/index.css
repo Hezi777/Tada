@@ -4,50 +4,88 @@
 
 @layer base {
   :root {
-    --color-bg: #f7f9fb;
-    --color-surface: #ffffff;
-    --color-surface-muted: #f2f4f6;
-    --color-surface-subtle: #eceef0;
-    --color-border: rgba(25, 28, 30, 0.12);
-    --color-accent: #00327d;
-    --color-accent-secondary: #0047ab;
-    --color-accent-light: #e7eef8;
-    --color-text-primary: #191c1e;
-    --color-text-secondary: #434653;
-    --color-text-muted: #9ba3b2;
-    --color-chart-grid: #eceef0;
-    --color-chart-axis: #6b7280;
-    --color-chart-hover: rgba(0, 50, 125, 0.05);
-    --color-chart-cursor-line: rgba(0, 50, 125, 0.18);
-    --dashboard-canvas: #f1f2f4;
-    --dashboard-paper: #fcfcfd;
-    --dashboard-paper-muted: #f6f7f8;
-    --dashboard-ink: #15171a;
-    --dashboard-hairline: rgba(21, 23, 26, 0.1);
-    --dashboard-brand: #2867f0;
-    --dashboard-signal: #ff6b55;
-    --dashboard-shadow: 0 20px 60px -46px rgba(21, 23, 26, 0.28);
-
-    --background: 210 43% 98%;
-    --foreground: 217 30% 13%;
+    /* shadcn HSL tokens — design-system-v2 §2 (light). */
+    --background: 210 17% 96%;
+    --foreground: 220 13% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 217 30% 13%;
+    --card-foreground: 220 13% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 217 30% 13%;
-    --primary: 216 100% 24%;
+    --popover-foreground: 220 13% 10%;
+    --primary: 221 87% 55%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 213 58% 95%;
-    --secondary-foreground: 217 28% 24%;
-    --muted: 213 40% 95%;
-    --muted-foreground: 215 14% 48%;
-    --accent: 212 21% 91%;
-    --accent-foreground: 217 12% 18%;
-    --destructive: 0 84% 60%;
+    --secondary: 210 16% 93%;
+    --secondary-foreground: 220 13% 20%;
+    --muted: 210 16% 93%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 210 16% 91%;
+    --accent-foreground: 220 13% 15%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 34% 88%;
-    --input: 214 34% 88%;
-    --ring: 216 100% 24%;
-    --radius: 1.25rem;
+    --border: 220 13% 89%;
+    --input: 220 13% 89%;
+    --ring: 221 87% 55%;
+    --radius: 0.875rem;
+    --sidebar-background: 210 17% 96%;
+    --sidebar-foreground: 220 9% 46%;
+    --sidebar-primary: 221 87% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-accent-foreground: 220 13% 10%;
+    --sidebar-border: 220 13% 89%;
+    --sidebar-ring: 221 87% 55%;
+
+    /* Chart tokens — design-system-v2 §2. */
+    --chart-1: 221 87% 55%;
+    --chart-2: 199 89% 48%;
+    --chart-3: 250 80% 63%;
+    --chart-4: 168 62% 45%;
+    --chart-5: 220 9% 60%;
+    --chart-neutral: 220 13% 87%;
+    --chart-grid: 220 13% 92%;
+    --chart-axis: 220 9% 55%;
+
+    /* Shadows — design-system-v2 §4. Cards get no shadow; these are for
+       things that genuinely float (raised pill, popover, drag preview). */
+    --shadow-raised: 0 1px 2px 0 hsl(220 13% 10% / 0.04);
+    --shadow-overlay: 0 8px 24px -8px hsl(220 13% 10% / 0.12),
+      0 2px 6px -2px hsl(220 13% 10% / 0.06);
+    --shadow-drag: 0 16px 40px -12px hsl(220 13% 10% / 0.22);
+
+    /* Legacy bridge — design-system-v2 §0/§4. ~493 `--color-*` and ~41
+       `--dashboard-*` references still live in .tsx files, and the
+       marketing pages under src/app/(marketing) keep using them
+       permanently. Every one is redefined here to derive from the shadcn
+       tokens above, so the whole app shifts to the new palette without
+       breaking anything mid-migration. Do not delete any of these. */
+    --color-bg: hsl(var(--background));
+    --color-surface: hsl(var(--card));
+    --color-surface-muted: hsl(var(--muted));
+    --color-surface-subtle: hsl(var(--accent));
+    --color-border: hsl(var(--border));
+    --color-accent: hsl(var(--primary));
+    /* Hover step for the primary accent: one lightness step DOWN on the
+       light canvas. Must stay in the primary hue — this is the hover state
+       for every primary button in the app. */
+    --color-accent-secondary: hsl(221 87% 47%);
+    --color-accent-light: hsl(var(--primary) / 0.08);
+    --color-text-primary: hsl(var(--foreground));
+    --color-text-secondary: hsl(var(--secondary-foreground));
+    --color-text-muted: hsl(var(--muted-foreground));
+    --color-chart-grid: hsl(var(--chart-grid));
+    --color-chart-axis: hsl(var(--chart-axis));
+    --color-chart-hover: hsl(var(--primary) / 0.05);
+    --color-chart-cursor-line: hsl(var(--primary) / 0.18);
+    --dashboard-canvas: hsl(var(--background));
+    --dashboard-paper: hsl(var(--card));
+    --dashboard-paper-muted: hsl(var(--muted));
+    --dashboard-ink: hsl(var(--foreground));
+    --dashboard-hairline: hsl(var(--border));
+    --dashboard-brand: hsl(var(--primary));
+    --dashboard-signal: hsl(var(--destructive));
+    --dashboard-shadow: var(--shadow-overlay);
+
+    /* Non-shadcn legacy tokens (marketing hero/glow gradients) — kept
+       as-is; out of scope for the §2 colour-token rebuild. */
     --glow: 216 96% 42%;
     --surface: 210 43% 98%;
     --surface-elevated: 0 0% 100%;
@@ -55,68 +93,84 @@
     --hero-grid: 213 42% 89%;
     --shadow-color: 216 65% 24%;
     --panel: 213 52% 97%;
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 217 28% 24%;
-    --sidebar-primary: 216 100% 24%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 213 57% 93%;
-    --sidebar-accent-foreground: 217 28% 24%;
-    --sidebar-border: 214 34% 88%;
-    --sidebar-ring: 216 100% 24%;
-    --chart-1: 216 100% 24%;
-    --chart-2: 216 88% 36%;
-    --chart-3: 216 75% 44%;
-    --chart-4: 216 52% 68%;
-    --chart-5: 216 34% 84%;
   }
 
   .dark {
-    /* App custom tokens - the ones components actually use. Dark canvas,
-       lifted surfaces, brand blue brightened one family-step for contrast. */
-    --color-bg: #0e1116;
-    --color-surface: #171b22;
-    --color-surface-muted: #1f242d;
-    --color-surface-subtle: #272d37;
-    --color-border: rgba(255, 255, 255, 0.1);
-    --color-accent: #2f65b5;
-    --color-accent-secondary: #4a7acc;
-    --color-accent-light: #1a2740;
-    --color-text-primary: #eef1f5;
-    --color-text-secondary: #aab3c0;
-    --color-text-muted: #6f7785;
-    --color-chart-grid: #272d37;
-    --color-chart-axis: #8891a0;
-    --color-chart-hover: rgba(255, 255, 255, 0.045);
-    --color-chart-cursor-line: rgba(255, 255, 255, 0.16);
-    --dashboard-canvas: #0d1015;
-    --dashboard-paper: #171b21;
-    --dashboard-paper-muted: #1d222a;
-    --dashboard-ink: #f2f4f7;
-    --dashboard-hairline: rgba(255, 255, 255, 0.1);
-    --dashboard-brand: #6d9cff;
-    --dashboard-signal: #ff806d;
-    --dashboard-shadow: 0 24px 70px -44px rgba(0, 0, 0, 0.88);
-
-    /* shadcn HSL tokens (button/card/popover/input primitives). */
-    --background: 220 22% 8%;
-    --foreground: 210 20% 96%;
-    --card: 222 18% 12%;
-    --card-foreground: 210 20% 96%;
-    --popover: 222 18% 12%;
-    --popover-foreground: 210 20% 96%;
-    --primary: 213 59% 45%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 18%;
-    --secondary-foreground: 210 20% 92%;
-    --muted: 220 14% 18%;
-    --muted-foreground: 215 12% 60%;
-    --accent: 220 14% 20%;
-    --accent-foreground: 210 20% 92%;
+    /* shadcn HSL tokens — design-system-v2 §2 (dark). */
+    --background: 220 9% 5%;
+    --foreground: 210 20% 98%;
+    --card: 220 8% 10%;
+    --card-foreground: 210 20% 98%;
+    --popover: 220 8% 12%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 221 90% 66%;
+    --primary-foreground: 220 20% 8%;
+    --secondary: 220 8% 15%;
+    --secondary-foreground: 210 20% 94%;
+    --muted: 220 8% 14%;
+    --muted-foreground: 220 7% 58%;
+    --accent: 220 8% 17%;
+    --accent-foreground: 210 20% 94%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 14% 20%;
-    --input: 220 14% 22%;
-    --ring: 213 59% 50%;
+    --border: 220 8% 18%;
+    --input: 220 8% 20%;
+    --ring: 221 90% 66%;
+    --sidebar-background: 220 9% 5%;
+    --sidebar-foreground: 220 7% 58%;
+    --sidebar-primary: 221 90% 66%;
+    --sidebar-primary-foreground: 220 20% 8%;
+    --sidebar-accent: 220 8% 14%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 220 8% 18%;
+    --sidebar-ring: 221 90% 66%;
+
+    /* Chart tokens — design-system-v2 §2. */
+    --chart-1: 221 90% 66%;
+    --chart-2: 199 89% 58%;
+    --chart-3: 250 85% 72%;
+    --chart-4: 168 62% 55%;
+    --chart-5: 220 8% 45%;
+    --chart-neutral: 220 8% 20%;
+    --chart-grid: 220 8% 14%;
+    --chart-axis: 220 7% 50%;
+
+    /* Shadows — design-system-v2 §4. Same shapes as light, alpha raised
+       (0.4 / 0.6) and colour swapped to near-black. */
+    --shadow-raised: 0 1px 2px 0 hsl(220 20% 2% / 0.4);
+    --shadow-overlay: 0 8px 24px -8px hsl(220 20% 2% / 0.6),
+      0 2px 6px -2px hsl(220 20% 2% / 0.4);
+    --shadow-drag: 0 16px 40px -12px hsl(220 20% 2% / 0.6);
+
+    /* Legacy bridge — see :root for rationale. Same semantic mapping,
+       resolved against the dark tokens above. */
+    --color-bg: hsl(var(--background));
+    --color-surface: hsl(var(--card));
+    --color-surface-muted: hsl(var(--muted));
+    --color-surface-subtle: hsl(var(--accent));
+    --color-border: hsl(var(--border));
+    --color-accent: hsl(var(--primary));
+    /* Hover step for the primary accent: one lightness step UP on the dark
+       canvas (hover brightens against dark). Stays in the primary hue. */
+    --color-accent-secondary: hsl(221 90% 74%);
+    --color-accent-light: hsl(var(--primary) / 0.16);
+    --color-text-primary: hsl(var(--foreground));
+    --color-text-secondary: hsl(var(--secondary-foreground));
+    --color-text-muted: hsl(var(--muted-foreground));
+    --color-chart-grid: hsl(var(--chart-grid));
+    --color-chart-axis: hsl(var(--chart-axis));
+    --color-chart-hover: hsl(var(--primary) / 0.08);
+    --color-chart-cursor-line: hsl(var(--primary) / 0.22);
+    --dashboard-canvas: hsl(var(--background));
+    --dashboard-paper: hsl(var(--card));
+    --dashboard-paper-muted: hsl(var(--muted));
+    --dashboard-ink: hsl(var(--foreground));
+    --dashboard-hairline: hsl(var(--border));
+    --dashboard-brand: hsl(var(--primary));
+    --dashboard-signal: hsl(var(--destructive));
+    --dashboard-shadow: var(--shadow-overlay);
+
+    /* Non-shadcn legacy tokens — kept as-is; out of scope, see :root. */
     --glow: 213 70% 55%;
     --surface: 220 22% 8%;
     --surface-elevated: 222 18% 12%;
@@ -124,14 +178,6 @@
     --hero-grid: 220 14% 18%;
     --shadow-color: 220 40% 3%;
     --panel: 222 18% 12%;
-    --sidebar-background: 222 18% 11%;
-    --sidebar-foreground: 210 20% 92%;
-    --sidebar-primary: 213 59% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 18%;
-    --sidebar-accent-foreground: 210 20% 92%;
-    --sidebar-border: 220 14% 20%;
-    --sidebar-ring: 213 59% 50%;
   }
 
   * {
@@ -508,7 +554,7 @@
 
   .dashboard-scroll {
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: hsl(var(--border)) transparent;
   }
 
   .dashboard-scroll::-webkit-scrollbar {
@@ -521,7 +567,7 @@
   }
 
   .dashboard-scroll::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: hsl(var(--border));
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: content-box;
@@ -532,24 +578,6 @@
     border: 1px solid var(--dashboard-hairline);
     border-radius: 22px;
     box-shadow: var(--dashboard-shadow);
-  }
-
-  .dashboard-hover {
-    transition:
-      transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
-      border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
-      box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .dashboard-hover:hover {
-    transform: translateY(-1px);
-    border-color: color-mix(
-      in srgb,
-      var(--dashboard-brand) 24%,
-      var(--dashboard-hairline)
-    );
-    box-shadow: 0 24px 64px -44px
-      color-mix(in srgb, var(--dashboard-brand) 18%, transparent);
   }
 
   .dashboard-provenance {
@@ -732,20 +760,13 @@
 }
 
 /* ── Maximal-premium surface system (light + dark, one language) ──────────
-   Accent gradient tokens (brand blue) + the `.premium-card` surface used for
-   widgets across the dashboard: gradient-tinted background, layered soft
-   shadow + accent-tinted glow halo, hairline border. `.glass` is the overlay
-   variant. Glow/gradient live on surfaces & fills only — text keeps the
-   existing WCAG-AA `--color-text-*` tokens in both themes. */
+   Accent gradient tokens (brand blue). `.glass` is the overlay variant.
+   Glow/gradient live on surfaces & fills only — text keeps the existing
+   WCAG-AA `--color-text-*` tokens in both themes. */
 @layer utilities {
   :root {
     --accent-gradient-from: #2f6df6;
     --accent-gradient-to: #00327d;
-    --premium-glow: rgba(47, 109, 246, 0.16);
-  }
-
-  .dark {
-    --premium-glow: rgba(47, 109, 246, 0.32);
   }
 
   .accent-gradient {
@@ -757,31 +778,6 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-  }
-
-  /* Premium widget surface: subtle accent-tinted gradient + hairline border +
-     layered shadow with an accent glow halo (soft colored shadow in light,
-     luminous glow in dark). */
-  .premium-card {
-    position: relative;
-    background:
-      linear-gradient(160deg, rgba(47, 109, 246, 0.05) 0%, transparent 45%),
-      var(--color-surface);
-    border: 1px solid var(--color-border);
-    box-shadow:
-      0 1px 2px rgba(16, 24, 40, 0.04),
-      0 18px 44px -28px var(--premium-glow),
-      0 14px 36px -18px rgba(16, 24, 40, 0.16);
-  }
-
-  .dark .premium-card {
-    background:
-      linear-gradient(160deg, rgba(47, 109, 246, 0.1) 0%, transparent 50%),
-      var(--color-surface);
-    box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.4),
-      0 0 48px -8px var(--premium-glow),
-      0 16px 44px -18px rgba(0, 0, 0, 0.65);
   }
 
   /* Glass overlay surface (sheets, dropdowns, floating chrome). */
@@ -797,41 +793,17 @@
     border: 1px solid var(--color-border);
   }
 
-  /* Spring hover-lift for premium widgets; smooth size-change transition for
-     grid re-flow (col/row span changes). Both respect reduced-motion. */
-  .premium-hover {
-    transition:
-      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
-      box-shadow 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
-      border-color 200ms ease;
-  }
-
-  .premium-hover:hover {
-    transform: translateY(-3px);
-    box-shadow:
-      0 1px 2px rgba(16, 24, 40, 0.04),
-      0 26px 60px -28px var(--premium-glow),
-      0 18px 44px -18px rgba(16, 24, 40, 0.22);
-  }
-
-  .dark .premium-hover:hover {
-    box-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.4),
-      0 0 64px -8px var(--premium-glow),
-      0 22px 52px -18px rgba(0, 0, 0, 0.7);
-  }
-
+  /* Smooth size-change transition for grid re-flow (col/row span changes).
+     Respects reduced-motion. */
   .premium-transition {
     transition:
       grid-column 320ms cubic-bezier(0.4, 0, 0.2, 1),
       grid-row 320ms cubic-bezier(0.4, 0, 0.2, 1),
-      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
-      box-shadow 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform 320ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 320ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .premium-hover,
-    .premium-hover:hover,
     .premium-transition {
       transition-duration: 0.01ms;
       transform: none;

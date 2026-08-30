@@ -22,12 +22,12 @@ import { DonutChartView } from "./charts/DonutChartView";
 import { ScatterChartView } from "./charts/ScatterChartView";
 import { ChartEmptyState } from "./charts/ChartEmptyState";
 import { ChartHeadline, computeChartHeadline } from "./charts/ChartHeadline";
+import { deriveChartInsight } from "./charts/chart-format";
 import type { ChartRenderClass } from "./charts/chart-theme";
 
 type DashboardChartCardProps = {
   chart: ChartConfig;
   rows: SerializedRow[];
-  insight?: string;
   /** Canvas tier from the trait resolver — every dimension below is a
    * constant lookup (docs/WIDGET_SIZING.md §3). */
   tier: CanvasTier;
@@ -110,7 +110,6 @@ function DashboardChartContent({
 const DashboardChartCard = memo(function DashboardChartCard({
   chart,
   rows,
-  insight,
   tier,
   isEditing = false,
   isInteracting = false,
@@ -147,6 +146,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
   // hold a class this type doesn't support.
   const size = clampToSupportedSize(chart.type, chart.size);
   const renderClass = resolveRenderClass(size, tier);
+  const displayedInsight = deriveChartInsight(chart, rows);
 
   let body: ReactNode;
   if (renderClass === "small") {
@@ -171,7 +171,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
               {chart.title}
             </h3>
             <p className="mt-1 line-clamp-1 text-[11px] leading-snug text-[var(--color-text-muted)]">
-              {insight ?? chart.insight}
+              {displayedInsight}
             </p>
           </div>
           {chart.pinned ? (
@@ -181,7 +181,7 @@ const DashboardChartCard = memo(function DashboardChartCard({
             />
           ) : null}
         </div>
-        <div className="mx-auto mt-auto max-w-full overflow-hidden">
+        <div className="mt-2 flex max-w-full flex-1 items-center justify-center overflow-hidden">
           <DashboardChartContent
             chart={chart}
             rows={rows}

@@ -2,13 +2,13 @@ import type { ChartConfig, SerializedRow } from "@/shared/contracts";
 import { buildScatterSeries } from "@/features/dashboard/client/runtime";
 import { ChartEmptyState } from "./ChartEmptyState";
 import { EChart } from "./EChart";
-import { columnCurrency, formatAxisValue, formatMetric } from "./chart-format";
 import {
-  ACCENT_BRIGHT,
-  ECHARTS_GRID,
-  ECHARTS_TEXT,
-  SIGNAL,
-} from "./chart-theme";
+  columnCurrency,
+  displayColumnLabel,
+  formatAxisValue,
+  formatMetric,
+} from "./chart-format";
+import { tooltipStyle, useChartColors } from "./chart-theme";
 
 type ScatterChartViewProps = {
   chart: ChartConfig;
@@ -25,13 +25,16 @@ export function ScatterChartView({
   height,
   isInteracting = false,
 }: ScatterChartViewProps) {
+  const colors = useChartColors();
   const series = buildScatterSeries(chart, rows);
   if (series.length === 0) return <ChartEmptyState />;
 
-  const xLabel = chart.columns[0] ?? "X";
-  const yLabel = chart.columns[1] ?? "Y";
-  const xCurrency = columnCurrency(xLabel);
-  const yCurrency = columnCurrency(yLabel);
+  const xColumn = chart.columns[0] ?? "X";
+  const yColumn = chart.columns[1] ?? "Y";
+  const xLabel = displayColumnLabel(xColumn);
+  const yLabel = displayColumnLabel(yColumn);
+  const xCurrency = columnCurrency(xColumn);
+  const yCurrency = columnCurrency(yColumn);
   const option = {
     animationDuration: 280,
     grid: { top: 18, right: 20, bottom: 42, left: 64 },
@@ -40,18 +43,19 @@ export function ScatterChartView({
       renderMode: "richText",
       formatter: (params: { value: [number, number] }) =>
         `${xLabel}: ${formatMetric(params.value[0], xCurrency)}\n${yLabel}: ${formatMetric(params.value[1], yCurrency)}`,
+      ...tooltipStyle(colors),
     },
     xAxis: {
       type: "value",
       name: xLabel,
       nameLocation: "middle",
       nameGap: 28,
-      nameTextStyle: { color: ECHARTS_TEXT, fontSize: 11 },
+      nameTextStyle: { color: colors.axis, fontSize: 11 },
       axisLine: { show: false },
       axisTick: { show: false },
-      splitLine: { lineStyle: { color: ECHARTS_GRID } },
+      splitLine: { lineStyle: { color: colors.grid } },
       axisLabel: {
-        color: ECHARTS_TEXT,
+        color: colors.axis,
         fontSize: 11,
         formatter: (value: number) => formatAxisValue(value, xCurrency),
       },
@@ -59,12 +63,12 @@ export function ScatterChartView({
     yAxis: {
       type: "value",
       name: yLabel,
-      nameTextStyle: { color: ECHARTS_TEXT, fontSize: 11 },
+      nameTextStyle: { color: colors.axis, fontSize: 11 },
       axisLine: { show: false },
       axisTick: { show: false },
-      splitLine: { lineStyle: { color: ECHARTS_GRID } },
+      splitLine: { lineStyle: { color: colors.grid } },
       axisLabel: {
-        color: ECHARTS_TEXT,
+        color: colors.axis,
         fontSize: 11,
         formatter: (value: number) => formatAxisValue(value, yCurrency),
       },
@@ -72,17 +76,19 @@ export function ScatterChartView({
     series: [
       {
         type: "scatter",
+        // Points default to neutral grey; only the hovered point takes the
+        // accent (design-system-v2 §7.1).
         data: series.map((point) => [point.x, point.y]),
         symbolSize: 11,
         itemStyle: {
-          color: ACCENT_BRIGHT,
-          opacity: 0.68,
-          borderColor: "#fff",
+          color: colors.neutral,
+          opacity: 0.9,
+          borderColor: colors.popover,
           borderWidth: 1.5,
         },
         emphasis: {
           scale: 1.4,
-          itemStyle: { color: SIGNAL, opacity: 1 },
+          itemStyle: { color: colors.accent, opacity: 1 },
         },
       },
     ],

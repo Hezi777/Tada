@@ -1,5 +1,9 @@
 # Design System: Tada
 
+> **Superseded by `docs/design-system-v2.md`.** This file is stale (it forbids
+> borders and names Manrope/Inter; the live app uses shadcn HSL tokens,
+> hairline borders, and Satoshi). Kept for history only — do not follow it.
+
 ## 1. Visual Theme & Atmosphere
 
 Tada is a premium AI-powered business intelligence tool for everyday Israeli

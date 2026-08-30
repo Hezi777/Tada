@@ -9,11 +9,7 @@ import {
   metricLabel,
 } from "./chart-format";
 import { EChart } from "./EChart";
-import {
-  CATEGORICAL_PALETTE,
-  DONUT_RADII,
-  DONUT_SLICE_BUDGET,
-} from "./chart-theme";
+import { DONUT_RADII, DONUT_SLICE_BUDGET, useChartColors } from "./chart-theme";
 
 type DonutSize = "medium" | "large";
 
@@ -42,6 +38,7 @@ export function DonutChartView({
   height,
   isInteracting = false,
 }: DonutChartViewProps) {
+  const colors = useChartColors();
   const series = buildGroupedSeries(chart, rows, {
     categoryLimit: DONUT_SLICE_BUDGET[size],
   });
@@ -61,7 +58,7 @@ export function DonutChartView({
       label={`${chart.title}. ${series.length} segments totaling ${formatAxisValue(total, donutCurrency)}.`}
       isInteracting={isInteracting}
       option={{
-        color: [...CATEGORICAL_PALETTE],
+        color: colors.categorical,
         animationDuration: 300,
         tooltip: {
           trigger: "item",
@@ -78,7 +75,7 @@ export function DonutChartView({
                   top: "39%",
                   style: {
                     text: formatAxisValue(total, donutCurrency),
-                    fill: "#17191d",
+                    fill: colors.foreground,
                     fontSize: 18,
                     fontWeight: 600,
                     textAlign: "center",
@@ -93,8 +90,12 @@ export function DonutChartView({
                       chart.aggregation === "count" ||
                       chart.aggregation === null
                         ? "TOTAL COUNT"
-                        : `TOTAL ${truncateLabel(metricLabel(chart), 12).toUpperCase()}`,
-                    fill: "#8a909a",
+                        // No "TOTAL" prefix: the figure directly above is
+                        // plainly the total, and the extra six characters
+                        // pushed the string wider than the inner radius, so
+                        // the ring clipped both ends of it.
+                        : truncateLabel(metricLabel(chart), 12).toUpperCase(),
+                    fill: colors.mutedForeground,
                     fontSize: 9,
                     fontWeight: 600,
                     textAlign: "center",
@@ -110,7 +111,11 @@ export function DonutChartView({
             silent: false,
             padAngle: 2,
             label: { show: false },
-            itemStyle: { borderColor: "#fff", borderWidth: 2, borderRadius: 4 },
+            itemStyle: {
+              borderColor: colors.popover,
+              borderWidth: 2,
+              borderRadius: 4,
+            },
             emphasis: { scale: true, scaleSize: 3 },
             data: series.map((entry) => ({
               name: entry.label,
@@ -143,7 +148,7 @@ export function DonutChartView({
                   className="h-2 w-2 shrink-0 rounded-full"
                   style={{
                     background:
-                      CATEGORICAL_PALETTE[index % CATEGORICAL_PALETTE.length],
+                      colors.categorical[index % colors.categorical.length],
                   }}
                 />
                 <span className="min-w-0 flex-1 truncate text-[var(--color-text-secondary)]">
@@ -182,7 +187,7 @@ export function DonutChartView({
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{
                   background:
-                    CATEGORICAL_PALETTE[index % CATEGORICAL_PALETTE.length],
+                    colors.categorical[index % colors.categorical.length],
                 }}
               />
               <span className="text-[var(--color-text-secondary)]">

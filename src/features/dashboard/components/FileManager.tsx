@@ -146,18 +146,18 @@ function DashboardPreview({ index }: { index: number }) {
       <div className="grid h-full grid-cols-3 grid-rows-2 gap-3">
         <div className="col-span-2 flex items-end rounded-2xl bg-white/50 p-4">
           <div className="flex h-full w-full items-end gap-1.5">
-            <div className="h-[55%] flex-1 rounded-t-full bg-[rgba(0,50,125,0.16)]" />
-            <div className="h-[78%] flex-1 rounded-t-full bg-[rgba(0,50,125,0.16)]" />
-            <div className="h-[46%] flex-1 rounded-t-full bg-[rgba(0,50,125,0.16)]" />
-            <div className="h-full flex-1 rounded-t-full bg-[rgba(0,50,125,0.16)]" />
+            <div className="h-[55%] flex-1 rounded-t-full bg-primary/[0.16]" />
+            <div className="h-[78%] flex-1 rounded-t-full bg-primary/[0.16]" />
+            <div className="h-[46%] flex-1 rounded-t-full bg-primary/[0.16]" />
+            <div className="h-full flex-1 rounded-t-full bg-primary/[0.16]" />
           </div>
         </div>
         <div className="flex items-center justify-center rounded-2xl bg-white/45">
-          <div className="h-10 w-10 rounded-full border-4 border-[rgba(0,50,125,0.16)] border-t-transparent" />
+          <div className="h-10 w-10 rounded-full border-4 border-primary/[0.16] border-t-transparent" />
         </div>
         <div className="col-span-3 rounded-2xl bg-white/45 p-4">
-          <div className="h-2 rounded-full bg-[rgba(0,50,125,0.08)]">
-            <div className="h-full w-2/3 rounded-full bg-[rgba(0,50,125,0.2)]" />
+          <div className="h-2 rounded-full bg-primary/[0.08]">
+            <div className="h-full w-2/3 rounded-full bg-primary/[0.2]" />
           </div>
         </div>
       </div>
@@ -168,20 +168,20 @@ function DashboardPreview({ index }: { index: number }) {
     return (
       <div className="grid h-full grid-cols-4 grid-rows-2 gap-3">
         <div className="row-span-2 flex items-center justify-center rounded-2xl bg-white/50">
-          <div className="rounded-2xl bg-[rgba(0,50,125,0.08)] p-3">
-            <LayoutGrid className="h-7 w-7 text-[rgba(0,50,125,0.24)]" />
+          <div className="rounded-2xl bg-primary/[0.08] p-3">
+            <LayoutGrid className="h-7 w-7 text-primary/[0.24]" />
           </div>
         </div>
         <div className="col-span-3 rounded-2xl bg-white/45 p-4">
           <div className="space-y-2">
-            <div className="h-2 w-3/4 rounded-full bg-[rgba(0,50,125,0.12)]" />
-            <div className="h-2 w-1/2 rounded-full bg-[rgba(0,50,125,0.08)]" />
+            <div className="h-2 w-3/4 rounded-full bg-primary/[0.12]" />
+            <div className="h-2 w-1/2 rounded-full bg-primary/[0.08]" />
           </div>
         </div>
         <div className="col-span-3 grid grid-cols-3 gap-2 rounded-2xl bg-white/45 p-3">
-          <div className="rounded-xl bg-[rgba(0,50,125,0.06)]" />
-          <div className="rounded-xl bg-[rgba(0,50,125,0.12)]" />
-          <div className="rounded-xl bg-[rgba(0,50,125,0.18)]" />
+          <div className="rounded-xl bg-primary/[0.06]" />
+          <div className="rounded-xl bg-primary/[0.12]" />
+          <div className="rounded-xl bg-primary/[0.18]" />
         </div>
       </div>
     );
@@ -191,12 +191,12 @@ function DashboardPreview({ index }: { index: number }) {
     return (
       <div className="flex h-full flex-col gap-3">
         <div className="flex flex-1 items-center justify-between rounded-2xl bg-white/50 p-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,50,125,0.1)]">
-            <Search className="h-5 w-5 text-[rgba(0,50,125,0.28)]" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/[0.1]">
+            <Search className="h-5 w-5 text-primary/[0.28]" />
           </div>
           <div className="space-y-2">
-            <div className="h-3 w-16 rounded-full bg-[rgba(0,50,125,0.12)]" />
-            <div className="h-2 w-24 rounded-full bg-[rgba(0,50,125,0.08)]" />
+            <div className="h-3 w-16 rounded-full bg-primary/[0.12]" />
+            <div className="h-2 w-24 rounded-full bg-primary/[0.08]" />
           </div>
         </div>
         <div className="grid flex-1 grid-cols-2 gap-3">
@@ -211,17 +211,17 @@ function DashboardPreview({ index }: { index: number }) {
     return (
       <div className="grid h-full grid-cols-2 gap-3">
         <div className="flex items-center justify-center rounded-2xl bg-white/50">
-          <div className="h-14 w-14 rounded-full bg-[rgba(0,50,125,0.1)]" />
+          <div className="h-14 w-14 rounded-full bg-primary/[0.1]" />
         </div>
         <div className="space-y-2 rounded-2xl bg-white/45 p-4">
-          <div className="h-2 rounded-full bg-[rgba(0,50,125,0.12)]" />
-          <div className="h-2 rounded-full bg-[rgba(0,50,125,0.12)]" />
-          <div className="h-2 w-2/3 rounded-full bg-[rgba(0,50,125,0.12)]" />
+          <div className="h-2 rounded-full bg-primary/[0.12]" />
+          <div className="h-2 rounded-full bg-primary/[0.12]" />
+          <div className="h-2 w-2/3 rounded-full bg-primary/[0.12]" />
         </div>
         <div className="col-span-2 flex items-end gap-1 rounded-2xl bg-white/45 p-4">
-          <div className="h-1/2 flex-1 rounded-t-2xl bg-[rgba(0,50,125,0.16)]" />
-          <div className="h-3/4 flex-1 rounded-t-2xl bg-[rgba(0,50,125,0.16)]" />
-          <div className="h-full flex-1 rounded-t-2xl bg-[rgba(0,50,125,0.16)]" />
+          <div className="h-1/2 flex-1 rounded-t-2xl bg-primary/[0.16]" />
+          <div className="h-3/4 flex-1 rounded-t-2xl bg-primary/[0.16]" />
+          <div className="h-full flex-1 rounded-t-2xl bg-primary/[0.16]" />
         </div>
       </div>
     );
@@ -235,9 +235,9 @@ function DashboardPreview({ index }: { index: number }) {
         <div className="rounded-2xl bg-white/50" />
       </div>
       <div className="flex-1 space-y-3 rounded-2xl bg-white/50 p-4">
-        <div className="h-2 rounded-full bg-[rgba(0,50,125,0.1)]" />
-        <div className="h-2 w-5/6 rounded-full bg-[rgba(0,50,125,0.1)]" />
-        <div className="h-2 w-4/6 rounded-full bg-[rgba(0,50,125,0.1)]" />
+        <div className="h-2 rounded-full bg-primary/[0.1]" />
+        <div className="h-2 w-5/6 rounded-full bg-primary/[0.1]" />
+        <div className="h-2 w-4/6 rounded-full bg-primary/[0.1]" />
       </div>
     </div>
   );
@@ -596,14 +596,14 @@ export default function FileManager() {
 
   if (view === "dashboards") {
     return (
-      <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-10 sm:px-8">
+      <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-background px-6 py-10 sm:px-8">
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="font-display text-[2.25rem] font-black tracking-[-0.05em] text-[var(--color-text-primary)]">
+              <h1 className="font-display text-[2.25rem] font-black tracking-[-0.05em] text-foreground">
                 {t("files.title")}
               </h1>
-              <p className="mt-2 text-sm font-medium text-[var(--color-text-secondary)]">
+              <p className="mt-2 text-sm font-medium text-muted-foreground">
                 {t("files.subtitle")}
               </p>
             </div>
@@ -611,7 +611,7 @@ export default function FileManager() {
             <Button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="h-10 rounded-full bg-[var(--color-accent)] px-5 text-white hover:bg-[var(--color-accent-secondary)]"
+              className="h-10 rounded-full bg-primary px-5 text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="h-4 w-4" />
               {t("files.new")}
@@ -622,10 +622,10 @@ export default function FileManager() {
             type="button"
             onClick={() => dashboardUploadInputRef.current?.click()}
             disabled={isQuickUploading}
-            className="flex w-full items-center justify-between rounded-[20px] border-2 border-dashed border-[var(--color-accent)] bg-card px-6 py-5 text-left transition-colors hover:bg-[var(--color-surface-muted)] disabled:cursor-not-allowed"
+            className="flex w-full items-center justify-between rounded-lg border-2 border-dashed border-primary bg-card px-6 py-5 text-left transition-colors hover:bg-muted disabled:cursor-not-allowed"
           >
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(0,50,125,0.08)] text-[var(--color-accent)]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/[0.08] text-primary">
                 {isQuickUploading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
@@ -633,15 +633,15 @@ export default function FileManager() {
                 )}
               </div>
               <div>
-                <p className="font-display text-lg font-semibold text-[var(--color-text-primary)]">
+                <p className="font-display text-lg font-semibold text-foreground">
                   Drop a CSV, Excel, or PDF file here
                 </p>
-                <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Uploading starts a new dashboard automatically.
                 </p>
               </div>
             </div>
-            <span className="rounded-full bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white">
+            <span className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">
               Browse files
             </span>
           </button>
@@ -667,7 +667,7 @@ export default function FileManager() {
               <Button
                 type="button"
                 variant="ghost"
-                className="h-10 rounded-full bg-[var(--color-surface-muted)] px-4 text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-card hover:text-[var(--color-text-primary)]"
+                className="h-10 rounded-full bg-muted px-4 text-sm font-semibold text-muted-foreground hover:bg-card hover:text-foreground"
               >
                 Sort by:{" "}
                 {sortMode === "updated"
@@ -680,7 +680,7 @@ export default function FileManager() {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-48 rounded-[16px] p-2"
+              className="w-48 rounded-lg p-2"
             >
               <DropdownMenuItem onSelect={() => setSortMode("updated")}>
                 <span className="flex-1">Last Modified</span>
@@ -702,12 +702,12 @@ export default function FileManager() {
           {isLoading ? (
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 3 }).map((_, index) => (
-                <Skeleton key={index} className="aspect-[3/2] rounded-[20px]" />
+                <Skeleton key={index} className="aspect-[3/2] rounded-lg" />
               ))}
             </div>
           ) : sortedDashboards.length === 0 ? (
             <EmptyState
-              className="min-h-[420px] justify-center rounded-[20px] border border-[var(--color-border)] bg-card px-6 py-10 shadow-card"
+              className="min-h-[420px] justify-center rounded-lg border border-border bg-card px-6 py-10"
               icon={<LayoutGrid className="h-8 w-8" />}
               title="No dashboards yet"
               description="Upload a CSV, Excel, or PDF file above to create your first dashboard."
@@ -740,7 +740,7 @@ export default function FileManager() {
                         void handleDrillIn(dashboard);
                       }
                     }}
-                    className="group relative flex aspect-[3/2] cursor-pointer flex-col overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-ui hover:-translate-y-1 hover:shadow-[0_28px_60px_-30px_rgba(25,28,30,0.24)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+                    className="group relative flex aspect-[3/2] cursor-pointer flex-col overflow-hidden rounded-lg border border-border bg-card transition-colors duration-150 motion-reduce:transition-none hover:border-foreground/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     onClick={() => void handleDrillIn(dashboard)}
                   >
                     <div
@@ -748,12 +748,12 @@ export default function FileManager() {
                       style={{ backgroundColor: tint }}
                     >
                       <div className="mb-4 flex items-start justify-between">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/60 text-[var(--color-accent)]">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/60 text-primary">
                           <IconComponent className="h-5 w-5" />
                         </div>
 
                         <div
-                          className="flex items-center gap-2 opacity-0 transition-ui group-hover:opacity-100"
+                          className="flex items-center gap-2 opacity-0 transition-opacity duration-150 motion-reduce:transition-none group-hover:opacity-100"
                           onClick={(event) => event.stopPropagation()}
                         >
                           <Popover
@@ -767,14 +767,14 @@ export default function FileManager() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 rounded-full bg-card text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm hover:bg-[var(--color-surface-muted)]"
+                                className="h-8 w-8 rounded-full bg-card text-muted-foreground shadow-sm backdrop-blur-sm hover:bg-muted"
                                 aria-label="Change dashboard icon"
                               >
                                 <Smile className="h-4 w-4" />
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent align="end" className="w-72 p-3">
-                              <div className="mb-2 text-xs font-medium text-[var(--color-text-secondary)]">
+                              <div className="mb-2 text-xs font-medium text-muted-foreground">
                                 Choose icon
                               </div>
                               <div className="grid grid-cols-5 gap-1.5">
@@ -792,8 +792,8 @@ export default function FileManager() {
                                       }
                                       className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${
                                         iconName === dashboard.icon
-                                          ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
-                                          : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)]"
+                                          ? "bg-primary/10 text-primary"
+                                          : "text-muted-foreground hover:bg-muted"
                                       }`}
                                     >
                                       <OptionIcon className="h-4 w-4" />
@@ -815,7 +815,7 @@ export default function FileManager() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 rounded-full bg-card shadow-sm backdrop-blur-sm hover:bg-[var(--color-surface-muted)]"
+                                className="h-8 w-8 rounded-full bg-card shadow-sm backdrop-blur-sm hover:bg-muted"
                                 aria-label="Change dashboard color"
                               >
                                 <span
@@ -825,7 +825,7 @@ export default function FileManager() {
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent align="end" className="w-72 p-3">
-                              <div className="mb-2 text-xs font-medium text-[var(--color-text-secondary)]">
+                              <div className="mb-2 text-xs font-medium text-muted-foreground">
                                 Choose color
                               </div>
                               <div className="flex flex-wrap gap-1.5">
@@ -841,7 +841,7 @@ export default function FileManager() {
                                     }
                                     className={`h-7 w-7 rounded-full border border-white/70 transition-all ${
                                       color === dashboard.color
-                                        ? "ring-2 ring-[var(--color-accent)] ring-offset-1"
+                                        ? "ring-2 ring-primary ring-offset-1"
                                         : "hover:scale-110"
                                     }`}
                                     style={{ backgroundColor: color }}
@@ -857,7 +857,7 @@ export default function FileManager() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 rounded-full bg-card text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm hover:bg-[var(--color-surface-muted)]"
+                                className="h-8 w-8 rounded-full bg-card text-muted-foreground shadow-sm backdrop-blur-sm hover:bg-muted"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -869,7 +869,7 @@ export default function FileManager() {
                                   setRenameValue(dashboard.name);
                                 }}
                               >
-                                <Pencil className="mr-2 h-3.5 w-3.5" />
+                                <Pencil className="me-2 h-3.5 w-3.5" />
                                 Rename
                               </DropdownMenuItem>
                               <DropdownMenuItem
@@ -877,9 +877,9 @@ export default function FileManager() {
                                   setDeleteConfirmId(dashboard.id);
                                   setDeleteConfirmName(dashboard.name);
                                 }}
-                                className="text-[var(--color-text-secondary)] focus:text-[var(--color-text-primary)]"
+                                className="text-muted-foreground focus:text-foreground"
                               >
-                                <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                <Trash2 className="me-2 h-3.5 w-3.5" />
                                 Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -890,7 +890,7 @@ export default function FileManager() {
                       <DashboardPreview index={index} />
 
                       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                        <div className="rounded-full bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-white opacity-0 shadow-[0_18px_40px_-26px_rgba(0,50,125,0.7)] transition-ui group-hover:opacity-100">
+                        <div className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground opacity-0 shadow-overlay transition-opacity duration-150 motion-reduce:transition-none group-hover:opacity-100">
                           Open Dashboard
                         </div>
                       </div>
@@ -911,18 +911,18 @@ export default function FileManager() {
                             onChange={(event) =>
                               setRenameValue(event.target.value)
                             }
-                            className="h-9 rounded-[8px] border border-[rgba(25,28,30,0.12)] bg-card text-sm font-semibold"
+                            className="h-9 text-sm font-semibold"
                             onBlur={() => void handleRename(dashboard.id)}
                             autoFocus
                           />
                         </form>
                       ) : (
-                        <h3 className="truncate font-display text-xl font-bold tracking-[-0.03em] text-[var(--color-text-primary)]">
+                        <h3 className="truncate font-display text-xl font-bold tracking-[-0.03em] text-foreground">
                           {dashboard.name}
                         </h3>
                       )}
 
-                      <p className="mt-2 text-sm font-medium tabular-nums text-[var(--color-text-secondary)]">
+                      <p className="mt-2 text-sm font-medium tabular-nums text-muted-foreground">
                         {dashboard.fileCount}{" "}
                         {dashboard.fileCount === 1 ? "file" : "files"} ·{" "}
                         {formatDateIL(dashboard.updatedAt)}
@@ -937,7 +937,7 @@ export default function FileManager() {
 
         {sortedDashboards.length > 0 ? (
           <footer className="mt-14 flex flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+            <span className="text-sm font-medium text-muted-foreground">
               Showing {bidiIsolate(String(pagedDashboards.length))} of{" "}
               {bidiIsolate(String(sortedDashboards.length))} dashboards
             </span>
@@ -966,8 +966,8 @@ export default function FileManager() {
                       onClick={() => setCurrentPage(page)}
                       className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
                         active
-                          ? "bg-[var(--color-accent)] text-white"
-                          : "text-[var(--color-text-secondary)] hover:bg-card"
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-card"
                       }`}
                     >
                       {page}
@@ -1025,8 +1025,8 @@ export default function FileManager() {
   }
 
   return (
-    <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-[var(--color-bg)] px-6 py-8 sm:px-8">
-      <div className="flex flex-col gap-5 rounded-[20px] border border-[var(--color-border)] bg-card px-6 py-6 shadow-[0_24px_48px_-36px_rgba(25,28,30,0.16)]">
+    <div className="dashboard-scroll flex h-full flex-col overflow-y-auto bg-background px-6 py-8 sm:px-8">
+      <div className="flex flex-col gap-5 rounded-lg border border-border bg-card px-6 py-6">
         <div className="flex flex-wrap items-center gap-3">
           <TooltipProvider delayDuration={100}>
             <Tooltip>
@@ -1037,7 +1037,7 @@ export default function FileManager() {
                   size="icon"
                   onClick={handleBack}
                   aria-label="Back to dashboards"
-                  className="h-10 w-10 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
+                  className="h-10 w-10 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
@@ -1048,31 +1048,31 @@ export default function FileManager() {
 
           {activeDash ? (
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-accent-light)] text-[var(--color-accent)]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 {(() => {
                   const ActiveIcon = getIconComponent(activeDash.icon);
                   return <ActiveIcon className="h-5 w-5" />;
                 })()}
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   Dashboard Assets
                 </p>
-                <h1 className="font-display text-[1.75rem] font-bold tracking-[-0.04em] text-[var(--color-text-primary)]">
+                <h1 className="font-display text-[1.75rem] font-bold tracking-[-0.04em] text-foreground">
                   {activeDash.name}
                 </h1>
               </div>
             </div>
           ) : null}
 
-          <div className="ml-auto flex flex-wrap items-center gap-3">
+          <div className="ms-auto flex flex-wrap items-center gap-3">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
+              <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search files..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="h-10 w-56 rounded-full border border-transparent bg-[var(--color-surface-muted)] pl-10 text-sm"
+                className="h-10 w-56 rounded-full border border-transparent bg-muted ps-10 text-sm"
               />
             </div>
 
@@ -1080,7 +1080,7 @@ export default function FileManager() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="relative h-10 rounded-full bg-[var(--color-accent)] px-0 text-sm font-semibold text-white hover:bg-[var(--color-accent-secondary)] disabled:w-[200px]"
+              className="relative h-10 rounded-full bg-primary px-0 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:w-[200px]"
             >
               <AnimatePresence mode="popLayout" initial={false}>
                 {isUploading ? (
@@ -1130,7 +1130,7 @@ export default function FileManager() {
       <div className="mt-8 flex-1">
         {filteredFiles.length === 0 ? (
           <EmptyState
-            className="min-h-[420px] justify-center rounded-[20px] border border-[var(--color-border)] bg-card px-6 py-10 shadow-card"
+            className="min-h-[420px] justify-center rounded-lg border border-border bg-card px-6 py-10"
             icon={<UploadCloud className="h-8 w-8" />}
             title={
               searchQuery.trim()
@@ -1168,10 +1168,10 @@ export default function FileManager() {
               return (
                 <Card
                   key={file.id}
-                  className="group relative overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card shadow-[0_20px_40px_-32px_rgba(25,28,30,0.16)] transition-ui hover:-translate-y-1 hover:shadow-[0_28px_54px_-30px_rgba(25,28,30,0.24)]"
+                  className="group relative overflow-hidden rounded-lg border border-border bg-card transition-colors duration-150 motion-reduce:transition-none hover:border-foreground/15"
                 >
                   <div className="flex items-start gap-4 p-5">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-accent-light)] text-[var(--color-accent)]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                       {isSpreadsheet ? (
                         <Table className="h-5 w-5" />
                       ) : (
@@ -1181,18 +1181,18 @@ export default function FileManager() {
 
                     <div className="min-w-0 flex-1">
                       <p
-                        className="truncate text-sm font-semibold text-[var(--color-text-primary)]"
+                        className="truncate text-sm font-semibold text-foreground"
                         title={file.fileName}
                       >
                         {file.fileName}
                       </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-secondary)]">
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <span className="tabular-nums">
                           {file.rowCount.toLocaleString()}
                         </span>
                         <span>rows</span>
                         {file.isPrimary ? (
-                          <Badge className="rounded-full border-0 bg-[var(--color-accent-light)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]">
+                          <Badge className="rounded-full border border-emerald-500/30 bg-transparent px-2.5 py-0.5 text-[10px] font-medium text-emerald-600 hover:bg-transparent dark:text-emerald-400">
                             Primary
                           </Badge>
                         ) : null}
@@ -1205,18 +1205,18 @@ export default function FileManager() {
                       size="icon"
                       onClick={() => setDeleteFileConfirm(file)}
                       aria-label={`Remove ${file.fileName}`}
-                      className="h-8 w-8 shrink-0 rounded-full text-[var(--color-text-muted)] opacity-0 transition-ui hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] group-hover:opacity-100"
+                      className="h-8 w-8 shrink-0 rounded-full text-muted-foreground opacity-0 transition-colors duration-150 motion-reduce:transition-none hover:bg-muted hover:text-foreground group-hover:opacity-100"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-[var(--color-border)] bg-[var(--color-surface-muted)] px-5 py-3">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
+                  <div className="flex items-center justify-between border-t border-border bg-muted px-5 py-3">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                       {extension}
                     </span>
                     {file.isPrimary ? (
-                      <span className="text-[11px] font-medium text-[var(--color-text-secondary)]">
+                      <span className="text-[11px] font-medium text-muted-foreground">
                         Used for dashboard charts
                       </span>
                     ) : null}

@@ -51,36 +51,36 @@ export function ProcessingView({
   return (
     <div className="flex h-full flex-col items-center justify-center px-5 py-6">
       <div className="mx-auto grid w-full max-w-5xl gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-        <Card className="rounded-[24px] border-0 bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
-          <div className="inline-flex rounded-full bg-[rgba(0,50,125,0.08)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+        <Card className="rounded-lg p-8 sm:p-10">
+          <div className="inline-flex rounded-full bg-muted px-4 py-2 text-xs font-medium text-muted-foreground">
             {content.eyebrow}
           </div>
-          <h2 className="mt-6 font-display text-4xl text-[var(--color-text-primary)] sm:text-5xl">
+          <h2 className="mt-6 text-3xl font-semibold tracking-tight text-foreground">
             {content.heading}
           </h2>
-          <p className="mt-5 max-w-xl text-lg leading-8 text-[var(--color-text-secondary)]">
+          <p className="mt-5 max-w-xl text-sm text-muted-foreground">
             {content.blurb}
           </p>
 
-          <Card className="mt-8 rounded-[20px] border-0 bg-[var(--color-surface-muted)] p-5 shadow-none">
+          <div className="mt-8 rounded-lg border border-border bg-muted p-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)] text-white">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 {phase === "profiling" ? (
                   <ShieldCheck className="h-6 w-6" />
                 ) : (
                   <Sparkles className="h-6 w-6" />
                 )}
               </div>
-              <p className="text-sm text-[var(--color-text-secondary)]">
+              <p className="text-sm text-muted-foreground">
                 {phase === "generating" && piiColumns.length > 0
                   ? `Personal columns detected (${piiColumns.join(", ")}). Their raw values are excluded from AI analysis.`
                   : content.note}
               </p>
             </div>
-          </Card>
+          </div>
         </Card>
 
-        <Card className="flex flex-col rounded-[24px] border-0 bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-10">
+        <Card className="flex flex-col rounded-lg p-8 sm:p-10">
           <div className="mb-8 flex items-center justify-center">
             {phase === "profiling" ? (
               <ScanVisual reduceMotion={Boolean(reduceMotion)} />
@@ -89,17 +89,17 @@ export function ProcessingView({
             )}
           </div>
 
-          <div className="space-y-3 text-left">
+          <div className="space-y-3 text-start">
             {steps.map((step) => {
               return (
                 <div
                   key={step}
-                  className="flex items-center gap-4 rounded-[20px] bg-[rgba(0,50,125,0.08)] px-4 py-3.5"
+                  className="flex items-center gap-4 rounded-lg bg-muted px-4 py-3.5"
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card">
-                    <Loader2 className="h-4 w-4 animate-spin text-[var(--color-accent)] motion-reduce:animate-none" />
+                    <Loader2 className="h-4 w-4 animate-spin text-primary motion-reduce:animate-none" />
                   </div>
-                  <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  <span className="text-sm font-medium text-foreground">
                     {step}
                   </span>
                 </div>
@@ -145,12 +145,12 @@ function ChartBuildVisual({ reduceMotion }: { reduceMotion: boolean }) {
         <linearGradient id="bar-fill" x1="0" y1="0" x2="0" y2="1">
           <stop
             offset="0%"
-            stopColor="var(--color-accent)"
+            stopColor="hsl(var(--primary))"
             stopOpacity="0.95"
           />
           <stop
             offset="100%"
-            stopColor="var(--color-accent)"
+            stopColor="hsl(var(--primary))"
             stopOpacity="0.45"
           />
         </linearGradient>
@@ -162,7 +162,7 @@ function ChartBuildVisual({ reduceMotion }: { reduceMotion: boolean }) {
         y1={baseline}
         x2={width - padding}
         y2={baseline}
-        stroke="var(--color-chart-grid)"
+        stroke="hsl(var(--chart-grid))"
         strokeWidth={1.5}
       />
 
@@ -198,7 +198,7 @@ function ChartBuildVisual({ reduceMotion }: { reduceMotion: boolean }) {
       <motion.path
         d={linePath}
         fill="none"
-        stroke="var(--color-accent)"
+        stroke="hsl(var(--primary))"
         strokeWidth={2.5}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -217,7 +217,7 @@ function ChartBuildVisual({ reduceMotion }: { reduceMotion: boolean }) {
           cx={x}
           cy={y}
           r={3}
-          fill="var(--color-accent)"
+          fill="hsl(var(--primary))"
           initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
           animate={reduceMotion ? { opacity: 1 } : { opacity: [0, 1, 0] }}
           transition={
@@ -266,8 +266,8 @@ function ScanVisual({ reduceMotion }: { reduceMotion: boolean }) {
               width={colW}
               height={rowH}
               rx={6}
-              fill="var(--color-surface-muted)"
-              stroke="var(--color-chart-grid)"
+              fill="hsl(var(--muted))"
+              stroke="hsl(var(--chart-grid))"
               strokeWidth={1}
               initial={reduceMotion ? { opacity: 1 } : { opacity: 0.5 }}
               animate={
@@ -294,7 +294,7 @@ function ScanVisual({ reduceMotion }: { reduceMotion: boolean }) {
           width={width - padding * 2 + 8}
           height={rowH + 4}
           rx={8}
-          fill="var(--color-accent)"
+          fill="hsl(var(--primary))"
           opacity={0.12}
           initial={{ y: padding - 2 }}
           animate={{

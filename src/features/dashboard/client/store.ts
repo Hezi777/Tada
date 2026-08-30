@@ -14,6 +14,7 @@ import type {
 import { normalizeChartConfig } from "@/shared/contracts";
 import {
   isChartVisible,
+  sanitizeChartCollection,
   toStoreContext,
   validateChartCollection,
   validateKpiCollection,
@@ -95,6 +96,17 @@ function setState(next: DashboardStoreState): void {
 }
 
 function validateNextState(next: DashboardStoreState): void {
+  // Degrade invalid part-to-whole donuts to bar charts before validating so
+  // a bad donut can't brick the dashboard (hydration included) — every other
+  // invariant below still throws as before.
+  next.charts = sanitizeChartCollection(
+    next.charts,
+    toStoreContext({
+      columns: next.columns,
+      rows: next.rows,
+      datasetMeta: next.datasetMeta,
+    }),
+  );
   const chartError = validateChartCollection(
     normalizeOrders(next.charts),
     toStoreContext({

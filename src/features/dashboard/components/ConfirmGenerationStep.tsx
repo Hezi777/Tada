@@ -46,16 +46,16 @@ export function ConfirmGenerationStep({
 
   return (
     <div className="flex h-full flex-col items-center justify-center overflow-y-auto px-5 py-6">
-      <Card className="w-full max-w-xl rounded-[24px] border-0 bg-card p-8 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)]">
+      <Card className="w-full max-w-xl rounded-lg p-8">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(0,50,125,0.1)]">
-            <FileSpreadsheet className="h-5 w-5 text-[var(--color-accent)]" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-muted">
+            <FileSpreadsheet className="h-5 w-5 text-primary" />
           </div>
           <div className="min-w-0">
-            <h2 className="truncate font-display text-xl text-[var(--color-text-primary)]">
+            <h2 className="truncate text-xl font-semibold tracking-tight text-foreground">
               {profiled.fileName}
             </h2>
-            <p className="text-sm text-[var(--color-text-secondary)]">
+            <p className="text-sm text-muted-foreground">
               {profiled.rowCount.toLocaleString()} rows ·{" "}
               {profiled.profile.columnCount} columns
             </p>
@@ -64,19 +64,19 @@ export function ConfirmGenerationStep({
 
         <div className="mt-5 flex flex-wrap gap-2">
           {kindCounts.numeric ? (
-            <span className="rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)]">
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
               {kindCounts.numeric} numeric{" "}
               {kindCounts.numeric === 1 ? "column" : "columns"}
             </span>
           ) : null}
           {kindCounts.categorical ? (
-            <span className="rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)]">
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
               {kindCounts.categorical}{" "}
               {kindCounts.categorical === 1 ? "category" : "categories"}
             </span>
           ) : null}
           {kindCounts.date ? (
-            <span className="rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)]">
+            <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
               {kindCounts.date} date{" "}
               {kindCounts.date === 1 ? "column" : "columns"}
             </span>
@@ -84,9 +84,9 @@ export function ConfirmGenerationStep({
         </div>
 
         {profiled.profile.piiColumns.length > 0 ? (
-          <div className="mt-4 flex items-start gap-2 rounded-[20px] bg-[var(--color-bg)] px-4 py-3">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-accent)]" />
-            <p className="text-xs leading-5 text-[var(--color-text-secondary)]">
+          <div className="mt-4 flex items-start gap-2 rounded-lg bg-muted px-4 py-3">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <p className="text-xs leading-5 text-muted-foreground">
               Personal data detected in {profiled.profile.piiColumns.join(", ")}{" "}
               - these columns are kept out of AI prompts and search indexes.
             </p>
@@ -97,7 +97,7 @@ export function ConfirmGenerationStep({
           <div>
             <label
               htmlFor="dataset-topic"
-              className="text-sm font-medium text-[var(--color-text-primary)]"
+              className="text-sm font-medium text-foreground"
             >
               What kind of data is this?
             </label>
@@ -107,7 +107,7 @@ export function ConfirmGenerationStep({
             >
               <SelectTrigger
                 id="dataset-topic"
-                className="mt-2 rounded-full border-0 bg-[var(--color-bg)]"
+                className="mt-2 rounded-xl border-0 bg-muted"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -123,7 +123,7 @@ export function ConfirmGenerationStep({
           </div>
 
           <div>
-            <span className="text-sm font-medium text-[var(--color-text-primary)]">
+            <span className="text-sm font-medium text-foreground">
               How many charts?
             </span>
             <div
@@ -138,10 +138,10 @@ export function ConfirmGenerationStep({
                   role="radio"
                   aria-checked={chartCount === count}
                   onClick={() => setChartCount(count)}
-                  className={`h-10 w-10 rounded-full text-sm font-semibold transition-colors ${
+                  className={`h-10 w-10 rounded-full text-sm font-semibold transition-colors duration-150 motion-reduce:transition-none ${
                     chartCount === count
-                      ? "bg-[var(--color-accent)] text-white"
-                      : "bg-[var(--color-bg)] text-[var(--color-text-secondary)] hover:bg-[rgba(0,50,125,0.1)]"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
                   }`}
                 >
                   {count}
@@ -155,7 +155,6 @@ export function ConfirmGenerationStep({
           <Button
             type="button"
             variant="ghost"
-            className="rounded-full"
             onClick={onCancel}
             disabled={isGenerating}
           >
@@ -164,11 +163,10 @@ export function ConfirmGenerationStep({
           <Button
             type="button"
             size="lg"
-            className="rounded-full bg-[var(--color-accent)] px-8 text-white hover:bg-[var(--color-accent-secondary)]"
             onClick={() => onConfirm(topic, chartCount)}
             disabled={isGenerating}
           >
-            <Sparkles className="mr-2 h-4 w-4" />
+            <Sparkles className="me-2 h-4 w-4" />
             {isGenerating ? "Generating..." : "Generate dashboard"}
           </Button>
         </div>

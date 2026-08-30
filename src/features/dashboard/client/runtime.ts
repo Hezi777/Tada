@@ -117,6 +117,30 @@ export function isChartVisible(chart: ChartConfig): boolean {
   return chart.visibilityState === "visible" && chart.visible;
 }
 
+function isValidDonutSeries(
+  chart: ChartConfig,
+  rows: SerializedRow[],
+): boolean {
+  const series = buildGroupedSeries(chart, rows);
+  return series.length > 0 && series.every((entry) => entry.value > 0);
+}
+
+// Defense in depth: a donut that fails the part-to-whole check should
+// degrade to a bar chart rather than brick the dashboard. The server's BI
+// rules engine is expected to have already converted these at generation
+// time; this only guards against charts (e.g. from older saved state) that
+// slipped past that pass.
+export function sanitizeChartCollection(
+  charts: ChartConfig[],
+  context: DashboardRuntimeContext,
+): ChartConfig[] {
+  return charts.map((chart) =>
+    chart.type === "donut" && !isValidDonutSeries(chart, context.rows)
+      ? { ...chart, type: "bar" as const }
+      : chart,
+  );
+}
+
 export function validateChartCollection(
   charts: ChartConfig[],
   context: DashboardRuntimeContext,
@@ -521,6 +545,21 @@ const KPI_TREND_LIMITS = {
 export type KpiTrend = {
   deltaPct: number;
   sparkline: CategoricalChartSeries;
+  /**
+   * What the delta is measured against, in words ("vs. previous month").
+   *
+   * Not decoration. A KPI delta and a chart insight on the same column can
+   * both be correct and still look contradictory — month-over-month can rise
+   * while the full range falls. Unlabelled, that reads as a broken number.
+   * The chart insight already states its own basis; this gives the KPI one.
+   */
+  basis: string;
+};
+
+const TREND_BASIS_LABEL: Record<"day" | "month" | "year", string> = {
+  day: "vs. previous day",
+  month: "vs. previous month",
+  year: "vs. previous year",
 };
 
 /**
@@ -584,7 +623,7 @@ export function computeKpiTrend(
   const last = series[series.length - 1].value;
   const deltaPct = previous === 0 ? 0 : ((last - previous) / Math.abs(previous)) * 100;
 
-  return { deltaPct, sparkline };
+  return { deltaPct, sparkline, basis: TREND_BASIS_LABEL[granularity] };
 }
 
 export function formatNumber(value: number | null): string | null {

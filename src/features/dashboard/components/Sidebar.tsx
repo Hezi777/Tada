@@ -10,6 +10,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Search,
   Settings,
 } from "lucide-react";
 import { useTranslation } from "@/shared/i18n";
@@ -56,24 +57,16 @@ function NavLink({
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? label : undefined}
       className={cn(
-        "group relative flex h-10 w-full items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]",
-        collapsed ? "justify-center px-0" : "px-3",
+        "group flex h-10 w-full items-center gap-3 rounded-xl text-sm font-medium transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
+        collapsed ? "w-10 justify-center px-0" : "px-3",
         active
-          ? "bg-[var(--color-accent-light)] font-semibold text-[var(--color-accent)]"
-          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]",
+          ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-raised"
+          : "text-sidebar-foreground hover:bg-accent hover:text-foreground",
       )}
     >
-      {active ? (
-        <span
-          className="absolute inset-y-1 start-0 w-0.5 rounded-full bg-[var(--color-accent)]"
-          aria-hidden="true"
-        />
-      ) : null}
       <span
-        className={cn(
-          "shrink-0",
-          active ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]",
-        )}
+        className={cn("shrink-0", active ? "text-primary" : "")}
+        aria-hidden="true"
       >
         {icon}
       </span>
@@ -110,7 +103,7 @@ function ProfileAvatar({
       type="button"
       onClick={onClick}
       aria-label="Open settings"
-      className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+      className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-muted-foreground transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
     >
       {avatarUrl ? (
         /* eslint-disable-next-line @next/next/no-img-element */
@@ -154,10 +147,10 @@ function IconAction({
       aria-label={label}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]",
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
         active
-          ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
-          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]",
+          ? "bg-sidebar-accent text-primary"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground",
       )}
     >
       {icon}
@@ -193,7 +186,7 @@ export function Sidebar({
         {/* Logo header */}
         <div
           className={cn(
-            "flex h-16 shrink-0 items-center gap-2",
+            "flex h-14 shrink-0 items-center gap-2",
             collapsed ? "justify-center px-2" : "px-5",
           )}
         >
@@ -205,13 +198,13 @@ export function Sidebar({
             <Image
               src="/tada-logo.svg"
               alt="Tada"
-              width={32}
-              height={32}
+              width={28}
+              height={28}
               priority
-              className="h-8 w-8 shrink-0"
+              className="h-7 w-7 shrink-0"
             />
             {collapsed ? null : (
-              <span className="text-xl font-black tracking-tight text-[var(--color-text-primary)]">
+              <span className="text-base font-semibold tracking-tight text-foreground">
                 Tada
               </span>
             )}
@@ -224,7 +217,7 @@ export function Sidebar({
               aria-label="Collapse sidebar"
               title="Collapse sidebar"
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors duration-150 motion-reduce:transition-none hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                 isRtl ? "mr-auto" : "ml-auto",
               )}
             >
@@ -241,7 +234,7 @@ export function Sidebar({
                   type="button"
                   onClick={onToggleCollapsed}
                   aria-label="Expand sidebar"
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground transition-colors duration-150 motion-reduce:transition-none hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
                 >
                   <PanelLeftOpen className={cn("h-4 w-4", isRtl ? "rotate-180" : "")} />
                 </button>
@@ -251,11 +244,12 @@ export function Sidebar({
           </div>
         ) : null}
 
+
         {/* Nav — main destinations only; account actions live in the footer. */}
         <ScrollArea className="flex-1">
           <nav className="flex flex-col gap-1 px-3 py-2">
             {collapsed ? null : (
-              <div className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+              <div className="mb-1 px-3 text-xs font-medium text-muted-foreground">
                 {t("nav.group.workspace")}
               </div>
             )}
@@ -277,7 +271,7 @@ export function Sidebar({
         </ScrollArea>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-[var(--color-border)] p-3">
+        <div className="shrink-0 border-t border-border p-3">
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -286,7 +280,7 @@ export function Sidebar({
                   aria-label={t("shell.beta")}
                   className="mesh-teal shadow-premium flex items-center justify-center rounded-xl p-3 transition hover:opacity-90"
                 >
-                  <span className="inline-flex items-center rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[11px] font-bold text-white">
+                  <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground">
                     {t("shell.beta")}
                   </span>
                 </Link>
@@ -298,10 +292,10 @@ export function Sidebar({
               href="/pricing"
               className="mesh-teal shadow-premium block rounded-xl p-3 transition hover:opacity-90"
             >
-              <span className="inline-flex items-center rounded-full bg-[var(--color-accent)] px-2 py-0.5 text-[11px] font-bold text-white">
+              <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground">
                 {t("shell.beta")}
               </span>
-              <p className="mt-2 text-xs font-medium text-[var(--color-text-secondary)]">
+              <p className="mt-2 text-xs font-medium text-muted-foreground">
                 {t("shell.betaNote")}
               </p>
             </Link>
@@ -309,7 +303,7 @@ export function Sidebar({
 
           <div
             className={cn(
-              "mt-3 flex gap-1.5 rounded-xl border border-[var(--color-border)] bg-card p-1.5",
+              "mt-3 flex gap-1.5 rounded-xl border border-border bg-card p-1.5",
               collapsed ? "flex-col items-center" : "items-center",
             )}
           >
@@ -321,7 +315,7 @@ export function Sidebar({
             />
 
             {collapsed ? null : (
-              <span className="min-w-0 flex-1 truncate text-xs font-medium text-[var(--color-text-secondary)]">
+              <span className="min-w-0 flex-1 truncate text-xs font-medium text-muted-foreground">
                 {userEmail ?? ""}
               </span>
             )}
@@ -342,7 +336,7 @@ export function Sidebar({
                       type="submit"
                       variant="ghost"
                       size="icon"
-                      className="h-9 w-9 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
+                      className="h-9 w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                       aria-label="Logout"
                     >
                       <LogOut className="h-4 w-4" />
@@ -355,7 +349,7 @@ export function Sidebar({
                   type="submit"
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)]"
+                  className="h-9 w-9 rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
                   aria-label="Logout"
                 >
                   <LogOut className="h-4 w-4" />

@@ -7,8 +7,8 @@ import {
   useSyncExternalStore,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useLanguage } from "@/shared/i18n";
-import { Menu, Monitor, Moon, Sun, X } from "lucide-react";
+import { useLanguage, useTranslation } from "@/shared/i18n";
+import { ChevronRight, Home, Menu, Monitor, Moon, Sun, X } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Dashboard } from "./Dashboard";
 import FileManager from "./FileManager";
@@ -110,7 +110,7 @@ function ThemeToggle({
       onClick={onCycle}
       aria-label={`${label}. Click to change.`}
       title={label}
-      className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]"
+      className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground transition-colors duration-150 motion-reduce:transition-none hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       {icon}
     </button>
@@ -123,6 +123,7 @@ export function AppShell({
 }: AppShellProps) {
   const lang = useLanguage();
   const isRtl = lang === "he";
+  const { t } = useTranslation();
   // localStorage-backed prefs read via useSyncExternalStore: the server snapshot
   // ("system" / not-collapsed) matches the first client render, so there is no
   // hydration mismatch, and updates flow through the THEME_EVENT/SIDEBAR_EVENT.
@@ -199,16 +200,23 @@ export function AppShell({
     setSidebarOpen(false);
   };
 
+  const activeSectionLabel =
+    activeTab === "settings"
+      ? t("nav.settings")
+      : activeTab === "dashboards"
+        ? t("nav.files")
+        : t("nav.overview");
+
   return (
-    <div className="h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text-primary)]">
+    <div className="h-screen overflow-hidden bg-background text-foreground">
       {/* Desktop sidebar */}
       <aside
-        className={`fixed inset-y-0 z-30 hidden bg-card transition-[width] duration-200 ease-in-out motion-reduce:transition-none lg:block ${
+        className={`fixed inset-y-0 z-30 hidden bg-sidebar transition-[width] duration-200 ease-in-out motion-reduce:transition-none lg:block ${
           collapsed ? "w-16" : "w-[248px]"
         } ${
           isRtl
-            ? "right-0 border-l border-[var(--color-border)]"
-            : "left-0 border-r border-[var(--color-border)]"
+            ? "right-0 border-l border-sidebar-border"
+            : "left-0 border-r border-sidebar-border"
         }`}
       >
         <Sidebar
@@ -253,10 +261,10 @@ export function AppShell({
                 duration: prefersReducedMotion ? 0.12 : 0.22,
                 ease: "easeOut",
               }}
-              className={`fixed inset-y-0 z-50 w-[248px] bg-card lg:hidden ${
+              className={`fixed inset-y-0 z-50 w-[248px] bg-sidebar lg:hidden ${
                 isRtl
-                  ? "right-0 border-l border-[var(--color-border)]"
-                  : "left-0 border-r border-[var(--color-border)]"
+                  ? "right-0 border-l border-sidebar-border"
+                  : "left-0 border-r border-sidebar-border"
               }`}
             >
               <div className={`absolute top-3 ${isRtl ? "left-3" : "right-3"}`}>
@@ -266,7 +274,7 @@ export function AppShell({
                   size="icon"
                   onClick={() => setSidebarOpen(false)}
                   aria-label="Close sidebar"
-                  className="h-9 w-9 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
+                  className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -297,19 +305,33 @@ export function AppShell({
         }`}
       >
         {/* Top bar */}
-        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between bg-[var(--color-bg)] px-4 sm:px-6">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open sidebar"
-            className="h-9 w-9 rounded-full text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] lg:hidden"
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
+        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4 sm:px-6">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open sidebar"
+              className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
 
-          <div className="ml-auto">
+            {/* Breadcrumb */}
+            <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
+              <Home className="h-4 w-4" aria-hidden="true" />
+              <ChevronRight
+                className={`h-4 w-4 text-muted-foreground/60 ${isRtl ? "rotate-180" : ""}`}
+                aria-hidden="true"
+              />
+              <span className="rounded-xl bg-muted px-2.5 py-1 text-sm font-medium text-foreground">
+                {activeSectionLabel}
+              </span>
+            </div>
+          </div>
+
+          <div className="ms-auto">
             <ThemeToggle themeMode={themeMode} onCycle={cycleTheme} />
           </div>
         </header>

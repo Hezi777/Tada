@@ -84,6 +84,68 @@ describe("applyBiRules", () => {
     );
   });
 
+  it("converts count-aggregation donuts with a non-numeric value column to bars", () => {
+    // Hole: donutHasValidParts short-circuits `aggregation === "count"` and
+    // never inspects the series, so a donut whose value column is
+    // non-numeric text stays a donut on the server while the client's
+    // buildGroupedSeries computes zero for every bucket and rejects it.
+    const chart = makeChart({
+      type: "donut",
+      aggregation: "count",
+      columns: ["region", "notes"],
+    });
+    const cols: Column[] = [...columns, { name: "notes", kind: "categorical" }];
+    const rows = [
+      { region: "North", notes: "abc" },
+      { region: "South", notes: "def" },
+    ];
+    const { charts } = applyBiRules([chart], cols, rows);
+    expect(charts[0].type).toBe("bar");
+  });
+
+  it("converts donuts with no groupBy to bars when the single aggregate is non-positive", () => {
+    // Hole: applyBiRules only inspects donuts when `next.groupBy` is set, so
+    // a groupBy-less donut is never converted even when it isn't a valid
+    // part-to-whole chart at all.
+    const chart = makeChart({
+      type: "donut",
+      groupBy: null,
+      columns: ["revenue"],
+      aggregation: "sum",
+    });
+    const rows = [{ revenue: -5 }, { revenue: -10 }];
+    const { charts } = applyBiRules([chart], columns, rows);
+    expect(charts[0].type).toBe("bar");
+  });
+
+  it("converts donuts to bars when a bucket sums to exactly zero", () => {
+    const chart = makeChart({ type: "donut" });
+    const rows = [
+      { region: "North", revenue: 100 },
+      { region: "Zero", revenue: 5 },
+      { region: "Zero", revenue: -5 },
+    ];
+    const { charts, violations } = applyBiRules([chart], columns, rows);
+    expect(charts[0].type).toBe("bar");
+    expect(violations).toContainEqual(
+      expect.objectContaining({ ruleId: "pie_only_part_to_whole" }),
+    );
+  });
+
+  it("treats a blank/non-numeric cell as missing, not zero (server/client parse agreement)", () => {
+    // Hole: server used Number(row[col]) where Number("") === 0 (finite, so
+    // the row counted toward the bucket), while the client's toNumber("")
+    // returns null (dropped). A bucket whose only value is "" must be
+    // treated as empty by both sides and the donut converted to a bar.
+    const chart = makeChart({ type: "donut" });
+    const rows = [
+      { region: "North", revenue: 100 },
+      { region: "Blank", revenue: "" },
+    ];
+    const { charts } = applyBiRules([chart], columns, rows);
+    expect(charts[0].type).toBe("bar");
+  });
+
   it("converts area charts without a date column to bars", () => {
     const chart = makeChart({ type: "area", timeColumn: null });
     const { charts, violations } = applyBiRules(

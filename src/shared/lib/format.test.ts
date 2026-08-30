@@ -55,6 +55,11 @@ describe("detectCurrencySymbol", () => {
     expect(detectCurrencySymbol("Cost in GBP")).toBe("£");
   });
 
+  it("reads explicit currency codes from snake-case column names", () => {
+    expect(detectCurrencySymbol("sales_amount_ils")).toBe("₪");
+    expect(detectCurrencySymbol("net_profit_usd")).toBe("$");
+  });
+
   it("returns null when no currency is stated (caller defaults to $)", () => {
     expect(detectCurrencySymbol("Sales")).toBeNull();
     expect(detectCurrencySymbol("Total Revenue")).toBeNull();
@@ -88,6 +93,12 @@ describe("helpers", () => {
     expect(looksLikeCurrencyColumn("total_revenue")).toBe(true);
     expect(looksLikeCurrencyColumn("הכנסה חודשית")).toBe(true);
     expect(looksLikeCurrencyColumn("region")).toBe(false);
+  });
+
+  it("treats profit as currency but not profit margins", () => {
+    expect(looksLikeCurrencyColumn("Total Profit")).toBe(true);
+    expect(looksLikeCurrencyColumn("רווח נקי")).toBe(true);
+    expect(looksLikeCurrencyColumn("Profit Margin")).toBe(false);
   });
 
   it("truncates long labels with an ellipsis, bidi-isolated", () => {

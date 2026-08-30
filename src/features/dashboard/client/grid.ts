@@ -97,8 +97,10 @@ export const CARD_PAD_X = 24;
  * it renders the type's headline (KPI) substitution. */
 export const CHART_PLOT_HEIGHT: Record<Exclude<SizeClass, "small">, number> = {
   medium: 96,
-  large: 232,
-  xlarge: 232,
+  // Tuned +8px (within the documented ±8px tolerance, WIDGET_SIZING.md §3)
+  // to reduce the dead chrome gap above the plot at these classes.
+  large: 240,
+  xlarge: 240,
 };
 
 /** Fixed plot box for a chart widget. Everything Recharts renders into is

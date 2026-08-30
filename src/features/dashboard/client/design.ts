@@ -80,6 +80,10 @@ const KPI_ICON_RULES: Array<{ icon: LucideIcon; keywords: string[] }> = [
     keywords: ["session", "time", "duration", "latency", "cycle", "depth"],
   },
   {
+    icon: TrendingUp,
+    keywords: ["profit", "margin"],
+  },
+  {
     icon: ShoppingCart,
     keywords: ["order", "cart", "purchase", "basket", "checkout"],
   },
@@ -109,7 +113,10 @@ const AGGREGATION_ICON_MAP: Record<string, LucideIcon> = {
   count: Hash,
   range: CalendarRange,
   avg: Activity,
-  sum: DollarSign,
+  // "sum" doesn't imply currency by itself — a genuinely money-shaped KPI
+  // (revenue/sales/amount/...) already matches a label/column rule above
+  // before falling back here, so this default stays generic (Hash), not $.
+  sum: Hash,
   min: Target,
   max: TrendingUp,
   mode: CreditCard,
@@ -154,7 +161,6 @@ function normalizeText(value: string | null | undefined): string {
 export function resolveKpiIcon(kpi: KPIConfig): LucideIcon {
   const haystack = [
     normalizeText(kpi.label),
-    normalizeText(kpi.description),
     normalizeText(kpi.column),
     normalizeText(kpi.aggregation),
   ].join(" ");

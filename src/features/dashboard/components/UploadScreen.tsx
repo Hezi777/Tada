@@ -49,12 +49,10 @@ export const UploadScreen = ({
   };
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <div className="pointer-events-none absolute inset-0 gradient-glow" />
-
+    <div className="min-h-screen bg-background">
       <header className="px-4 pt-4 sm:px-6">
         <div className="container">
-          <div className="flex items-center justify-between rounded-full bg-white px-4 py-3 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:px-6">
+          <div className="flex items-center justify-between rounded-full border border-border bg-card px-4 py-3 sm:px-6">
             <div className="flex items-center gap-3">
               <Image
                 src="/tada-logo.svg"
@@ -64,10 +62,10 @@ export const UploadScreen = ({
                 className="h-10 w-auto"
               />
               <div>
-                <span className="font-display text-xl font-semibold text-foreground">
+                <span className="text-xl font-semibold tracking-tight text-foreground">
                   Tada
                 </span>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary/80">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Dataset Intake
                 </p>
               </div>
@@ -79,27 +77,27 @@ export const UploadScreen = ({
               onClick={onBack}
               className="text-muted-foreground"
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
+              <ArrowLeft className="me-2 h-4 w-4" />
               Back to home
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="relative flex min-h-[calc(100vh-5.5rem)] items-center px-4 py-10 sm:px-6">
+      <main className="flex min-h-[calc(100vh-5.5rem)] items-center px-4 py-10 sm:px-6">
         <div className="container">
           <div className="grid items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="max-w-xl">
-              <div className="eyebrow mb-6">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-xs font-medium text-muted-foreground">
                 <Lightbulb className="h-3.5 w-3.5" />
                 Step 1 of 2
               </div>
 
-              <h1 className="font-display text-4xl text-foreground sm:text-5xl">
-                Upload your <span className="text-gradient">data file</span>
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                Upload your data file
               </h1>
 
-              <p className="mt-6 text-lg leading-8 text-muted-foreground">
+              <p className="mt-6 text-sm text-muted-foreground">
                 Drop your CSV, Excel, or PDF file and Tada will compose a
                 dashboard with structure, charts, and a chat-ready summary in
                 one pass.
@@ -113,7 +111,7 @@ export const UploadScreen = ({
                 ].map((item) => (
                   <Card
                     key={item}
-                    className="flex items-center gap-3 rounded-full border border-transparent bg-white px-4 py-3 text-sm font-medium text-foreground shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
+                    className="flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium text-foreground"
                   >
                     <span className="h-2.5 w-2.5 rounded-full bg-primary" />
                     {item}
@@ -126,41 +124,43 @@ export const UploadScreen = ({
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`rounded-[24px] bg-white p-4 shadow-[0_22px_52px_-38px_rgba(25,28,30,0.14)] sm:p-6 ${isDragging ? "shadow-glow" : ""}`}
+              className="rounded-lg border border-border bg-card p-4 sm:p-6"
             >
               <div
-                className={`
-                  flex min-h-[30rem] flex-col items-center justify-center rounded-[1.8rem] border-2 border-dashed px-6 py-10 text-center transition-all duration-300
-                  ${isDragging ? "scale-[1.01] border-[var(--color-accent)] bg-[rgba(0,50,125,0.08)]" : "border-[rgba(0,50,125,0.24)] bg-[var(--color-surface-muted)] hover:border-[var(--color-accent)] hover:bg-white"}
-                `}
+                className={`flex min-h-[30rem] flex-col items-center justify-center rounded-lg border border-dashed px-6 py-10 text-center transition-colors duration-150 motion-reduce:transition-none ${
+                  isDragging
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/50"
+                }`}
               >
                 {errorMessage ? (
-                  <Card className="mb-6 w-full max-w-md rounded-[1.2rem] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  <div className="mb-6 w-full max-w-md rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                     {errorMessage}
-                  </Card>
+                  </div>
                 ) : null}
 
                 <div
-                  className={`
-                    mb-6 flex h-20 w-20 items-center justify-center rounded-[20px] border border-transparent shadow-card transition-all duration-300
-                    ${isDragging ? "gradient-primary text-primary-foreground" : "bg-white text-primary"}
-                  `}
+                  className={`mb-6 flex h-20 w-20 items-center justify-center rounded-xl border border-border transition-colors duration-150 motion-reduce:transition-none ${
+                    isDragging
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-primary"
+                  }`}
                 >
                   <Upload className="h-8 w-8" />
                 </div>
 
-                <h2 className="font-display text-3xl text-foreground">
+                <h2 className="text-3xl font-semibold tracking-tight text-foreground">
                   Drop your file here
                 </h2>
                 <p className="mt-3 text-sm text-muted-foreground">
                   or click to browse from your computer
                 </p>
-                <p className="mb-8 mt-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground/80">
+                <p className="mb-8 mt-2 text-xs font-medium text-muted-foreground">
                   Maximum file size: 100MB
                 </p>
 
-                <Button onClick={handleFileSelect} size="lg" className="px-8">
-                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                <Button onClick={handleFileSelect} size="lg">
+                  <FileSpreadsheet className="me-2 h-4 w-4" />
                   Choose File
                 </Button>
 
@@ -173,14 +173,14 @@ export const UploadScreen = ({
                 />
 
                 <div className="mt-10 grid w-full max-w-xl gap-3 sm:grid-cols-3">
-                  <Card className="rounded-[20px] border border-transparent bg-white px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
+                  <Card className="rounded-lg px-4 py-4">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-primary" />
                     <p className="text-sm font-semibold text-foreground">CSV</p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Fast ingestion for flat files
                     </p>
                   </Card>
-                  <Card className="rounded-[20px] border border-transparent bg-white px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
+                  <Card className="rounded-lg px-4 py-4">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-primary" />
                     <p className="text-sm font-semibold text-foreground">
                       Excel (.xlsx)
@@ -189,7 +189,7 @@ export const UploadScreen = ({
                       Modern workbook support
                     </p>
                   </Card>
-                  <Card className="rounded-[20px] border border-transparent bg-white px-4 py-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]">
+                  <Card className="rounded-lg px-4 py-4">
                     <div className="mx-auto mb-2 h-2.5 w-2.5 rounded-full bg-primary" />
                     <p className="text-sm font-semibold text-foreground">
                       Excel (.xls)

@@ -1,0 +1,81 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - heading "Tada / Sales overview" [level=1] [ref=e1083]
+        - paragraph [ref=e7]: A synthetic retail dataset, profiled and shaped into decision-ready signals.
+    - generic [ref=e15]:
+      - heading "Key signals" [level=2] [ref=e1084]
+      - generic [ref=e22]:
+        - generic [ref=e23]: 12.4%
+        - generic [ref=e30]:
+          - generic [ref=e31]: 612,480
+          - paragraph [ref=e32]: Total Revenue
+      - generic [ref=e77]:
+        - generic [ref=e78]: 3.1%
+        - generic [ref=e87]:
+          - generic [ref=e88]: 1,284
+          - paragraph [ref=e89]: Total Orders
+      - generic [ref=e140]:
+        - generic [ref=e141]: Count
+        - generic [ref=e149]:
+          - generic [ref=e150]: "356"
+          - paragraph [ref=e151]: Active Customers
+    - generic [ref=e186]:
+      - heading "Sales by category" [level=2] [ref=e1085]
+      - generic [ref=e266]:
+        - generic [ref=e268]:
+          - heading "Sales by Category" [level=3] [ref=e269]
+          - paragraph [ref=e270]: Apparel ranks first at ⁦₪82,469⁩.
+        - img "Sales by Category. 4 categories ranked by Sales Amount." [ref=e272]:
+          - img [ref=e274]:
+            - generic [ref=e276]:
+              - generic [ref=e705]: Apparel
+              - generic [ref=e707]: Office Supplies
+              - generic [ref=e709]: Furniture
+              - generic [ref=e711]: Technology
+              - generic [ref=e289]: ⁦₪82,469⁩
+              - generic [ref=e290]: ⁦₪82,347⁩
+              - generic [ref=e292]: ⁦₪81,673⁩
+              - generic [ref=e291]: ⁦₪81,795⁩
+              - generic [ref=e1102]: Furniture
+              - generic [ref=e1105]: Sales Amount
+              - generic [ref=e1106]: ⁦₪81,795⁩
+    - generic [ref=e412]:
+      - heading "Revenue over time" [level=2] [ref=e1086]
+      - generic [ref=e486]:
+        - generic [ref=e488]:
+          - heading "Revenue Over Time" [level=3] [ref=e489]
+          - paragraph [ref=e490]: Sales Amount increased 54.2%, from ⁦₪14,700⁩ in ⁦01/24⁩ to ⁦₪22,666⁩ in ⁦06/25⁩.
+        - img "Revenue Over Time. 18 time points for Sales Amount." [ref=e492]:
+          - img [ref=e494]:
+            - generic [ref=e496]:
+              - generic [ref=e793]: ⁦₪0⁩
+              - generic [ref=e794]: ⁦₪5,000⁩
+              - generic [ref=e795]: ⁦₪10K⁩
+              - generic [ref=e796]: ⁦₪15K⁩
+              - generic [ref=e797]: ⁦₪20K⁩
+              - generic [ref=e798]: ⁦₪25K⁩
+              - generic [ref=e799]: ⁦₪30K⁩
+              - generic [ref=e800]: ⁦01/24⁩
+              - generic [ref=e801]: ⁦02/24⁩
+              - generic [ref=e802]: ⁦03/24⁩
+              - generic [ref=e803]: ⁦04/24⁩
+              - generic [ref=e804]: ⁦05/24⁩
+              - generic [ref=e805]: ⁦06/24⁩
+              - generic [ref=e806]: ⁦07/24⁩
+              - generic [ref=e807]: ⁦08/24⁩
+              - generic [ref=e808]: ⁦09/24⁩
+              - generic [ref=e809]: ⁦10/24⁩
+              - generic [ref=e810]: ⁦11/24⁩
+              - generic [ref=e811]: ⁦12/24⁩
+              - generic [ref=e812]: ⁦01/25⁩
+              - generic [ref=e813]: ⁦02/25⁩
+              - generic [ref=e814]: ⁦03/25⁩
+              - generic [ref=e815]: ⁦04/25⁩
+              - generic [ref=e816]: ⁦05/25⁩
+              - generic [ref=e817]: ⁦06/25⁩
+              - generic [ref=e525]: ⁦₪22,666⁩
+  - region "Notifications (F8)":
+    - list
+  - alert [ref=e687]

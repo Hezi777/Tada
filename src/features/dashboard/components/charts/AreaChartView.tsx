@@ -9,12 +9,8 @@ import {
   metricLabel,
 } from "./chart-format";
 import {
-  ACCENT_BRIGHT,
-  COMPARISON_STROKE_COLOR,
-  ECHARTS_GRID,
-  ECHARTS_INK,
-  ECHARTS_TEXT,
-  SIGNAL,
+  tooltipStyle,
+  useChartColors,
   type ChartRenderClass,
 } from "./chart-theme";
 
@@ -37,6 +33,7 @@ export function AreaChartView({
   comparisonSeries,
   isInteracting = false,
 }: AreaChartViewProps) {
+  const colors = useChartColors();
   const series = buildAreaSeries(chart, rows);
   if (series.length === 0) return <ChartEmptyState />;
 
@@ -44,6 +41,7 @@ export function AreaChartView({
   const compact = size === "medium";
   const labels = series.map((item) => item.label);
   const values = series.map((item) => item.value);
+  const lastIndex = values.length - 1;
   const comparisons = comparisonSeries
     ? series.map(
         (point) =>
@@ -55,7 +53,7 @@ export function AreaChartView({
     animationDuration: 320,
     grid: {
       top: 18,
-      right: compact ? 16 : 28,
+      right: compact ? 16 : 88,
       bottom: 28,
       left: compact ? 12 : 64,
       containLabel: false,
@@ -64,7 +62,8 @@ export function AreaChartView({
       trigger: "axis",
       renderMode: "richText",
       valueFormatter: (value: number) => String(formatMetric(value, currency)),
-      axisPointer: { type: "line", lineStyle: { color: ECHARTS_GRID } },
+      axisPointer: { type: "line", lineStyle: { color: colors.grid } },
+      ...tooltipStyle(colors),
     },
     xAxis: {
       type: "category",
@@ -73,7 +72,7 @@ export function AreaChartView({
       axisLine: { show: false },
       axisTick: { show: false },
       axisLabel: {
-        color: ECHARTS_TEXT,
+        color: colors.axis,
         fontSize: 11,
         formatter: (value: string, index: number) =>
           compact && index !== 0 && index !== labels.length - 1
@@ -84,9 +83,9 @@ export function AreaChartView({
     yAxis: {
       type: "value",
       show: !compact,
-      splitLine: { lineStyle: { color: ECHARTS_GRID } },
+      splitLine: { lineStyle: { color: colors.grid } },
       axisLabel: {
-        color: ECHARTS_TEXT,
+        color: colors.axis,
         fontSize: 11,
         formatter: (value: number) => formatAxisValue(value, currency),
       },
@@ -98,10 +97,12 @@ export function AreaChartView({
               name: "Previous period",
               type: "line",
               data: comparisons,
-              smooth: 0.35,
-              symbol: "none",
+              smooth: false,
+              showSymbol: true,
+              symbol: "circle",
+              symbolSize: 5,
               lineStyle: {
-                color: COMPARISON_STROKE_COLOR,
+                color: colors.mutedForeground,
                 width: 1.5,
                 type: "dashed",
               },
@@ -111,18 +112,29 @@ export function AreaChartView({
       {
         name: metricLabel(chart),
         type: "line",
-        data: values,
-        smooth: 0.35,
-        showSymbol: false,
+        data: values.map((value, index) => ({
+          value,
+          // Default mark is neutral grey; only the latest point carries the
+          // accent (design-system-v2 §7.1 — quiet by default, loud once).
+          itemStyle: {
+            color: index === lastIndex ? colors.accent : colors.neutral,
+            borderColor: colors.popover,
+            borderWidth: 2,
+          },
+        })),
+        smooth: false,
+        showSymbol: true,
         symbol: "circle",
-        symbolSize: 8,
-        lineStyle: { color: ACCENT_BRIGHT, width: 3, cap: "round" },
-        itemStyle: { color: SIGNAL, borderColor: "#fff", borderWidth: 2 },
+        symbolSize: compact ? 5 : 6,
+        lineStyle: { color: colors.neutral, width: 3, cap: "round" },
+        emphasis: {
+          itemStyle: { color: colors.accent },
+        },
         endLabel: compact
           ? { show: false }
           : {
               show: true,
-              color: ECHARTS_INK,
+              color: colors.foreground,
               fontSize: 11,
               fontWeight: 600,
               formatter: (params: { value: number }) =>

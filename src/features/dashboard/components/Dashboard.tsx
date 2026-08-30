@@ -51,6 +51,7 @@ import { Card, CardContent } from "@/shared/ui/card";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { Skeleton } from "@/shared/ui/skeleton";
 import {
+  computeKpiTrend,
   computeKpiValue,
   formatNumber as legacyFormatNumber,
   hasRenderableChartData,
@@ -99,7 +100,10 @@ import {
   detectCurrencySymbol,
   formatCurrency,
   formatDateIL,
+  formatRatioAsPercent,
   looksLikeCurrencyColumn,
+  looksLikeRatioColumn,
+  metricPolarity,
 } from "@/shared/lib/format";
 import {
   Sheet,
@@ -126,6 +130,13 @@ function formatMetric(
   if (columnName && looksLikeCurrencyColumn(columnName)) {
     const symbol = detectCurrencySymbol(columnName) ?? "$";
     return formatCurrency(value, symbol, Math.abs(value) >= 100_000);
+  }
+
+  // A proportion stored as a fraction reads as a bug at KPI scale: an average
+  // discount of 9% renders as "0.09", which looks like a broken number rather
+  // than a small one.
+  if (columnName && looksLikeRatioColumn(columnName, value)) {
+    return formatRatioAsPercent(value);
   }
 
   return legacyFormatNumber(value) ?? value;
@@ -336,22 +347,54 @@ function KpiSparkline({
   );
 }
 
-function KpiDeltaBadge({ deltaPct }: { deltaPct: number }) {
-  const isPositive = deltaPct >= 0;
-  const ArrowIcon = isPositive ? ArrowUp : ArrowDown;
+/**
+ * The arrow always reports the real direction of travel. The colour reports
+ * whether that direction is good news, which is not the same question: for a
+ * cost-like measure (discount, refunds, churn, latency) a rise is a loss, and
+ * painting it emerald tells the reader the opposite of the truth.
+ */
+function KpiDeltaBadge({
+  deltaPct,
+  columnName,
+}: {
+  deltaPct: number;
+  columnName?: string;
+}) {
+  const rising = deltaPct >= 0;
+  const ArrowIcon = rising ? ArrowUp : ArrowDown;
+  const inverse = columnName ? metricPolarity(columnName) === "inverse" : false;
+  const isGoodNews = inverse ? !rising : rising;
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold ${
-        isPositive
-          ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
-          : "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400"
+      /* Tinted fill rather than a hairline outline. At this size an outlined
+         pill reads as another piece of card chrome; a filled one reads as a
+         value, which is what it is. Kept at /10 so it stays quiet next to the
+         number it belongs to. */
+      className={`inline-flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+        isGoodNews
+          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+          : "bg-destructive/10 text-destructive"
       }`}
     >
       <ArrowIcon className="h-3 w-3" strokeWidth={2.5} />
       {Math.abs(deltaPct).toFixed(1)}%
     </span>
   );
+}
+
+/**
+ * A "large" KPI card without a trend has nothing to fill its second row
+ * (no sparkline, no breakdown) — collapse it to "medium" so the card's
+ * height matches its actual content instead of leaving a hole. Cards that
+ * do have a trend, or are already medium/small, render at their configured
+ * size unchanged.
+ */
+function kpiPresentationSize(size: ChartSize, trend: KpiTrend | null): ChartSize {
+  if (!trend && size === "large") {
+    return "medium";
+  }
+  return size;
 }
 
 export function KpiCard({
@@ -364,6 +407,7 @@ export function KpiCard({
   chrome,
   size = "medium",
   tier = "t4",
+  columnName,
 }: {
   key?: Key;
   icon: LucideIcon;
@@ -372,6 +416,8 @@ export function KpiCard({
   eyebrow: string;
   isPrimary?: boolean;
   trend: KpiTrend | null;
+  /** Source column, used to pick number format and delta polarity. */
+  columnName?: string;
   /** Edit-mode chrome (drag handle + size control), rendered top-right. */
   chrome?: React.ReactNode;
   /** Size class selects the VIEW (docs/WIDGET_SIZING.md §5), it never
@@ -381,60 +427,75 @@ export function KpiCard({
   size?: ChartSize;
   tier?: CanvasTier;
 }) {
-  const displayValue = formatMetric(value);
+  const displayValue = formatMetric(value, columnName);
   const cardWidth = widgetDimensions(size, tier).width;
 
-  const surfaceClass = isPrimary
-    ? "border-[var(--color-border)] bg-card text-[var(--color-text-primary)] shadow-[0_18px_60px_-52px_rgba(47,109,246,0.8)]"
-    : "border-[var(--color-border)] bg-card text-[var(--color-text-primary)] shadow-none";
-  const iconBoxClass = isPrimary
-    ? "bg-[var(--color-accent)] text-white"
-    : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]";
-  const valueColor = "text-[var(--color-text-primary)]";
-  const labelColor = "text-[var(--color-text-secondary)]";
+  // Spec §6.5: every KPI card variant shares the same neutral surface and
+  // icon chip — "quiet by default, loud once" means the accent lives on the
+  // eyebrow badge (Badge default variant), not on the card chrome.
+  const surfaceClass = "border-border bg-card text-card-foreground";
+  const iconBoxClass = "bg-muted text-muted-foreground";
+  const valueColor = "text-foreground";
+  const labelColor = "text-muted-foreground";
 
   const statusBadge = trend ? (
-    <KpiDeltaBadge deltaPct={trend.deltaPct} />
+    <KpiDeltaBadge deltaPct={trend.deltaPct} columnName={columnName} />
   ) : (
-    <span
-      className={`inline-flex shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
-        isPrimary
-          ? "bg-[var(--color-accent-light)] text-[var(--color-accent)]"
-          : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]"
-      }`}
+    <Badge
+      variant={isPrimary ? "default" : "secondary"}
+      className="shrink-0 text-[10px] uppercase tracking-wide"
     >
       {eyebrow}
-    </span>
+    </Badge>
   );
 
   if (size === "small") {
-    // 1×1: icon + delta row, value, one-line label. Nothing else fits — and
-    // nothing else should.
+    /*
+      1×1, laid out per §6.5: a header row of icon chip + title, then the
+      value beneath it. The earlier arrangement put the icon and the delta on
+      the top row and the label under the value, which left the delta sitting
+      diagonally opposite the number it modifies — the reader had to travel
+      the full card to pair them. Value and delta now share a baseline, and
+      the label reads as the card's title where the spec puts it.
+    */
     return (
       <Card
-        className={`relative h-full overflow-hidden rounded-[18px] ${surfaceClass}`}
+        className={`relative h-full overflow-hidden rounded-lg ${surfaceClass}`}
       >
         {chrome}
-        <CardContent className="relative flex h-full flex-col justify-between overflow-hidden p-5">
-          <div className="flex items-start justify-between gap-3">
+        {/* Centred, not space-between: the row height is fixed by the grid, so
+            justifying to the edges pushed ~90px of air between the title and
+            the number and read as two unrelated things. Grouping them with the
+            spec's mt-4 and centring the group keeps the card's own proportions
+            regardless of how tall the row happens to be. */}
+        <CardContent className="relative flex h-full flex-col justify-center overflow-hidden p-5">
+          <div className="flex items-center gap-3">
             <div
               className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconBoxClass}`}
             >
               <Icon className="h-4 w-4" strokeWidth={2.25} />
             </div>
-            {statusBadge}
-          </div>
-          <div>
-            <div
-              className={`truncate ${kpiValueSizeClass(displayValue, isPrimary, true)} ${valueColor}`}
-            >
-              {displayValue}
-            </div>
-            <p
-              className={`mt-1 truncate text-xs font-semibold leading-snug ${labelColor}`}
-            >
+            <p className={`min-w-0 truncate text-sm font-medium ${valueColor}`}>
               {label}
             </p>
+          </div>
+          <div className="mt-4">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span
+                className={`truncate ${kpiValueSizeClass(displayValue, isPrimary, true)} ${valueColor}`}
+              >
+                {displayValue}
+              </span>
+              {statusBadge}
+            </div>
+            {/* Without this the delta is a bare percentage against an unstated
+                period, which can look like it contradicts the chart insight
+                below it. Stating the basis costs one line. */}
+            {trend ? (
+              <p className={`mt-1 truncate text-[11px] leading-snug ${labelColor}`}>
+                {trend.basis}
+              </p>
+            ) : null}
           </div>
         </CardContent>
       </Card>
@@ -448,7 +509,7 @@ export function KpiCard({
     const sparklineWidth = Math.floor((cardWidth - 40) * 0.45);
     return (
       <Card
-        className={`relative h-full overflow-hidden rounded-[18px] ${surfaceClass}`}
+        className={`relative h-full overflow-hidden rounded-lg ${surfaceClass}`}
       >
         {chrome}
         <CardContent className="relative flex h-full flex-col justify-between overflow-hidden p-5">
@@ -468,7 +529,7 @@ export function KpiCard({
                 {displayValue}
               </div>
               <p
-                className={`mt-1 truncate text-sm font-semibold leading-snug ${labelColor}`}
+                className={`mt-1 truncate text-sm font-medium leading-snug ${labelColor}`}
               >
                 {label}
               </p>
@@ -492,15 +553,15 @@ export function KpiCard({
   const sparklineWidth = cardWidth - 40 + 8;
   return (
     <Card
-      className={`relative h-full overflow-hidden rounded-[18px] ${surfaceClass}`}
+      className={`relative h-full overflow-hidden rounded-lg ${surfaceClass}`}
     >
       {chrome}
       <CardContent className="relative flex h-full flex-col justify-between overflow-hidden p-5">
         <div className="flex items-start justify-between gap-4">
           <div
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${iconBoxClass}`}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconBoxClass}`}
           >
-            <Icon className="h-5 w-5" strokeWidth={2.25} />
+            <Icon className="h-4 w-4" strokeWidth={2.25} />
           </div>
           {isPrimary ? null : statusBadge}
         </div>
@@ -513,15 +574,13 @@ export function KpiCard({
               {displayValue}
             </div>
             {isPrimary ? (
-              <span className="mb-1 rounded-full bg-[var(--color-accent-light)] px-3 py-1 text-[11px] font-semibold text-[var(--color-accent)]">
+              <Badge variant="default" className="mb-1 text-[11px]">
                 {eyebrow}
-              </span>
+              </Badge>
             ) : null}
           </div>
 
-          <p
-            className={`mt-2 text-sm font-semibold leading-snug ${labelColor}`}
-          >
+          <p className={`mt-2 text-sm font-medium leading-snug ${labelColor}`}>
             {label}
           </p>
 
@@ -537,11 +596,11 @@ export function KpiCard({
         </div>
 
         {trend ? (
-          <div className="mt-3 flex items-center justify-between border-t border-[var(--color-border)] pt-3">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+          <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+            <span className="text-xs font-medium text-muted-foreground">
               {eyebrow}
             </span>
-            <span className="text-xs font-medium text-[var(--color-text-secondary)]">
+            <span className="text-xs font-medium text-muted-foreground">
               {trend.sparkline.length} pts
             </span>
           </div>
@@ -623,10 +682,10 @@ function DashboardSkeleton() {
         {Array.from({ length: 4 }).map((_, index) => (
           <Card
             key={index}
-            className="overflow-hidden rounded-[20px] border border-[var(--color-border)] bg-card"
+            className="overflow-hidden rounded-lg border border-border bg-card"
           >
-            <CardContent className="p-6">
-              <Skeleton className="h-10 w-10 rounded-xl" />
+            <CardContent className="p-5">
+              <Skeleton className="h-9 w-9 rounded-xl" />
               <Skeleton className="mt-4 h-3 w-20 rounded-full" />
               <Skeleton className="mt-3 h-6 w-24 rounded-full" />
               <Skeleton className="mt-2 h-3 w-28 rounded-full" />
@@ -635,8 +694,8 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div className="flex-1 px-5 pb-4">
-        <Card className="h-full rounded-2xl border border-[var(--color-border)] bg-card">
-          <Skeleton className="h-full w-full rounded-2xl" />
+        <Card className="h-full rounded-lg border border-border bg-card">
+          <Skeleton className="h-full w-full rounded-lg" />
         </Card>
       </div>
     </div>
@@ -668,12 +727,8 @@ function ManageViewsSection({
   return (
     <section className="space-y-3">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-          {title}
-        </p>
-        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          {description}
-        </p>
+        <p className="text-xs font-medium text-muted-foreground">{title}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       </div>
 
       <div className="space-y-2">
@@ -683,26 +738,19 @@ function ManageViewsSection({
           const canDelete = !visible || canHide;
 
           return (
-            <div
-              key={chart.id}
-              className="rounded-[20px] bg-[var(--color-surface-muted)] p-4"
-            >
+            <div key={chart.id} className="rounded-lg bg-muted p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    <span className="text-xs font-medium text-muted-foreground">
                       {String(index + 1).padStart(2, "0")}
                     </span>
                     <Badge variant="secondary" className="text-[10px]">
                       {chart.type}
                     </Badge>
                     <Badge
-                      variant="secondary"
-                      className={`text-[10px] ${
-                        visible
-                          ? "bg-[var(--color-accent-light)] text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]"
-                          : ""
-                      }`}
+                      variant={visible ? "default" : "secondary"}
+                      className="text-[10px]"
                     >
                       {visible ? "visible" : "hidden"}
                     </Badge>
@@ -712,18 +760,15 @@ function ManageViewsSection({
                       </Badge>
                     ) : null}
                     {chart.chatbotGenerated ? (
-                      <Badge
-                        variant="secondary"
-                        className="bg-[var(--color-accent-light)] text-[10px] text-[var(--color-accent)] hover:bg-[var(--color-accent-light)]"
-                      >
+                      <Badge variant="default" className="text-[10px]">
                         suggested
                       </Badge>
                     ) : null}
                   </div>
-                  <p className="mt-2 truncate font-display text-sm font-semibold text-[var(--color-text-primary)]">
+                  <p className="mt-2 truncate text-sm font-medium text-foreground">
                     {chart.title}
                   </p>
-                  <p className="mt-1 line-clamp-1 text-xs text-[var(--color-text-secondary)]">
+                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
                     {chart.insight}
                   </p>
                 </div>
@@ -733,7 +778,7 @@ function ManageViewsSection({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-card hover:text-[var(--color-text-primary)]"
+                    className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-card hover:text-foreground"
                     onClick={() => toggleChartPinned(chart.id)}
                     aria-label={
                       chart.pinned
@@ -753,7 +798,7 @@ function ManageViewsSection({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
+                      className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
                       onClick={() => setChartVisibility(chart.id, false)}
                       disabled={!canHide}
                       aria-label={`Hide ${chart.title}`}
@@ -765,7 +810,7 @@ function ManageViewsSection({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-card hover:text-[var(--color-text-primary)]"
+                      className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-card hover:text-foreground"
                       onClick={() => {
                         if (visibleCount < BI_RULE_LIMITS.maxCharts) {
                           promoteHiddenChart(chart.id);
@@ -786,7 +831,7 @@ function ManageViewsSection({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-full text-[var(--color-text-muted)] hover:bg-card hover:text-[var(--color-text-primary)]"
+                    className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-card hover:text-foreground"
                     onClick={() => removeChart(chart.id)}
                     disabled={!canDelete}
                     aria-label={`Remove ${chart.title}`}
@@ -797,8 +842,8 @@ function ManageViewsSection({
               </div>
 
               {!visible && replaceTargetFor === chart.id ? (
-                <div className="mt-3 rounded-[16px] bg-card p-3">
-                  <p className="text-xs font-medium text-[var(--color-text-secondary)]">
+                <div className="mt-3 rounded-lg bg-card p-3">
+                  <p className="text-xs font-medium text-muted-foreground">
                     Replace one visible chart to show this view:
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -808,7 +853,7 @@ function ManageViewsSection({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="h-8 rounded-full border border-transparent bg-[var(--color-surface-muted)] px-3 text-xs text-[var(--color-text-primary)] hover:bg-card"
+                        className="h-8 rounded-lg px-3 text-xs"
                         onClick={() => {
                           promoteHiddenChart(chart.id, candidate.id);
                           setReplaceTargetFor(null);
@@ -849,12 +894,10 @@ function ManageViewsSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-[420px] border-0 bg-[var(--color-bg)] p-0 sm:max-w-[420px]"
+        className="w-[420px] p-0 sm:max-w-[420px]"
       >
-        <SheetHeader className="px-6 py-5 text-left">
-          <SheetTitle className="font-display text-[var(--color-text-primary)]">
-            Customize dashboard
-          </SheetTitle>
+        <SheetHeader className="px-6 py-5 text-start">
+          <SheetTitle>Customize dashboard</SheetTitle>
           <SheetDescription>
             Reorder or choose which insights appear on the dashboard.
           </SheetDescription>
@@ -904,6 +947,7 @@ export function Dashboard() {
   const datasetId = useDashboardStore((snapshot) => snapshot.datasetId);
   const charts = useDashboardStore((snapshot) => snapshot.charts);
   const kpiConfigs = useDashboardStore((snapshot) => snapshot.kpis);
+  const columns = useDashboardStore((snapshot) => snapshot.columns);
   const fileName = useDashboardStore((snapshot) => snapshot.fileName);
   const [isManageViewsOpen, setIsManageViewsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -941,9 +985,11 @@ export function Dashboard() {
         ? "Primary KPI"
         : formatAggregationLabel(kpi.aggregation),
       isPrimary: kpi.isPrimary,
-      // Trend badges require an explicit comparison period. Until the KPI
-      // contract carries one, showing a percentage implies unsupported meaning.
-      trend: null,
+      columnName: kpi.column,
+      // Real comparison: current period vs. the immediately preceding
+      // equal-length period, derived from the dataset's date column. Never
+      // fabricated — null when there's no date basis or too few periods.
+      trend: computeKpiTrend(kpi, rows, columns),
     }));
 
     // Only fill with fallback cards if backend returned fewer than 4
@@ -957,13 +1003,14 @@ export function Dashboard() {
           ...fallback,
           eyebrow: index === 0 ? "Fallback KPI" : "Reference Metric",
           isPrimary: false,
+          columnName: undefined as string | undefined,
           trend: null,
         })),
       ].slice(0, 4);
     }
 
     return backendCards;
-  }, [kpiConfigs, rows]);
+  }, [kpiConfigs, rows, columns]);
 
   // KPI cards backed by a persisted KPIConfig participate in the sortable
   // Apple-widget canvas (drag-to-reorder + size control). Fallback cards
@@ -1102,19 +1149,19 @@ export function Dashboard() {
 
     return (
       <>
-        <div className="flex shrink-0 flex-col gap-5 px-5 pb-5 pt-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex shrink-0 flex-col gap-5 px-6 pb-5 pt-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
           <div className="min-w-0">
-            <div className="font-display text-[38px] font-medium tracking-[-0.05em] text-[var(--color-text-primary)] sm:text-[52px]">
+            <h1 className="truncate text-3xl font-semibold tracking-tight text-foreground">
               {title}
-            </div>
-            <p className="mt-1.5 max-w-[52rem] truncate text-sm text-[var(--color-text-secondary)]">
+            </h1>
+            <p className="mt-1.5 max-w-[52rem] truncate text-sm text-muted-foreground">
               {subtitle}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            <div className="inline-flex h-10 items-center gap-2 rounded-full border border-[var(--color-border)] bg-card px-4 text-sm font-medium text-[var(--color-text-secondary)]">
-              <CalendarDays className="h-4 w-4 text-[var(--color-accent)]" />
+            <div className="inline-flex h-9 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-muted-foreground">
+              <CalendarDays className="h-4 w-4 text-primary" />
               <span className="tabular-nums">
                 {rows.length.toLocaleString()} {t("dash.rows")}
               </span>
@@ -1126,8 +1173,8 @@ export function Dashboard() {
               activeDashboardName={activeDashboardName}
               activeDashboardIcon={activeDashboardIcon}
               fallbackLabel={fileName ?? "No dashboard"}
-              triggerClassName="h-10 rounded-full border border-[var(--color-border)] bg-card px-4 text-[13px] text-[var(--color-text-primary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
-              contentClassName="rounded-[20px] border border-[var(--color-border)] bg-card shadow-[0_32px_64px_-42px_rgba(25,28,30,0.18)]"
+              triggerClassName="h-9 rounded-xl border border-border bg-card px-4 text-[13px] text-foreground hover:bg-accent hover:text-foreground"
+              contentClassName="rounded-lg border border-border bg-popover shadow-overlay"
               onSwitchDashboard={(dashboard) => {
                 void handleSwitch(dashboard);
               }}
@@ -1137,15 +1184,11 @@ export function Dashboard() {
             <Button
               type="button"
               onClick={() => setManageViewsOpen((current) => !current)}
-              className={`h-10 rounded-full px-4 text-sm font-semibold text-white transition ${
-                manageViewsOpen
-                  ? "bg-[#191c1e]"
-                  : "bg-[var(--color-accent)] hover:bg-[#0047ab]"
-              }`}
-              variant="default"
+              variant={manageViewsOpen ? "secondary" : "default"}
+              size="lg"
               aria-label="Customize dashboard"
             >
-              <LayoutPanelLeft className="mr-2 h-4 w-4" />
+              <LayoutPanelLeft className="me-2 h-4 w-4" />
               Customize
             </Button>
           </div>
@@ -1161,8 +1204,8 @@ export function Dashboard() {
 
   if (!datasetId) {
     return (
-      <div className="flex h-full items-center justify-center bg-[var(--color-bg)] p-8">
-        <Card className="transition-ui px-10 py-12 hover:shadow-premium">
+      <div className="flex h-full items-center justify-center bg-background p-8">
+        <Card className="px-10 py-12">
           <EmptyState
             icon={<LayoutPanelLeft className="h-7 w-7" />}
             title="Upload a dataset to begin"
@@ -1240,11 +1283,23 @@ export function Dashboard() {
                   strategy={rectSortingStrategy}
                 >
                   <div style={canvasGridStyle(tier)}>
-                    {sortedKpiEntries.map(({ card, config }) => (
+                    {sortedKpiEntries.map(({ card, config }) => {
+                      // The primary KPI honours its configured size like any
+                      // other. Forcing it to "medium" overrode the dashboard's
+                      // own composition: a 2×1 primary beside three 1×1 tiles
+                      // is five column-units on a four-column canvas, which
+                      // pushed a tile onto the next row and stranded the
+                      // fourth column. Primacy is carried by the value's type
+                      // scale, not by the tile's footprint.
+                      const presentationSize = kpiPresentationSize(
+                        config.size,
+                        card.trend,
+                      );
+                      return (
                       <SortableWidget
                         key={card.id}
                         id={card.id}
-                        size={card.isPrimary ? "medium" : config.size}
+                        size={presentationSize}
                         tier={tier}
                       >
                         {(drag) => (
@@ -1255,7 +1310,8 @@ export function Dashboard() {
                             eyebrow={card.eyebrow}
                             isPrimary={card.isPrimary}
                             trend={card.trend}
-                            size={card.isPrimary ? "medium" : config.size}
+                            columnName={card.columnName}
+                            size={presentationSize}
                             tier={tier}
                             chrome={
                               isEditing ? (
@@ -1274,7 +1330,8 @@ export function Dashboard() {
                           />
                         )}
                       </SortableWidget>
-                    ))}
+                      );
+                    })}
                     {visibleCharts.map((chart) => (
                       <SortableWidget
                         key={chart.id}
@@ -1286,11 +1343,6 @@ export function Dashboard() {
                           <DashboardChartCard
                             chart={chart}
                             rows={rows}
-                            insight={
-                              dateRange
-                                ? `Filtered to ${rows.length.toLocaleString()} rows`
-                                : undefined
-                            }
                             tier={tier}
                             isEditing={isEditing}
                             isInteracting={isInteracting}

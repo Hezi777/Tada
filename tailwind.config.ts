@@ -82,6 +82,9 @@ export default {
           3: "hsl(var(--chart-3))",
           4: "hsl(var(--chart-4))",
           5: "hsl(var(--chart-5))",
+          neutral: "hsl(var(--chart-neutral))",
+          grid: "hsl(var(--chart-grid))",
+          axis: "hsl(var(--chart-axis))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -99,6 +102,11 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      boxShadow: {
+        raised: "var(--shadow-raised)",
+        overlay: "var(--shadow-overlay)",
+        drag: "var(--shadow-drag)",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -107,16 +115,6 @@ export default {
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
-        },
-        "card-lift": {
-          from: {
-            transform: "translateY(0)",
-            boxShadow: "0 2px 6px hsl(215 74% 31% / 0.05)",
-          },
-          to: {
-            transform: "translateY(-2px)",
-            boxShadow: "0 8px 24px hsl(215 74% 31% / 0.12)",
-          },
         },
         "fab-pulse": {
           "0%": { transform: "scale(1)", opacity: "0.6" },
@@ -127,7 +125,6 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "card-lift": "card-lift 0.2s ease forwards",
         "fab-pulse": "fab-pulse 2.5s ease-in-out infinite",
       },
     },

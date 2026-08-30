@@ -1,5 +1,10 @@
-import type { ChartConfig } from "@/shared/contracts";
-import { formatNumber as legacyFormatNumber } from "@/features/dashboard/client/runtime";
+import type { ChartConfig, SerializedRow } from "@/shared/contracts";
+import {
+  buildAreaSeries,
+  buildGroupedSeries,
+  computeScatterCorrelation,
+  formatNumber as legacyFormatNumber,
+} from "@/features/dashboard/client/runtime";
 import {
   abbreviateNumber,
   detectCurrencySymbol,
@@ -70,7 +75,73 @@ export function metricLabel(chart: ChartConfig): string {
   ) {
     return "Count";
   }
-  return measure ?? "Value";
+  return measure ? displayColumnLabel(measure) : "Value";
+}
+
+export function displayColumnLabel(label: string): string {
+  return label
+    .replace(/[_-]+/g, " ")
+    .replace(/\b(ils|nis|usd|eur|gbp)\b/gi, "")
+    .replace(/[₪$€£]/g, "")
+    .replace(/[()[\]]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+/**
+ * Recomputes the sentence shown above a chart from the same rows and
+ * aggregation used by the visualization. Persisted/AI copy is never treated
+ * as evidence, so filtering or older dashboards cannot leave a stale claim on
+ * screen.
+ */
+export function deriveChartInsight(
+  chart: ChartConfig,
+  rows: SerializedRow[],
+): string {
+  if (chart.type === "area") {
+    const series = buildAreaSeries(chart, rows);
+    const first = series[0];
+    const last = series.at(-1);
+    if (!first || !last) return chart.insight;
+
+    const currency = chartCurrency(chart);
+    const measure = metricLabel(chart);
+    const firstValue = String(formatMetric(first.value, currency));
+    const lastValue = String(formatMetric(last.value, currency));
+    const firstPeriod = formatAxisValue(first.label);
+    const lastPeriod = formatAxisValue(last.label);
+    if (first.value === 0) {
+      return `${measure} moved from ${firstValue} in ${firstPeriod} to ${lastValue} in ${lastPeriod}.`;
+    }
+    const change = ((last.value - first.value) / Math.abs(first.value)) * 100;
+    const direction = change >= 0 ? "increased" : "decreased";
+    return `${measure} ${direction} ${Math.abs(change).toFixed(1)}%, from ${firstValue} in ${firstPeriod} to ${lastValue} in ${lastPeriod}.`;
+  }
+
+  if (chart.type === "bar" || chart.type === "donut") {
+    const series = buildGroupedSeries(chart, rows);
+    const leader = series[0];
+    if (!leader) return chart.insight;
+
+    const currency = chartCurrency(chart);
+    const leaderValue = String(formatMetric(leader.value, currency));
+    if (chart.type === "donut") {
+      const total = series.reduce((sum, entry) => sum + entry.value, 0);
+      const share = total === 0 ? 0 : (leader.value / total) * 100;
+      return `${leader.label} is the largest share at ${share.toFixed(1)}% (${leaderValue}).`;
+    }
+    return `${leader.label} ranks first at ${leaderValue}.`;
+  }
+
+  if (chart.type === "scatter") {
+    const correlation = computeScatterCorrelation(chart, rows);
+    if (correlation === null) return chart.insight;
+    const direction = correlation >= 0 ? "positive" : "negative";
+    return `${displayColumnLabel(chart.columns[0] ?? "X")} and ${displayColumnLabel(chart.columns[1] ?? "Y")} have a ${direction} correlation (r=${correlation.toFixed(2)}).`;
+  }
+
+  return chart.insight;
 }
 
 /** The currency symbol for the chart's aggregated measure, or null when the

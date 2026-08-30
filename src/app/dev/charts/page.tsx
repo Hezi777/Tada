@@ -148,8 +148,16 @@ function buildSparkline(seed: number, length = 12): KpiTrend["sparkline"] {
   }));
 }
 
-const revenueTrend: KpiTrend = { deltaPct: 12.4, sparkline: buildSparkline(48000) };
-const ordersTrend: KpiTrend = { deltaPct: -3.1, sparkline: buildSparkline(920) };
+const revenueTrend: KpiTrend = {
+  deltaPct: 12.4,
+  sparkline: buildSparkline(48000),
+  basis: "vs. previous month",
+};
+const ordersTrend: KpiTrend = {
+  deltaPct: -3.1,
+  sparkline: buildSparkline(920),
+  basis: "vs. previous month",
+};
 
 const KPI_EXAMPLES = [
   {
